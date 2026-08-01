@@ -55,6 +55,19 @@ await page.waitForTimeout(1200);
 const cyberpunkPath = new URL("cyberpunk.png", outputDir);
 await page.screenshot({ path: cyberpunkPath.pathname });
 
+await page.locator('[data-theme="cyberpunk-tactical"]').click();
+await page.locator('[data-theme="cyberpunk-tactical"][aria-checked="true"]').waitFor();
+await page.waitForTimeout(1200);
+
+const tacticalPath = new URL("cyberpunk-tactical-florida.png", outputDir);
+await page.screenshot({ path: tacticalPath.pathname });
+if (await page.locator("#grid-toggle").getAttribute("aria-pressed") !== "false") {
+  failures.push("Tactical coordinate grid was not disabled by default");
+}
+if (!(await page.locator('.swatch.cyberpunk-tactical').evaluate((element) => getComputedStyle(element).backgroundImage)).includes("/styles/cyberpunk-tactical/")) {
+  failures.push("Tactical preview card did not use a real local raster tile");
+}
+
 const cyberpunkRasterResponse = page.waitForResponse((response) => response.url().includes("/styles/cyberpunk/") && response.url().endsWith(".png"));
 await page.locator('[data-mode="raster"]').click();
 await page.locator('[data-mode="raster"][aria-checked="true"]').waitFor();
@@ -64,9 +77,11 @@ const digest = async (path) => createHash("sha256").update(await readFile(path))
 const daylightDigest = await digest(daylightPath);
 const midnightDigest = await digest(midnightPath);
 const cyberpunkDigest = await digest(cyberpunkPath);
+const tacticalDigest = await digest(tacticalPath);
 
 if (daylightDigest === midnightDigest) failures.push("theme screenshots are identical");
 if (daylightDigest === cyberpunkDigest || midnightDigest === cyberpunkDigest) failures.push("Cyberpunk screenshot is not visually distinct");
+if ([daylightDigest, midnightDigest, cyberpunkDigest].includes(tacticalDigest)) failures.push("Cyberpunk Tactical screenshot is not visually distinct");
 if ((await page.locator(".maplibregl-ctrl").count()) < 2) failures.push("MapLibre controls did not render");
 
 await browser.close();
@@ -80,4 +95,5 @@ console.log("PASS Chromium rendered the map, manifest, and controls");
 console.log("PASS ATAK Raster mode requested the rendered PNG tile endpoint");
 console.log("PASS Daylight and Midnight produced distinct browser screenshots");
 console.log("PASS Cyberpunk produced a distinct vector screenshot and requested its ATAK raster endpoint");
+console.log("PASS Cyberpunk Tactical rendered distinctly with a real preview tile and default-off grid");
 console.log(`Screenshots: ${outputDir.pathname}`);
