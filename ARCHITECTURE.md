@@ -1,4 +1,9 @@
-# Map Room Architecture Proposal
+# Historical prototype architecture proposal
+
+> **Non-normative:** This document records the initial OpenStreetMap-focused
+> prototype proposal. It is superseded by the source-neutral specifications in
+> [`docs/specs/`](docs/specs/README.md) and retained as prototype evidence and
+> rationale only. New work MUST cite the normative specifications and ADRs.
 
 Status: concept draft
 Date: 2026-08-01

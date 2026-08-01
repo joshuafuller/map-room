@@ -1,0 +1,67 @@
+name: Map Room work item
+description: Propose scoped work with specifications, acceptance criteria, and a definition of done.
+title: "[TYPE] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Every Map Room issue must identify its specification contract and contain testable Acceptance Criteria and Definition of Done.
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Outcome
+      description: Describe the user or system outcome, not the implementation activity.
+    validations:
+      required: true
+  - type: textarea
+    id: requirements
+    attributes:
+      label: Requirement IDs
+      description: List the normative MR-* requirements this issue implements or verifies.
+      placeholder: MR-SYS-020, MR-API-012
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope and non-scope
+      description: State what is included and explicitly excluded.
+    validations:
+      required: true
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: Dependencies and ADRs
+      description: Link blocking issues and applicable ADRs, or explain why none apply.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance Criteria
+      description: Provide observable, testable checklist items.
+      placeholder: "- [ ] Given ..., when ..., then ..."
+    validations:
+      required: true
+  - type: textarea
+    id: tests
+    attributes:
+      label: Test plan and red evidence
+      description: Identify the first failing test and all required test layers or external validation.
+    validations:
+      required: true
+  - type: textarea
+    id: done
+    attributes:
+      label: Definition of Done
+      description: Include tests, exact 100% coverage, documentation, observability, security, migration, and cleanup as applicable.
+      placeholder: "- [ ] All acceptance tests pass\n- [ ] Coverage is 100% lines/statements/functions/branches"
+    validations:
+      required: true
+  - type: textarea
+    id: risks
+    attributes:
+      label: Risks and rollback
+      description: Identify failure impact, rollback, destructive actions, and unresolved external dependencies.
+    validations:
+      required: true
