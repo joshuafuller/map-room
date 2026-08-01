@@ -59,6 +59,16 @@ await page.screenshot({ path: cyberpunkPath.pathname });
 await page.locator('[data-theme="cyberpunk-tactical"]').click();
 await page.locator('[data-theme="cyberpunk-tactical"][aria-checked="true"]').waitFor();
 await page.waitForTimeout(1200);
+if (await page.locator('[data-poi-preset="essential"]').getAttribute("aria-pressed") !== "true") {
+  failures.push("Essential POIs were not enabled by default");
+}
+if (await page.locator('[data-poi-preset="explore"]').getAttribute("aria-pressed") !== "false") {
+  failures.push("Explore POIs were not conservative by default");
+}
+await page.locator('[data-poi-preset="explore"]').click();
+if (await page.locator('[data-poi-preset="explore"]').getAttribute("aria-pressed") !== "true") {
+  failures.push("Explore POIs could not be enabled");
+}
 
 const tacticalPath = new URL("cyberpunk-tactical-florida.png", outputDir);
 await page.screenshot({ path: tacticalPath.pathname });
