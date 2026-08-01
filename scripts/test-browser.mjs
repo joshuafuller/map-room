@@ -67,6 +67,10 @@ if (await page.locator("#grid-toggle").getAttribute("aria-pressed") !== "false")
 if (!(await page.locator('.swatch.cyberpunk-tactical').evaluate((element) => getComputedStyle(element).backgroundImage)).includes("/styles/cyberpunk-tactical/")) {
   failures.push("Tactical preview card did not use a real local raster tile");
 }
+await page.locator("#grid-toggle").click();
+if (await page.locator("#grid-toggle").getAttribute("aria-pressed") !== "true") {
+  failures.push("Tactical coordinate grid could not be enabled");
+}
 
 const cyberpunkRasterResponse = page.waitForResponse((response) => response.url().includes("/styles/cyberpunk/") && response.url().endsWith(".png"));
 await page.locator('[data-mode="raster"]').click();
