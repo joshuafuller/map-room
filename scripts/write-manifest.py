@@ -39,6 +39,6 @@ manifest = {
     "sourceTimestamp": metadata.get("planetiler:osm:osmosisreplicationtime"),
     "planetilerVersion": metadata.get("planetiler:version"),
     "generatedAt": datetime.now(timezone.utc).isoformat(),
-    "themes": ["daylight", "midnight"],
+    "themes": ["daylight", "midnight", "cyberpunk", "cyberpunk-tactical"],
 }
 output.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")

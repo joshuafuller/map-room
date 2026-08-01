@@ -17,6 +17,18 @@
       "tilejson": {
         "type": "baselayer"
       }
+    },
+    "cyberpunk": {
+      "style": "cyberpunk/style.json",
+      "tilejson": {
+        "type": "baselayer"
+      }
+    },
+    "cyberpunk-tactical": {
+      "style": "cyberpunk-tactical/style.json",
+      "tilejson": {
+        "type": "baselayer"
+      }
     }
   },
   "data": {

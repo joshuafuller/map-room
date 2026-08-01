@@ -3,7 +3,8 @@
   "name": "Daylight",
   "metadata": {
     "map-room:theme": "daylight",
-    "map-room:tileset-schema": "openmaptiles-3.16"
+    "map-room:tileset-schema": "openmaptiles-3.16",
+    "map-room:style-version": "1.0.0"
   },
   "sources": {
     "osm": {
@@ -300,6 +301,13 @@
           "#e8b06d",
           "secondary",
           "#f1d49a",
+          "tertiary",
+          "#ffffff",
+          [
+            "path",
+            "track"
+          ],
+          "#ffffff",
           "#ffffff"
         ],
         "line-width": [

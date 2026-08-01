@@ -1,13 +1,17 @@
 import * as maplibregl from "/vendor/maplibre-gl.mjs";
-import { buildAtakXml } from "/atak.js";
+import { buildAtakXml, RASTER_MAX_ZOOM } from "/atak.js";
+import { buildCoordinateGrid } from "/grid.js";
 
 const themes = {
   daylight: { name: "Daylight", color: "#f4f1ea" },
-  midnight: { name: "Midnight", color: "#101820" }
+  midnight: { name: "Midnight", color: "#101820" },
+  cyberpunk: { name: "Cyberpunk Classic", color: "#060711" },
+  "cyberpunk-tactical": { name: "Cyberpunk Tactical", color: "#03040b" }
 };
 
 let activeTheme = "daylight";
 let activeMode = "vector";
+let gridEnabled = false;
 let manifest = null;
 try {
   const response = await fetch("/manifest.json", { cache: "no-store" });
@@ -15,6 +19,14 @@ try {
   document.querySelector("#region").textContent = manifest.region;
   const date = new Date(manifest.sourceTimestamp);
   document.querySelector("#freshness").textContent = `OSM data ${date.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}`;
+  if (manifest.testTile) {
+    document.querySelectorAll(".swatch").forEach((swatch) => {
+      const id = swatch.closest("[data-theme]")?.dataset.theme;
+      if (!id) return;
+      swatch.style.backgroundImage = `linear-gradient(rgba(3, 4, 11, .08), rgba(3, 4, 11, .08)), url("/styles/${id}/${manifest.testTile}.png")`;
+      swatch.classList.add("has-preview");
+    });
+  }
 } catch {
   document.querySelector("#freshness").textContent = "Freshness unavailable";
   document.querySelector(".status-dot").style.background = "#c78d42";
@@ -48,7 +60,7 @@ function rasterStyle(id) {
         tiles: [`${window.location.origin}/styles/${id}/{z}/{x}/{y}.png`],
         tileSize: 256,
         minzoom: 0,
-        maxzoom: 14,
+        maxzoom: RASTER_MAX_ZOOM,
         attribution: "© OpenMapTiles © OpenStreetMap contributors"
       }
     },
@@ -56,13 +68,36 @@ function rasterStyle(id) {
   };
 }
 
+function updateGridControl() {
+  const button = document.querySelector("#grid-toggle");
+  button.hidden = activeTheme !== "cyberpunk-tactical" || activeMode !== "vector";
+  button.setAttribute("aria-pressed", String(gridEnabled));
+}
+
+function updateCoordinateGrid() {
+  if (activeTheme !== "cyberpunk-tactical" || activeMode !== "vector") return;
+  const source = map.getSource("coordinate-grid");
+  if (!source) return;
+  const bounds = map.getBounds();
+  source.setData(buildCoordinateGrid({
+    west: bounds.getWest(),
+    south: bounds.getSouth(),
+    east: bounds.getEast(),
+    north: bounds.getNorth()
+  }));
+  map.setLayoutProperty("coordinate-grid", "visibility", gridEnabled ? "visible" : "none");
+}
+
 function applyMapStyle() {
   const style = activeMode === "vector"
     ? `/styles/${activeTheme}/style.json`
     : rasterStyle(activeTheme);
   map.setStyle(style);
-  document.documentElement.style.colorScheme = activeTheme === "midnight" ? "dark" : "light";
+  map.once("style.load", updateCoordinateGrid);
+  document.documentElement.style.colorScheme = activeTheme === "daylight" ? "light" : "dark";
   document.querySelector('meta[name="theme-color"]').content = themes[activeTheme].color;
+  document.documentElement.dataset.mapTheme = activeTheme;
+  updateGridControl();
 }
 
 function selectTheme(id) {
@@ -114,3 +149,12 @@ document.querySelector("#copy-raster").addEventListener("click", async () => {
   await navigator.clipboard.writeText(`${window.location.origin}/styles/${activeTheme}/{z}/{x}/{y}.png`);
   toast("Raster tile URL copied");
 });
+
+document.querySelector("#grid-toggle").addEventListener("click", () => {
+  gridEnabled = !gridEnabled;
+  updateGridControl();
+  updateCoordinateGrid();
+  toast(gridEnabled ? "Coordinate grid enabled" : "Coordinate grid disabled");
+});
+
+map.on("moveend", updateCoordinateGrid);

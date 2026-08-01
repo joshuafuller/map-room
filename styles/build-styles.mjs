@@ -48,6 +48,58 @@ const themes = {
     text: "#e2e8ec",
     textHalo: "#111a22",
     waterText: "#79b9d4"
+  },
+  cyberpunk: {
+    name: "Cyberpunk",
+    background: "#060711",
+    residential: "#101126",
+    industrial: "#171028",
+    park: "#071f20",
+    wood: "#08251f",
+    water: "#061b2a",
+    waterLine: "#00d9ff",
+    building: "#17152d",
+    buildingOutline: "#ff2aa3",
+    boundary: "#9d5cff",
+    roadCasing: "#080812",
+    motorway: "#ff2aa3",
+    primary: "#00e5ff",
+    secondary: "#9d5cff",
+    tertiary: "#5e6da8",
+    minor: "#35406b",
+    path: "#26314f",
+    rail: "#f7e65b",
+    text: "#f4f7ff",
+    textHalo: "#080912",
+    waterText: "#70f7ff",
+    glow: true
+  },
+  "cyberpunk-tactical": {
+    name: "Cyberpunk Tactical",
+    description: "Operational neon with disciplined visual hierarchy",
+    background: "#03040b",
+    residential: "#090c19",
+    industrial: "#120a1c",
+    park: "#041714",
+    wood: "#052019",
+    water: "#03131f",
+    waterLine: "#00eaff",
+    building: "#101225",
+    buildingOutline: "#32406c",
+    boundary: "#8056d9",
+    roadCasing: "#020309",
+    motorway: "#ff2a9f",
+    primary: "#00eaff",
+    secondary: "#8c62f4",
+    tertiary: "#41598b",
+    minor: "#26314e",
+    path: "#172039",
+    rail: "#f2dc58",
+    text: "#f6f8ff",
+    textHalo: "#03040b",
+    waterText: "#70f6ff",
+    glow: true,
+    tactical: true
   }
 };
 
@@ -56,6 +108,8 @@ const roadColor = (theme) => [
   ["motorway", "trunk"], theme.motorway,
   "primary", theme.primary,
   "secondary", theme.secondary,
+  "tertiary", theme.tertiary ?? theme.minor,
+  ["path", "track"], theme.path ?? theme.minor,
   theme.minor
 ];
 
@@ -73,6 +127,20 @@ const roadCasingWidth = [
   16, ["match", ["get", "class"], ["motorway", "trunk"], 15.6, "primary", 12.6, "secondary", 10.6, 7.6]
 ];
 
+const tacticalRoadWidth = [
+  "interpolate", ["linear"], ["zoom"],
+  7, ["match", ["get", "class"], ["motorway", "trunk"], 1.5, "primary", 0.9, "secondary", 0.45, 0.18],
+  12, ["match", ["get", "class"], ["motorway", "trunk"], 5.2, "primary", 4.1, "secondary", 2.2, "tertiary", 1.25, 0.6],
+  16, ["match", ["get", "class"], ["motorway", "trunk"], 15, "primary", 12, "secondary", 8, "tertiary", 5, 2]
+];
+
+const tacticalRoadCasingWidth = [
+  "interpolate", ["linear"], ["zoom"],
+  7, ["match", ["get", "class"], ["motorway", "trunk"], 3.2, "primary", 2.1, 1.1],
+  12, ["match", ["get", "class"], ["motorway", "trunk"], 6.8, "primary", 5.7, "secondary", 3.7, 2.1],
+  16, ["match", ["get", "class"], ["motorway", "trunk"], 16.8, "primary", 13.8, "secondary", 9.8, "tertiary", 6.8, 3.8]
+];
+
 function makeStyle(id, theme) {
   const labelLayout = {
     "text-field": ["coalesce", ["get", "name:latin"], ["get", "name"]],
@@ -81,19 +149,98 @@ function makeStyle(id, theme) {
     "text-max-width": 9
   };
 
+  const selectedRoadWidth = theme.tactical ? tacticalRoadWidth : roadWidth;
+  const selectedRoadCasingWidth = theme.tactical ? tacticalRoadCasingWidth : roadCasingWidth;
+  const glowRoadClasses = theme.tactical
+    ? ["motorway", "trunk", "primary"]
+    : ["motorway", "trunk", "primary", "secondary", "tertiary", "minor", "service", "path", "track"];
+  const glowLayers = theme.glow ? [
+    {
+      id: "waterway-glow", type: "line", source: "osm", "source-layer": "waterway",
+      paint: {
+        "line-color": theme.waterLine,
+        "line-width": ["interpolate", ["linear"], ["zoom"], 8, 2, 15, 7],
+        "line-blur": 4,
+        "line-opacity": 0.38
+      }
+    },
+    {
+      id: "roads-glow", type: "line", source: "osm", "source-layer": "transportation",
+      filter: ["in", ["get", "class"], ["literal", glowRoadClasses]],
+      layout: { "line-cap": "round", "line-join": "round" },
+      paint: {
+        "line-color": roadColor(theme),
+        "line-width": selectedRoadCasingWidth,
+        "line-blur": theme.tactical ? 4 : 3,
+        "line-opacity": theme.tactical ? 0.36 : 0.44
+      }
+    },
+    {
+      id: "rail-glow", type: "line", source: "osm", "source-layer": "transportation",
+      filter: ["==", ["get", "class"], "rail"],
+      paint: {
+        "line-color": theme.rail,
+        "line-width": ["interpolate", ["linear"], ["zoom"], 8, 2, 15, 6],
+        "line-blur": 3,
+        "line-opacity": 0.35
+      }
+    }
+  ] : [];
+
+  const tacticalLayers = theme.tactical ? {
+    urban: [{
+      id: "urban-glow", type: "circle", source: "osm", "source-layer": "place", maxzoom: 11,
+      filter: ["in", ["get", "class"], ["literal", ["city", "town"]]],
+      paint: {
+        "circle-color": ["match", ["get", "class"], "city", theme.motorway, theme.primary],
+        "circle-radius": ["interpolate", ["linear"], ["zoom"], 4, 4, 8, 25, 11, 42],
+        "circle-blur": 0.92,
+        "circle-opacity": ["interpolate", ["linear"], ["zoom"], 4, 0.04, 8, 0.12, 11, 0]
+      }
+    }],
+    coastline: [{
+      id: "coastline-glow", type: "line", source: "osm", "source-layer": "water",
+      paint: { "line-color": theme.waterLine, "line-width": 5, "line-blur": 5, "line-opacity": 0.28 }
+    }],
+    landmarks: [
+      {
+        id: "airports", type: "fill", source: "osm", "source-layer": "aeroway", minzoom: 8,
+        filter: ["in", ["get", "class"], ["literal", ["aerodrome", "heliport"]]],
+        paint: { "fill-color": theme.primary, "fill-opacity": 0.11, "fill-outline-color": theme.primary }
+      },
+      {
+        id: "operational-landmarks", type: "circle", source: "osm", "source-layer": "poi", minzoom: 12,
+        filter: ["in", ["get", "class"], ["literal", ["hospital", "clinic", "police", "fire_station", "harbor"]]],
+        paint: { "circle-color": ["match", ["get", "class"], ["hospital", "clinic"], theme.motorway, ["police", "fire_station"], theme.primary, theme.rail], "circle-radius": ["interpolate", ["linear"], ["zoom"], 12, 2, 16, 5], "circle-stroke-color": theme.textHalo, "circle-stroke-width": 1.5 }
+      }
+    ],
+    grid: [{
+      id: "coordinate-grid", type: "line", source: "coordinate-grid", minzoom: 14,
+      layout: { visibility: "none" },
+      paint: { "line-color": theme.primary, "line-width": 0.8, "line-dasharray": [2, 3], "line-opacity": 0.24 }
+    }]
+  } : { urban: [], coastline: [], landmarks: [], grid: [] };
+
   return {
     version: 8,
     name: theme.name,
     metadata: {
       "map-room:theme": id,
-      "map-room:tileset-schema": "openmaptiles-3.16"
+      "map-room:tileset-schema": "openmaptiles-3.16",
+      "map-room:style-version": "1.0.0",
+      ...(theme.tactical ? {
+        "map-room:description": theme.description,
+        "map-room:variant-of": "cyberpunk"
+      } : {})
     },
     sources: {
-      osm: { type: "vector", url: "mbtiles://{osm}" }
+      osm: { type: "vector", url: "mbtiles://{osm}" },
+      ...(theme.tactical ? { "coordinate-grid": { type: "geojson", data: { type: "FeatureCollection", features: [] } } } : {})
     },
     glyphs: "{fontstack}/{range}.pbf",
     layers: [
       { id: "background", type: "background", paint: { "background-color": theme.background } },
+      ...tacticalLayers.urban,
       {
         id: "landuse", type: "fill", source: "osm", "source-layer": "landuse",
         paint: {
@@ -108,6 +255,8 @@ function makeStyle(id, theme) {
       },
       { id: "parks", type: "fill", source: "osm", "source-layer": "park", paint: { "fill-color": theme.park, "fill-opacity": 0.82 } },
       { id: "water", type: "fill", source: "osm", "source-layer": "water", paint: { "fill-color": theme.water } },
+      ...tacticalLayers.coastline,
+      ...glowLayers.filter(({ id: layerId }) => layerId === "waterway-glow"),
       { id: "waterways", type: "line", source: "osm", "source-layer": "waterway", paint: { "line-color": theme.waterLine, "line-width": ["interpolate", ["linear"], ["zoom"], 8, 0.5, 15, 2.2] } },
       {
         id: "buildings", type: "fill", source: "osm", "source-layer": "building", minzoom: 13,
@@ -117,23 +266,27 @@ function makeStyle(id, theme) {
         id: "boundaries", type: "line", source: "osm", "source-layer": "boundary",
         paint: { "line-color": theme.boundary, "line-width": ["interpolate", ["linear"], ["zoom"], 3, 0.5, 12, 1.6], "line-dasharray": [4, 2], "line-opacity": 0.8 }
       },
+      ...glowLayers.filter(({ id: layerId }) => layerId === "roads-glow"),
       {
         id: "roads-casing", type: "line", source: "osm", "source-layer": "transportation",
         filter: ["in", ["get", "class"], ["literal", ["motorway", "trunk", "primary", "secondary", "tertiary", "minor", "service", "path", "track"]]],
         layout: { "line-cap": "round", "line-join": "round" },
-        paint: { "line-color": theme.roadCasing, "line-width": roadCasingWidth, "line-opacity": 0.95 }
+        paint: { "line-color": theme.roadCasing, "line-width": selectedRoadCasingWidth, "line-opacity": 0.95 }
       },
       {
         id: "roads", type: "line", source: "osm", "source-layer": "transportation",
         filter: ["in", ["get", "class"], ["literal", ["motorway", "trunk", "primary", "secondary", "tertiary", "minor", "service", "path", "track"]]],
         layout: { "line-cap": "round", "line-join": "round" },
-        paint: { "line-color": roadColor(theme), "line-width": roadWidth }
+        paint: { "line-color": roadColor(theme), "line-width": selectedRoadWidth }
       },
+      ...glowLayers.filter(({ id: layerId }) => layerId === "rail-glow"),
       {
         id: "rail", type: "line", source: "osm", "source-layer": "transportation",
         filter: ["==", ["get", "class"], "rail"],
         paint: { "line-color": theme.rail, "line-width": ["interpolate", ["linear"], ["zoom"], 8, 0.5, 15, 2], "line-dasharray": [3, 2] }
       },
+      ...tacticalLayers.landmarks,
+      ...tacticalLayers.grid,
       {
         id: "road-labels", type: "symbol", source: "osm", "source-layer": "transportation_name", minzoom: 12,
         layout: { ...labelLayout, "symbol-placement": "line", "text-size": 11 },

@@ -1,7 +1,11 @@
 const atakThemes = {
   daylight: { name: "Daylight", color: "#f4f1ea" },
-  midnight: { name: "Midnight", color: "#101820" }
+  midnight: { name: "Midnight", color: "#101820" },
+  cyberpunk: { name: "Cyberpunk", color: "#060711" },
+  "cyberpunk-tactical": { name: "Cyberpunk Tactical", color: "#03040b" }
 };
+
+export const RASTER_MAX_ZOOM = 18;
 
 export function buildAtakXml(id, baseUrl) {
   const theme = atakThemes[id];
@@ -11,7 +15,7 @@ export function buildAtakXml(id, baseUrl) {
 <customMapSource>
   <name>Map Room - ${theme.name}</name>
   <minZoom>0</minZoom>
-  <maxZoom>14</maxZoom>
+  <maxZoom>${RASTER_MAX_ZOOM}</maxZoom>
   <tileType>png</tileType>
   <tileUpdate>None</tileUpdate>
   <url>${base}/styles/${id}/{$z}/{$x}/{$y}.png</url>

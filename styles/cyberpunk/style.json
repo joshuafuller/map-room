@@ -1,8 +1,8 @@
 {
   "version": 8,
-  "name": "Midnight",
+  "name": "Cyberpunk",
   "metadata": {
-    "map-room:theme": "midnight",
+    "map-room:theme": "cyberpunk",
     "map-room:tileset-schema": "openmaptiles-3.16",
     "map-room:style-version": "1.0.0"
   },
@@ -18,7 +18,7 @@
       "id": "background",
       "type": "background",
       "paint": {
-        "background-color": "#101820"
+        "background-color": "#060711"
       }
     },
     {
@@ -34,16 +34,16 @@
             "class"
           ],
           "residential",
-          "#17232c",
+          "#101126",
           "industrial",
-          "#202933",
+          "#171028",
           [
             "park",
             "grass",
             "cemetery"
           ],
-          "#18332d",
-          "#101820"
+          "#071f20",
+          "#060711"
         ],
         "fill-opacity": 0.78
       }
@@ -75,8 +75,8 @@
             "class"
           ],
           "wood",
-          "#15352c",
-          "#18332d"
+          "#08251f",
+          "#071f20"
         ],
         "fill-opacity": 0.72
       }
@@ -87,7 +87,7 @@
       "source": "osm",
       "source-layer": "park",
       "paint": {
-        "fill-color": "#18332d",
+        "fill-color": "#071f20",
         "fill-opacity": 0.82
       }
     },
@@ -97,7 +97,31 @@
       "source": "osm",
       "source-layer": "water",
       "paint": {
-        "fill-color": "#102b3c"
+        "fill-color": "#061b2a"
+      }
+    },
+    {
+      "id": "waterway-glow",
+      "type": "line",
+      "source": "osm",
+      "source-layer": "waterway",
+      "paint": {
+        "line-color": "#00d9ff",
+        "line-width": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          8,
+          2,
+          15,
+          7
+        ],
+        "line-blur": 4,
+        "line-opacity": 0.38
       }
     },
     {
@@ -106,7 +130,7 @@
       "source": "osm",
       "source-layer": "waterway",
       "paint": {
-        "line-color": "#1d526c",
+        "line-color": "#00d9ff",
         "line-width": [
           "interpolate",
           [
@@ -129,8 +153,8 @@
       "source-layer": "building",
       "minzoom": 13,
       "paint": {
-        "fill-color": "#29343d",
-        "fill-outline-color": "#35434d",
+        "fill-color": "#17152d",
+        "fill-outline-color": "#ff2aa3",
         "fill-opacity": 0.9
       }
     },
@@ -140,7 +164,7 @@
       "source": "osm",
       "source-layer": "boundary",
       "paint": {
-        "line-color": "#8f73b5",
+        "line-color": "#9d5cff",
         "line-width": [
           "interpolate",
           [
@@ -159,6 +183,124 @@
           2
         ],
         "line-opacity": 0.8
+      }
+    },
+    {
+      "id": "roads-glow",
+      "type": "line",
+      "source": "osm",
+      "source-layer": "transportation",
+      "filter": [
+        "in",
+        [
+          "get",
+          "class"
+        ],
+        [
+          "literal",
+          [
+            "motorway",
+            "trunk",
+            "primary",
+            "secondary",
+            "tertiary",
+            "minor",
+            "service",
+            "path",
+            "track"
+          ]
+        ]
+      ],
+      "layout": {
+        "line-cap": "round",
+        "line-join": "round"
+      },
+      "paint": {
+        "line-color": [
+          "match",
+          [
+            "get",
+            "class"
+          ],
+          [
+            "motorway",
+            "trunk"
+          ],
+          "#ff2aa3",
+          "primary",
+          "#00e5ff",
+          "secondary",
+          "#9d5cff",
+          "tertiary",
+          "#5e6da8",
+          [
+            "path",
+            "track"
+          ],
+          "#26314f",
+          "#35406b"
+        ],
+        "line-width": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          7,
+          [
+            "match",
+            [
+              "get",
+              "class"
+            ],
+            [
+              "motorway",
+              "trunk"
+            ],
+            2.8,
+            1.95
+          ],
+          12,
+          [
+            "match",
+            [
+              "get",
+              "class"
+            ],
+            [
+              "motorway",
+              "trunk"
+            ],
+            6.1,
+            "primary",
+            5.1,
+            "secondary",
+            4.2,
+            3
+          ],
+          16,
+          [
+            "match",
+            [
+              "get",
+              "class"
+            ],
+            [
+              "motorway",
+              "trunk"
+            ],
+            15.6,
+            "primary",
+            12.6,
+            "secondary",
+            10.6,
+            7.6
+          ]
+        ],
+        "line-blur": 3,
+        "line-opacity": 0.44
       }
     },
     {
@@ -192,7 +334,7 @@
         "line-join": "round"
       },
       "paint": {
-        "line-color": "#0c1117",
+        "line-color": "#080812",
         "line-width": [
           "interpolate",
           [
@@ -296,19 +438,19 @@
             "motorway",
             "trunk"
           ],
-          "#d77d5b",
+          "#ff2aa3",
           "primary",
-          "#c7a260",
+          "#00e5ff",
           "secondary",
-          "#7f7a65",
+          "#9d5cff",
           "tertiary",
-          "#53606a",
+          "#5e6da8",
           [
             "path",
             "track"
           ],
-          "#53606a",
-          "#53606a"
+          "#26314f",
+          "#35406b"
         ],
         "line-width": [
           "interpolate",
@@ -372,6 +514,38 @@
       }
     },
     {
+      "id": "rail-glow",
+      "type": "line",
+      "source": "osm",
+      "source-layer": "transportation",
+      "filter": [
+        "==",
+        [
+          "get",
+          "class"
+        ],
+        "rail"
+      ],
+      "paint": {
+        "line-color": "#f7e65b",
+        "line-width": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          8,
+          2,
+          15,
+          6
+        ],
+        "line-blur": 3,
+        "line-opacity": 0.35
+      }
+    },
+    {
       "id": "rail",
       "type": "line",
       "source": "osm",
@@ -385,7 +559,7 @@
         "rail"
       ],
       "paint": {
-        "line-color": "#6d7780",
+        "line-color": "#f7e65b",
         "line-width": [
           "interpolate",
           [
@@ -431,8 +605,8 @@
         "symbol-placement": "line"
       },
       "paint": {
-        "text-color": "#e2e8ec",
-        "text-halo-color": "#111a22",
+        "text-color": "#f4f7ff",
+        "text-halo-color": "#080912",
         "text-halo-width": 1.5
       }
     },
@@ -472,8 +646,8 @@
         "text-max-width": 9
       },
       "paint": {
-        "text-color": "#79b9d4",
-        "text-halo-color": "#111a22",
+        "text-color": "#70f7ff",
+        "text-halo-color": "#080912",
         "text-halo-width": 1.4
       }
     },
@@ -513,8 +687,8 @@
         "text-max-width": 9
       },
       "paint": {
-        "text-color": "#e2e8ec",
-        "text-halo-color": "#111a22",
+        "text-color": "#f4f7ff",
+        "text-halo-color": "#080912",
         "text-halo-width": 1.8
       }
     },
@@ -535,8 +709,8 @@
         "text-size": 9
       },
       "paint": {
-        "text-color": "#e2e8ec",
-        "text-halo-color": "#111a22",
+        "text-color": "#f4f7ff",
+        "text-halo-color": "#080912",
         "text-halo-width": 1
       }
     }

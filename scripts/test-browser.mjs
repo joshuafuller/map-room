@@ -78,7 +78,7 @@ const tacticalRasterResponse = page.waitForResponse((response) => response.url()
 await page.locator('[data-mode="raster"]').click();
 await page.locator('[data-mode="raster"][aria-checked="true"]').waitFor();
 await tacticalRasterResponse;
-const tacticalHighZoomResponse = page.waitForResponse((response) => response.url().includes("/styles/cyberpunk-tactical/17/") && response.url().endsWith(".png"));
+const tacticalHighZoomResponse = page.waitForResponse((response) => /\/styles\/cyberpunk-tactical\/(?:1[5-8])\//.test(response.url()) && response.url().endsWith(".png"));
 await page.evaluate(() => { window.location.hash = "#17/25.775/-80.19"; });
 await tacticalHighZoomResponse;
 
