@@ -10,6 +10,7 @@ test("builds local game-inspired shields and truthful POI categories", async () 
   await execute(process.execPath, ["styles/build-styles.mjs"]);
   const style = JSON.parse(await readFile("styles/cyberpunk-tactical/style.json", "utf8"));
   const sprite = JSON.parse(await readFile("styles/cyberpunk-tactical/sprite.json", "utf8"));
+  const designs = JSON.parse(await readFile("styles/cyberpunk-tactical/sprite-design.json", "utf8"));
   const png = await readFile("styles/cyberpunk-tactical/sprite.png");
   const html = await readFile("web/index.html", "utf8");
 
@@ -39,6 +40,14 @@ test("builds local game-inspired shields and truthful POI categories", async () 
     "poi-food", "poi-lodging", "poi-attraction", "poi-shopping", "poi-parking"
   ];
   assert.deepEqual(Object.keys(sprite).sort(), requiredSprites.sort());
+  assert.deepEqual(designs["poi-fuel"], {
+    label: "Fuel",
+    silhouette: ["pump-body", "display-window", "hose", "nozzle"],
+    accent: "#f2dc58"
+  });
+  for (const id of ["poi-fire", "poi-police", "poi-airport", "poi-food", "poi-attraction"]) {
+    assert.ok(designs[id].silhouette.length >= 2, `${id} must use a recognizable multi-part silhouette`);
+  }
   assert.deepEqual([...png.subarray(0, 8)], [137, 80, 78, 71, 13, 10, 26, 10]);
   assert.match(html, /data-poi-preset="essential"/);
   assert.match(html, /data-poi-preset="explore"/);
