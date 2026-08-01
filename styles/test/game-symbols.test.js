@@ -13,6 +13,8 @@ test("builds local game-inspired shields and truthful POI categories", async () 
   const designs = JSON.parse(await readFile("styles/cyberpunk-tactical/sprite-design.json", "utf8"));
   const png = await readFile("styles/cyberpunk-tactical/sprite.png");
   const html = await readFile("web/index.html", "utf8");
+  const packageJson = JSON.parse(await readFile("package.json", "utf8"));
+  const notices = await readFile("THIRD_PARTY_NOTICES.md", "utf8");
 
   assert.equal(style.sprite, "/styles/cyberpunk-tactical/sprite");
   const layers = Object.fromEntries(style.layers.map((layer) => [layer.id, layer]));
@@ -29,6 +31,7 @@ test("builds local game-inspired shields and truthful POI categories", async () 
   assert.ok(layers["poi-essential"].layout["icon-size"] >= 1.05);
   assert.ok(layers["poi-explore"].layout["icon-size"] >= 1);
   assert.ok(layers["poi-airports"].layout["icon-size"] >= 1.05);
+  assert.ok(layers["poi-airports"].maxzoom <= 12);
   assert.equal(layers["runway-glow"].type, "line");
   assert.equal(layers.runways.type, "line");
   assert.equal(layers.taxiways.type, "line");
@@ -52,7 +55,7 @@ test("builds local game-inspired shields and truthful POI categories", async () 
     label: "Fuel",
     silhouette: ["pump-body", "display-window", "hose", "nozzle"],
     accent: "#f2dc58",
-    rendering: "fine-line"
+    rendering: "lucide-svg"
   });
   for (const id of ["poi-fire", "poi-police", "poi-airport", "poi-food", "poi-attraction"]) {
     assert.ok(designs[id].silhouette.length >= 2, `${id} must use a recognizable multi-part silhouette`);
@@ -61,6 +64,11 @@ test("builds local game-inspired shields and truthful POI categories", async () 
   assert.equal(sprite["poi-fuel"].width, 128);
   assert.equal(sprite["poi-fuel"].height, 128);
   assert.equal(sprite["poi-fuel"].pixelRatio, 4);
+  assert.equal(packageJson.devDependencies["lucide-static"], "1.28.0");
+  assert.equal(packageJson.devDependencies.sharp, "0.35.3");
+  assert.match(notices, /Lucide.*ISC/is);
+  assert.match(notices, /Sharp.*Apache-2\.0/is);
+  assert.equal(layers.taxiways.paint["line-color"], "#00eaff");
   assert.match(html, /data-poi-preset="essential"/);
   assert.match(html, /data-poi-preset="explore"/);
 });
