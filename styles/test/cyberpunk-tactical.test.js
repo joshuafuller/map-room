@@ -36,6 +36,7 @@ test("generates an additive Cyberpunk Tactical style without changing Classic", 
   assert.ok(layers["urban-glow"]);
   assert.ok(layers["coastline-glow"]);
   assert.ok(layers["airports"]);
+  assert.equal(layers["airports"].type, "fill");
   assert.ok(layers["operational-landmarks"]);
   assert.deepEqual(layers["roads-glow"].filter[2][1], ["motorway", "trunk", "primary"]);
   assert.ok(layers["roads-glow"].paint["line-opacity"] <= 0.4);

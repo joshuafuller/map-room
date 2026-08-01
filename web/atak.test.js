@@ -17,4 +17,5 @@ test("generates Cyberpunk Tactical ATAK XML as a separate map source", () => {
   assert.match(xml, /<name>Map Room - Cyberpunk Tactical<\/name>/);
   assert.match(xml, /https:\/\/maps\.example\.test\/styles\/cyberpunk-tactical\/\{\$z\}\/\{\$x\}\/\{\$y\}\.png/);
   assert.match(xml, /<backgroundColor>#03040b<\/backgroundColor>/);
+  assert.match(xml, /<maxZoom>18<\/maxZoom>/);
 });

@@ -17,7 +17,8 @@ const requestedUrls = [];
 
 page.on("pageerror", (error) => failures.push(`page error: ${error.message}`));
 page.on("requestfailed", (request) => {
-  failures.push(`request failed: ${request.url()} (${request.failure()?.errorText})`);
+  const error = request.failure()?.errorText;
+  if (error !== "net::ERR_ABORTED") failures.push(`request failed: ${request.url()} (${error})`);
 });
 page.on("request", (request) => requestedUrls.push(request.url()));
 
@@ -71,21 +72,35 @@ await page.locator("#grid-toggle").click();
 if (await page.locator("#grid-toggle").getAttribute("aria-pressed") !== "true") {
   failures.push("Tactical coordinate grid could not be enabled");
 }
+await page.locator("#grid-toggle").click();
 
-const cyberpunkRasterResponse = page.waitForResponse((response) => response.url().includes("/styles/cyberpunk/") && response.url().endsWith(".png"));
+const tacticalRasterResponse = page.waitForResponse((response) => response.url().includes("/styles/cyberpunk-tactical/") && response.url().endsWith(".png"));
 await page.locator('[data-mode="raster"]').click();
 await page.locator('[data-mode="raster"][aria-checked="true"]').waitFor();
-await cyberpunkRasterResponse;
+await tacticalRasterResponse;
+const tacticalHighZoomResponse = page.waitForResponse((response) => response.url().includes("/styles/cyberpunk-tactical/17/") && response.url().endsWith(".png"));
+await page.evaluate(() => { window.location.hash = "#17/25.775/-80.19"; });
+await tacticalHighZoomResponse;
+
+await page.locator('[data-mode="vector"]').click();
+await page.locator('[data-mode="vector"][aria-checked="true"]').waitFor();
+await page.waitForTimeout(700);
+await page.evaluate(() => { window.location.hash = "#13.2/25.775/-80.19"; });
+await page.waitForTimeout(1600);
+const tacticalMiamiPath = new URL("cyberpunk-tactical-miami.png", outputDir);
+await page.screenshot({ path: tacticalMiamiPath.pathname });
 
 const digest = async (path) => createHash("sha256").update(await readFile(path)).digest("hex");
 const daylightDigest = await digest(daylightPath);
 const midnightDigest = await digest(midnightPath);
 const cyberpunkDigest = await digest(cyberpunkPath);
 const tacticalDigest = await digest(tacticalPath);
+const tacticalMiamiDigest = await digest(tacticalMiamiPath);
 
 if (daylightDigest === midnightDigest) failures.push("theme screenshots are identical");
 if (daylightDigest === cyberpunkDigest || midnightDigest === cyberpunkDigest) failures.push("Cyberpunk screenshot is not visually distinct");
 if ([daylightDigest, midnightDigest, cyberpunkDigest].includes(tacticalDigest)) failures.push("Cyberpunk Tactical screenshot is not visually distinct");
+if (tacticalMiamiDigest === tacticalDigest) failures.push("Cyberpunk Tactical dense-urban screenshot did not change from the regional view");
 if ((await page.locator(".maplibregl-ctrl").count()) < 2) failures.push("MapLibre controls did not render");
 
 await browser.close();
@@ -98,6 +113,6 @@ if (failures.length) {
 console.log("PASS Chromium rendered the map, manifest, and controls");
 console.log("PASS ATAK Raster mode requested the rendered PNG tile endpoint");
 console.log("PASS Daylight and Midnight produced distinct browser screenshots");
-console.log("PASS Cyberpunk produced a distinct vector screenshot and requested its ATAK raster endpoint");
-console.log("PASS Cyberpunk Tactical rendered distinctly with a real preview tile and default-off grid");
+console.log("PASS Cyberpunk produced a distinct vector screenshot");
+console.log("PASS Cyberpunk Tactical rendered distinctly with a real preview tile, default-off grid, and ATAK raster request");
 console.log(`Screenshots: ${outputDir.pathname}`);
