@@ -29,6 +29,12 @@ test("builds local game-inspired shields and truthful POI categories", async () 
   assert.ok(layers["poi-essential"].layout["icon-size"] >= 1.05);
   assert.ok(layers["poi-explore"].layout["icon-size"] >= 1);
   assert.ok(layers["poi-airports"].layout["icon-size"] >= 1.05);
+  assert.equal(layers["runway-glow"].type, "line");
+  assert.equal(layers.runways.type, "line");
+  assert.equal(layers.taxiways.type, "line");
+  assert.ok(layers.taxiways.minzoom > layers.runways.minzoom);
+  assert.match(JSON.stringify(layers.runways.filter), /runway/);
+  assert.match(JSON.stringify(layers.taxiways.filter), /taxiway/);
   assert.equal(layers["poi-explore"].layout.visibility, "none");
   assert.match(JSON.stringify(layers["poi-essential"]), /hospital/);
   assert.match(JSON.stringify(layers["poi-essential"]), /fire_station/);
