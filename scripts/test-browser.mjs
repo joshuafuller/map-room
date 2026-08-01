@@ -91,6 +91,9 @@ await tacticalRasterResponse;
 const tacticalHighZoomResponse = page.waitForResponse((response) => /\/styles\/cyberpunk-tactical\/(?:1[5-8])\//.test(response.url()) && response.url().endsWith(".png"));
 await page.evaluate(() => { window.location.hash = "#17/25.775/-80.19"; });
 await tacticalHighZoomResponse;
+await page.waitForTimeout(500);
+const tacticalRasterMiamiPath = new URL("cyberpunk-tactical-miami-raster.png", outputDir);
+await page.screenshot({ path: tacticalRasterMiamiPath.pathname });
 
 await page.locator('[data-mode="vector"]').click();
 await page.locator('[data-mode="vector"][aria-checked="true"]').waitFor();
@@ -106,11 +109,13 @@ const midnightDigest = await digest(midnightPath);
 const cyberpunkDigest = await digest(cyberpunkPath);
 const tacticalDigest = await digest(tacticalPath);
 const tacticalMiamiDigest = await digest(tacticalMiamiPath);
+const tacticalRasterMiamiDigest = await digest(tacticalRasterMiamiPath);
 
 if (daylightDigest === midnightDigest) failures.push("theme screenshots are identical");
 if (daylightDigest === cyberpunkDigest || midnightDigest === cyberpunkDigest) failures.push("Cyberpunk screenshot is not visually distinct");
 if ([daylightDigest, midnightDigest, cyberpunkDigest].includes(tacticalDigest)) failures.push("Cyberpunk Tactical screenshot is not visually distinct");
 if (tacticalMiamiDigest === tacticalDigest) failures.push("Cyberpunk Tactical dense-urban screenshot did not change from the regional view");
+if (tacticalRasterMiamiDigest === tacticalMiamiDigest) failures.push("Tactical raster evidence did not exercise the PNG route");
 if ((await page.locator(".maplibregl-ctrl").count()) < 2) failures.push("MapLibre controls did not render");
 
 await browser.close();

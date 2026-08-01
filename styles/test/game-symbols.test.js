@@ -16,9 +16,13 @@ test("builds local game-inspired shields and truthful POI categories", async () 
   assert.equal(style.sprite, "/styles/cyberpunk-tactical/sprite");
   const layers = Object.fromEntries(style.layers.map((layer) => [layer.id, layer]));
   assert.equal(layers["road-shields"].type, "symbol");
+  assert.ok(layers["road-shields"].layout["icon-size"] >= 0.8);
+  assert.ok(layers["road-shields"].layout["text-size"] >= 11);
+  assert.ok(layers["road-shields"].paint["text-halo-width"] >= 1.5);
   assert.match(JSON.stringify(layers["road-shields"]), /route_1_ref/);
   assert.match(JSON.stringify(layers["road-shields"]), /US:FL:CR/);
   assert.equal(layers["poi-essential"].layout.visibility, "visible");
+  assert.ok(layers["poi-essential"].layout["icon-size"] >= 0.65);
   assert.equal(layers["poi-explore"].layout.visibility, "none");
   assert.match(JSON.stringify(layers["poi-essential"]), /hospital/);
   assert.match(JSON.stringify(layers["poi-essential"]), /fire_station/);
