@@ -1,0 +1,27 @@
+{
+  "options": {
+    "paths": {
+      "fonts": "/data/fonts",
+      "styles": "/data/styles"
+    }
+  },
+  "styles": {
+    "daylight": {
+      "style": "daylight/style.json",
+      "tilejson": {
+        "type": "baselayer"
+      }
+    },
+    "midnight": {
+      "style": "midnight/style.json",
+      "tilejson": {
+        "type": "baselayer"
+      }
+    }
+  },
+  "data": {
+    "osm": {
+      "mbtiles": "/data/archive/current.mbtiles"
+    }
+  }
+}

@@ -1,0 +1,7 @@
+services:
+  web:
+    ports: !reset []
+
+networks:
+  default:
+    internal: true

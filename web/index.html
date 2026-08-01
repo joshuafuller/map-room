@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#f4f1ea" />
+    <meta name="description" content="Map Room — self-hosted maps for web, offline, and ATAK" />
+    <title>Map Room</title>
+    <link rel="stylesheet" href="/vendor/maplibre-gl.css" />
+    <link rel="stylesheet" href="/app.css" />
+  </head>
+  <body>
+    <div id="map" aria-label="Interactive map of Monaco"></div>
+
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <div>
+          <strong>Map Room</strong>
+          <span id="region">Loading local map…</span>
+        </div>
+      </div>
+      <div class="freshness"><span class="status-dot"></span><span id="freshness">Checking data</span></div>
+    </header>
+
+    <aside class="panel" aria-label="Map controls">
+      <p class="eyebrow">Tile delivery</p>
+      <div class="mode-switch" role="radiogroup" aria-label="Tile delivery mode">
+        <button class="mode selected" data-mode="vector" role="radio" aria-checked="true">Vector</button>
+        <button class="mode" data-mode="raster" role="radio" aria-checked="false">ATAK Raster</button>
+      </div>
+      <p id="mode-detail" class="mode-detail">Interactive vector tiles rendered by your browser.</p>
+
+      <div class="rule"></div>
+      <p class="eyebrow">Map style</p>
+      <div class="themes" role="radiogroup" aria-label="Map style">
+        <button class="theme selected" data-theme="daylight" role="radio" aria-checked="true">
+          <span class="swatch daylight"></span>
+          <span><strong>Daylight</strong><small>Clear and familiar</small></span>
+        </button>
+        <button class="theme" data-theme="midnight" role="radio" aria-checked="false">
+          <span class="swatch midnight"></span>
+          <span><strong>Midnight</strong><small>Low-glare operations</small></span>
+        </button>
+      </div>
+
+      <div class="rule"></div>
+      <p class="eyebrow">Take it with you</p>
+      <button id="atak-download" class="action primary">Download for ATAK</button>
+      <button id="copy-raster" class="action">Copy raster tile URL</button>
+      <p class="hint">ATAK can cache a selected area and zoom range for offline use.</p>
+    </aside>
+
+    <div class="attribution">© OpenMapTiles · © OpenStreetMap contributors</div>
+    <div id="toast" role="status" aria-live="polite"></div>
+
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>

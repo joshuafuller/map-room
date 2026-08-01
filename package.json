@@ -1,0 +1,18 @@
+{
+  "name": "map-room",
+  "private": true,
+  "type": "module",
+  "version": "0.0.1",
+  "description": "Self-hosted maps for web, offline, and ATAK",
+  "dependencies": {
+    "maplibre-gl": "6.1.0"
+  },
+  "scripts": {
+    "build:styles": "node styles/build-styles.mjs",
+    "test:unit": "node --test maintainer/test/*.test.js",
+    "test:browser": "node scripts/test-browser.mjs"
+  },
+  "devDependencies": {
+    "playwright": "1.62.1"
+  }
+}
