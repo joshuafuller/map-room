@@ -26,7 +26,9 @@ test("builds local game-inspired shields and truthful POI categories", async () 
   assert.match(JSON.stringify(layers["road-shields"]), /route_1_ref/);
   assert.match(JSON.stringify(layers["road-shields"]), /US:FL:CR/);
   assert.equal(layers["poi-essential"].layout.visibility, "visible");
-  assert.ok(layers["poi-essential"].layout["icon-size"] >= 0.65);
+  assert.ok(layers["poi-essential"].layout["icon-size"] >= 1.05);
+  assert.ok(layers["poi-explore"].layout["icon-size"] >= 1);
+  assert.ok(layers["poi-airports"].layout["icon-size"] >= 1.05);
   assert.equal(layers["poi-explore"].layout.visibility, "none");
   assert.match(JSON.stringify(layers["poi-essential"]), /hospital/);
   assert.match(JSON.stringify(layers["poi-essential"]), /fire_station/);
@@ -43,12 +45,16 @@ test("builds local game-inspired shields and truthful POI categories", async () 
   assert.deepEqual(designs["poi-fuel"], {
     label: "Fuel",
     silhouette: ["pump-body", "display-window", "hose", "nozzle"],
-    accent: "#f2dc58"
+    accent: "#f2dc58",
+    rendering: "fine-line"
   });
   for (const id of ["poi-fire", "poi-police", "poi-airport", "poi-food", "poi-attraction"]) {
     assert.ok(designs[id].silhouette.length >= 2, `${id} must use a recognizable multi-part silhouette`);
   }
   assert.deepEqual([...png.subarray(0, 8)], [137, 80, 78, 71, 13, 10, 26, 10]);
+  assert.equal(sprite["poi-fuel"].width, 128);
+  assert.equal(sprite["poi-fuel"].height, 128);
+  assert.equal(sprite["poi-fuel"].pixelRatio, 4);
   assert.match(html, /data-poi-preset="essential"/);
   assert.match(html, /data-poi-preset="explore"/);
 });
