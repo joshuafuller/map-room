@@ -48,11 +48,25 @@ await page.waitForTimeout(1200);
 const midnightPath = new URL("midnight.png", outputDir);
 await page.screenshot({ path: midnightPath.pathname });
 
+await page.locator('[data-theme="cyberpunk"]').click();
+await page.locator('[data-theme="cyberpunk"][aria-checked="true"]').waitFor();
+await page.waitForTimeout(1200);
+
+const cyberpunkPath = new URL("cyberpunk.png", outputDir);
+await page.screenshot({ path: cyberpunkPath.pathname });
+
+const cyberpunkRasterResponse = page.waitForResponse((response) => response.url().includes("/styles/cyberpunk/") && response.url().endsWith(".png"));
+await page.locator('[data-mode="raster"]').click();
+await page.locator('[data-mode="raster"][aria-checked="true"]').waitFor();
+await cyberpunkRasterResponse;
+
 const digest = async (path) => createHash("sha256").update(await readFile(path)).digest("hex");
 const daylightDigest = await digest(daylightPath);
 const midnightDigest = await digest(midnightPath);
+const cyberpunkDigest = await digest(cyberpunkPath);
 
 if (daylightDigest === midnightDigest) failures.push("theme screenshots are identical");
+if (daylightDigest === cyberpunkDigest || midnightDigest === cyberpunkDigest) failures.push("Cyberpunk screenshot is not visually distinct");
 if ((await page.locator(".maplibregl-ctrl").count()) < 2) failures.push("MapLibre controls did not render");
 
 await browser.close();
@@ -65,4 +79,5 @@ if (failures.length) {
 console.log("PASS Chromium rendered the map, manifest, and controls");
 console.log("PASS ATAK Raster mode requested the rendered PNG tile endpoint");
 console.log("PASS Daylight and Midnight produced distinct browser screenshots");
+console.log("PASS Cyberpunk produced a distinct vector screenshot and requested its ATAK raster endpoint");
 console.log(`Screenshots: ${outputDir.pathname}`);

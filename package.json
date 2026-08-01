@@ -9,7 +9,7 @@
   },
   "scripts": {
     "build:styles": "node styles/build-styles.mjs",
-    "test:unit": "node --test maintainer/test/*.test.js",
+    "test:unit": "node --test maintainer/test/*.test.js styles/test/*.test.js web/*.test.js",
     "test:browser": "node scripts/test-browser.mjs"
   },
   "devDependencies": {

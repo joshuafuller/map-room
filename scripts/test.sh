@@ -23,21 +23,26 @@ check_status /manifest.json application/json
 check_status /vendor/maplibre-gl.mjs application/javascript
 check_status /styles/daylight/style.json application/json
 check_status /styles/midnight/style.json application/json
+check_status /styles/cyberpunk/style.json application/json
 check_status /data/osm.json application/json
 check_status "/data/osm/$tile.pbf" application/x-protobuf
 check_status "/styles/daylight/$tile.png" image/png
 check_status "/styles/midnight/$tile.png" image/png
+check_status "/styles/cyberpunk/$tile.png" image/png
 
 daylight_sha=$(curl -fsS "$base_url/styles/daylight/$tile.png" | sha256sum | cut -d' ' -f1)
 midnight_sha=$(curl -fsS "$base_url/styles/midnight/$tile.png" | sha256sum | cut -d' ' -f1)
+cyberpunk_sha=$(curl -fsS "$base_url/styles/cyberpunk/$tile.png" | sha256sum | cut -d' ' -f1)
 test "$daylight_sha" != "$midnight_sha"
-printf 'PASS themes produce distinct raster output\n'
+test "$daylight_sha" != "$cyberpunk_sha"
+test "$midnight_sha" != "$cyberpunk_sha"
+printf 'PASS all themes produce distinct raster output\n'
 
 curl -fsS "$base_url/app.js" | grep -q '/vendor/maplibre-gl.mjs'
 curl -fsS "$base_url/" | grep -q '© OpenMapTiles · © OpenStreetMap contributors'
 printf 'PASS frontend uses local MapLibre and includes attribution\n'
 
-node -e "import('./web/atak.js').then(({buildAtakXml}) => { const xml = buildAtakXml('midnight', '$base_url/'); if (!xml.includes('<tileType>png</tileType>') || !xml.includes('$base_url/styles/midnight/{\$z}/{\$x}/{\$y}.png')) process.exit(1); })"
+node -e "import('./web/atak.js').then(({buildAtakXml}) => { for (const theme of ['midnight', 'cyberpunk']) { const xml = buildAtakXml(theme, '$base_url/'); if (!xml.includes('<tileType>png</tileType>') || !xml.includes('$base_url/styles/' + theme + '/{\$z}/{\$x}/{\$y}.png')) process.exit(1); } })"
 printf 'PASS generated ATAK XML has raster URL and zoom contract\n'
 
 if rg -n 'https?://' web styles --glob '!web/vendor/**'; then
