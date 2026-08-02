@@ -1020,7 +1020,32 @@
         "text-font": [
           "Open Sans Semibold"
         ],
-        "text-size": 11.5,
+        "text-size": [
+          "step",
+          [
+            "length",
+            [
+              "to-string",
+              [
+                "coalesce",
+                [
+                  "get",
+                  "route_1_ref"
+                ],
+                [
+                  "get",
+                  "ref"
+                ],
+                ""
+              ]
+            ]
+          ],
+          17,
+          3,
+          15,
+          5,
+          13.5
+        ],
         "text-rotation-alignment": "viewport",
         "text-allow-overlap": false
       },
@@ -1085,8 +1110,8 @@
             "US:US",
             "us-highway"
           ],
-          0.65,
-          1.8
+          0.4,
+          1.25
         ]
       }
     },

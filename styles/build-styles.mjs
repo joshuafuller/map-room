@@ -282,13 +282,17 @@ function makeStyle(id, theme) {
             ["US:FL", "us-state"], "shield-state", "US:FL:CR", "shield-county", "shield-state"],
           "icon-size": 0.86, "icon-rotation-alignment": "viewport",
           "text-field": ["coalesce", ["get", "route_1_ref"], ["get", "ref"]],
-          "text-font": ["Open Sans Semibold"], "text-size": 11.5,
+          "text-font": ["Open Sans Semibold"],
+          "text-size": [
+            "step", ["length", ["to-string", ["coalesce", ["get", "route_1_ref"], ["get", "ref"], ""]]],
+            17, 3, 15, 5, 13.5
+          ],
           "text-rotation-alignment": "viewport", "text-allow-overlap": false
         },
         paint: {
           "text-color": ["match", ["coalesce", ["get", "route_1_network"], ["get", "network"], ""], ["US:US", "us-highway"], theme.symbols.onLight, theme.symbols.onMarker],
           "text-halo-color": ["match", ["coalesce", ["get", "route_1_network"], ["get", "network"], ""], ["US:US", "us-highway"], theme.symbols.lightFill, theme.symbols.shieldFill],
-          "text-halo-width": ["match", ["coalesce", ["get", "route_1_network"], ["get", "network"], ""], ["US:US", "us-highway"], 0.65, 1.8]
+          "text-halo-width": ["match", ["coalesce", ["get", "route_1_network"], ["get", "network"], ""], ["US:US", "us-highway"], 0.4, 1.25]
         }
       },
       {

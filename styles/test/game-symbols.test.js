@@ -27,14 +27,15 @@ test("builds local game-inspired shields and truthful POI categories", async () 
   assert.deepEqual(layers["road-shields"].layout["text-size"], [
     "step",
     ["length", ["to-string", ["coalesce", ["get", "route_1_ref"], ["get", "ref"], ""]]],
-    16,
-    3, 13.5,
-    5, 11.5
+    17,
+    3, 15,
+    5, 13.5
   ]);
   assert.ok(Array.isArray(layers["road-shields"].paint["text-halo-color"]));
   assert.match(JSON.stringify(layers["road-shields"].paint["text-halo-color"]), /#f6f8ff/);
   assert.match(JSON.stringify(layers["road-shields"].paint["text-halo-color"]), /#03040b/);
   assert.ok(Array.isArray(layers["road-shields"].paint["text-halo-width"]));
+  assert.deepEqual(layers["road-shields"].paint["text-halo-width"].slice(-2), [0.4, 1.25]);
   assert.match(JSON.stringify(layers["road-shields"]), /route_1_ref/);
   assert.match(JSON.stringify(layers["road-shields"]), /US:FL:CR/);
   assert.equal(layers["poi-essential"].layout.visibility, "visible");
