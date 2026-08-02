@@ -1,5 +1,5 @@
 import * as maplibregl from "/vendor/maplibre-gl.mjs";
-import { buildAtakXml, RASTER_MAX_ZOOM } from "/atak.js";
+import { buildAtakXml, RASTER_MAX_ZOOM, RASTER_PIXEL_RATIO } from "/atak.js";
 import { buildCoordinateGrid } from "/grid.js";
 
 const themes = {
@@ -12,6 +12,7 @@ const themes = {
 let activeTheme = "daylight";
 let activeMode = "vector";
 let gridEnabled = false;
+const poiPresets = { essential: true, explore: false };
 let manifest = null;
 try {
   const response = await fetch("/manifest.json", { cache: "no-store" });
@@ -57,7 +58,7 @@ function rasterStyle(id) {
     sources: {
       atak: {
         type: "raster",
-        tiles: [`${window.location.origin}/styles/${id}/{z}/{x}/{y}.png`],
+        tiles: [`${window.location.origin}/styles/${id}/{z}/{x}/{y}${RASTER_PIXEL_RATIO}.png`],
         tileSize: 256,
         minzoom: 0,
         maxzoom: RASTER_MAX_ZOOM,
@@ -72,6 +73,21 @@ function updateGridControl() {
   const button = document.querySelector("#grid-toggle");
   button.hidden = activeTheme !== "cyberpunk-tactical" || activeMode !== "vector";
   button.setAttribute("aria-pressed", String(gridEnabled));
+}
+
+function updatePoiControls() {
+  document.querySelector("#poi-controls").hidden = activeTheme !== "cyberpunk-tactical" || activeMode !== "vector";
+  document.querySelectorAll("[data-poi-preset]").forEach((button) => {
+    button.setAttribute("aria-pressed", String(poiPresets[button.dataset.poiPreset]));
+  });
+}
+
+function updatePoiLayers() {
+  if (activeTheme !== "cyberpunk-tactical" || activeMode !== "vector") return;
+  for (const [preset, enabled] of Object.entries(poiPresets)) {
+    const layer = `poi-${preset}`;
+    if (map.getLayer(layer)) map.setLayoutProperty(layer, "visibility", enabled ? "visible" : "none");
+  }
 }
 
 function updateCoordinateGrid() {
@@ -93,11 +109,15 @@ function applyMapStyle() {
     ? `/styles/${activeTheme}/style.json`
     : rasterStyle(activeTheme);
   map.setStyle(style);
-  map.once("style.load", updateCoordinateGrid);
+  map.once("style.load", () => {
+    updateCoordinateGrid();
+    updatePoiLayers();
+  });
   document.documentElement.style.colorScheme = activeTheme === "daylight" ? "light" : "dark";
   document.querySelector('meta[name="theme-color"]').content = themes[activeTheme].color;
   document.documentElement.dataset.mapTheme = activeTheme;
   updateGridControl();
+  updatePoiControls();
 }
 
 function selectTheme(id) {
@@ -146,7 +166,7 @@ document.querySelector("#atak-download").addEventListener("click", () => {
 });
 
 document.querySelector("#copy-raster").addEventListener("click", async () => {
-  await navigator.clipboard.writeText(`${window.location.origin}/styles/${activeTheme}/{z}/{x}/{y}.png`);
+  await navigator.clipboard.writeText(`${window.location.origin}/styles/${activeTheme}/{z}/{x}/{y}${RASTER_PIXEL_RATIO}.png`);
   toast("Raster tile URL copied");
 });
 
@@ -155,6 +175,16 @@ document.querySelector("#grid-toggle").addEventListener("click", () => {
   updateGridControl();
   updateCoordinateGrid();
   toast(gridEnabled ? "Coordinate grid enabled" : "Coordinate grid disabled");
+});
+
+document.querySelectorAll("[data-poi-preset]").forEach((button) => {
+  button.addEventListener("click", () => {
+    const preset = button.dataset.poiPreset;
+    poiPresets[preset] = !poiPresets[preset];
+    updatePoiControls();
+    updatePoiLayers();
+    toast(`${preset === "essential" ? "Essential" : "Explore"} intel ${poiPresets[preset] ? "enabled" : "disabled"}`);
+  });
 });
 
 map.on("moveend", updateCoordinateGrid);

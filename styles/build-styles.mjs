@@ -1,6 +1,7 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { buildSpriteAtlas } from "./build-sprite.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 
@@ -209,6 +210,24 @@ function makeStyle(id, theme) {
         paint: { "fill-color": theme.primary, "fill-opacity": 0.11, "fill-outline-color": theme.primary }
       },
       {
+        id: "runway-glow", type: "line", source: "osm", "source-layer": "aeroway", minzoom: 9,
+        filter: ["==", ["get", "class"], "runway"],
+        layout: { "line-cap": "round", "line-join": "round" },
+        paint: { "line-color": theme.primary, "line-width": ["interpolate", ["linear"], ["zoom"], 9, 5, 16, 18], "line-blur": 5, "line-opacity": 0.28 }
+      },
+      {
+        id: "runways", type: "line", source: "osm", "source-layer": "aeroway", minzoom: 9,
+        filter: ["==", ["get", "class"], "runway"],
+        layout: { "line-cap": "square", "line-join": "round" },
+        paint: { "line-color": theme.text, "line-width": ["interpolate", ["linear"], ["zoom"], 9, 1.2, 14, 4, 18, 9], "line-opacity": 0.92 }
+      },
+      {
+        id: "taxiways", type: "line", source: "osm", "source-layer": "aeroway", minzoom: 12,
+        filter: ["==", ["get", "class"], "taxiway"],
+        layout: { "line-cap": "round", "line-join": "round" },
+        paint: { "line-color": theme.primary, "line-width": ["interpolate", ["linear"], ["zoom"], 12, 0.65, 18, 3.2], "line-opacity": 0.48 }
+      },
+      {
         id: "operational-landmarks", type: "circle", source: "osm", "source-layer": "poi", minzoom: 12,
         filter: ["in", ["get", "class"], ["literal", ["hospital", "clinic", "police", "fire_station", "harbor"]]],
         paint: { "circle-color": ["match", ["get", "class"], ["hospital", "clinic"], theme.motorway, ["police", "fire_station"], theme.primary, theme.rail], "circle-radius": ["interpolate", ["linear"], ["zoom"], 12, 2, 16, 5], "circle-stroke-color": theme.textHalo, "circle-stroke-width": 1.5 }
@@ -218,8 +237,57 @@ function makeStyle(id, theme) {
       id: "coordinate-grid", type: "line", source: "coordinate-grid", minzoom: 14,
       layout: { visibility: "none" },
       paint: { "line-color": theme.primary, "line-width": 0.8, "line-dasharray": [2, 3], "line-opacity": 0.24 }
-    }]
-  } : { urban: [], coastline: [], landmarks: [], grid: [] };
+    }],
+    symbols: [
+      {
+        id: "road-shields", type: "symbol", source: "osm", "source-layer": "transportation_name", minzoom: 8,
+        filter: ["any", ["has", "ref"], ["has", "route_1_ref"]],
+        layout: {
+          "symbol-placement": "line", "symbol-spacing": 320,
+          "icon-image": ["match", ["coalesce", ["get", "route_1_network"], ["get", "network"], ""],
+            ["US:I", "us-interstate"], "shield-interstate", ["US:US", "us-highway"], "shield-us",
+            ["US:FL", "us-state"], "shield-state", "US:FL:CR", "shield-county", "shield-state"],
+          "icon-size": 0.86, "icon-rotation-alignment": "viewport",
+          "text-field": ["coalesce", ["get", "route_1_ref"], ["get", "ref"]],
+          "text-font": ["Open Sans Semibold"], "text-size": 11.5,
+          "text-rotation-alignment": "viewport", "text-allow-overlap": false
+        },
+        paint: {
+          "text-color": ["match", ["coalesce", ["get", "route_1_network"], ["get", "network"], ""], ["US:US", "us-highway"], theme.textHalo, theme.text],
+          "text-halo-color": ["match", ["coalesce", ["get", "route_1_network"], ["get", "network"], ""], ["US:US", "us-highway"], theme.text, theme.textHalo],
+          "text-halo-width": ["match", ["coalesce", ["get", "route_1_network"], ["get", "network"], ""], ["US:US", "us-highway"], 0.65, 1.8]
+        }
+      },
+      {
+        id: "poi-essential", type: "symbol", source: "osm", "source-layer": "poi", minzoom: 12,
+        filter: ["in", ["get", "class"], ["literal", ["hospital", "clinic", "fire_station", "police", "fuel", "harbor"]]],
+        layout: {
+          visibility: "visible", "icon-image": ["match", ["get", "class"], ["hospital", "clinic"], "poi-medical", "fire_station", "poi-fire", "police", "poi-police", "fuel", "poi-fuel", "poi-port"],
+          "icon-size": 1.15, "icon-allow-overlap": false,
+          "text-field": ["coalesce", ["get", "name:latin"], ["get", "name"]], "text-font": ["Open Sans Semibold"], "text-size": 11,
+          "text-offset": [0, 2], "text-anchor": "top", "text-optional": true
+        },
+        paint: { "text-color": theme.text, "text-halo-color": theme.textHalo, "text-halo-width": 1.6 }
+      },
+      {
+        id: "poi-airports", type: "symbol", source: "osm", "source-layer": "aeroway", minzoom: 10, maxzoom: 12,
+        filter: ["in", ["get", "class"], ["literal", ["aerodrome", "heliport"]]],
+        layout: { visibility: "visible", "icon-image": "poi-airport", "icon-size": 1.1, "text-field": ["get", "ref"], "text-font": ["Open Sans Semibold"], "text-size": 11, "text-offset": [0, 2], "text-anchor": "top" },
+        paint: { "text-color": theme.primary, "text-halo-color": theme.textHalo, "text-halo-width": 1.5 }
+      },
+      {
+        id: "poi-explore", type: "symbol", source: "osm", "source-layer": "poi", minzoom: 13,
+        filter: ["in", ["get", "class"], ["literal", ["restaurant", "fast_food", "lodging", "museum", "attraction", "grocery", "shop", "parking"]]],
+        layout: {
+          visibility: "none", "icon-image": ["match", ["get", "class"], ["restaurant", "fast_food"], "poi-food", "lodging", "poi-lodging", ["museum", "attraction"], "poi-attraction", ["grocery", "shop"], "poi-shopping", "poi-parking"],
+          "icon-size": 1.08, "icon-allow-overlap": false,
+          "text-field": ["coalesce", ["get", "name:latin"], ["get", "name"]], "text-font": ["Open Sans Semibold"], "text-size": 10.5,
+          "text-offset": [0, 1.9], "text-anchor": "top", "text-optional": true
+        },
+        paint: { "text-color": theme.text, "text-halo-color": theme.textHalo, "text-halo-width": 1.5 }
+      }
+    ]
+  } : { urban: [], coastline: [], landmarks: [], grid: [], symbols: [] };
 
   return {
     version: 8,
@@ -238,6 +306,7 @@ function makeStyle(id, theme) {
       ...(theme.tactical ? { "coordinate-grid": { type: "geojson", data: { type: "FeatureCollection", features: [] } } } : {})
     },
     glyphs: "{fontstack}/{range}.pbf",
+    ...(theme.tactical ? { sprite: "/styles/cyberpunk-tactical/sprite" } : {}),
     layers: [
       { id: "background", type: "background", paint: { "background-color": theme.background } },
       ...tacticalLayers.urban,
@@ -287,6 +356,7 @@ function makeStyle(id, theme) {
       },
       ...tacticalLayers.landmarks,
       ...tacticalLayers.grid,
+      ...tacticalLayers.symbols,
       {
         id: "road-labels", type: "symbol", source: "osm", "source-layer": "transportation_name", minzoom: 12,
         layout: { ...labelLayout, "symbol-placement": "line", "text-size": 11 },
@@ -315,5 +385,6 @@ for (const [id, theme] of Object.entries(themes)) {
   const output = resolve(here, id, "style.json");
   await mkdir(dirname(output), { recursive: true });
   await writeFile(output, `${JSON.stringify(makeStyle(id, theme), null, 2)}\n`);
+  if (theme.tactical) await buildSpriteAtlas(dirname(output));
   console.log(`wrote ${output}`);
 }

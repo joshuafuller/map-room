@@ -6,6 +6,7 @@ const atakThemes = {
 };
 
 export const RASTER_MAX_ZOOM = 18;
+export const RASTER_PIXEL_RATIO = "@2x";
 
 export function buildAtakXml(id, baseUrl) {
   const theme = atakThemes[id];
@@ -18,7 +19,7 @@ export function buildAtakXml(id, baseUrl) {
   <maxZoom>${RASTER_MAX_ZOOM}</maxZoom>
   <tileType>png</tileType>
   <tileUpdate>None</tileUpdate>
-  <url>${base}/styles/${id}/{$z}/{$x}/{$y}.png</url>
+  <url>${base}/styles/${id}/{$z}/{$x}/{$y}${RASTER_PIXEL_RATIO}.png</url>
   <backgroundColor>${theme.color}</backgroundColor>
 </customMapSource>
 `;
