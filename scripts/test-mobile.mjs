@@ -24,6 +24,7 @@ const initialPanel = await page.evaluate(() => {
   const toggle = document.querySelector("#panel-toggle");
   return {
     height: panel?.getBoundingClientRect().height ?? Infinity,
+    width: panel?.getBoundingClientRect().width ?? Infinity,
     hasToggle: Boolean(toggle),
     toggleVisible: Boolean(toggle && getComputedStyle(toggle).display !== "none"),
     expanded: toggle?.getAttribute("aria-expanded")
@@ -31,6 +32,7 @@ const initialPanel = await page.evaluate(() => {
 });
 if (!initialPanel.hasToggle || !initialPanel.toggleVisible) failures.push("mobile controls did not expose a visible collapse toggle");
 if (initialPanel.height > 80) failures.push(`mobile controls started at ${initialPanel.height}px instead of at most 80px`);
+if (initialPanel.width > 64) failures.push(`collapsed mobile controls remained a ${initialPanel.width}px-wide panel instead of a compact button`);
 if (initialPanel.expanded !== "false") failures.push("mobile controls did not start collapsed");
 
 if (initialPanel.hasToggle) {
