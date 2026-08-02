@@ -207,6 +207,14 @@ await page.locator('[data-mode="vector"][aria-checked="true"]').waitFor();
 await page.waitForTimeout(700);
 await page.evaluate(() => { window.location.hash = "#13.2/25.775/-80.19"; });
 await page.waitForTimeout(1600);
+if (await page.locator("#buildings-toggle").getAttribute("hidden") !== null) {
+  failures.push("Cyberpunk Tactical did not expose the 3D building control");
+}
+await page.locator("#buildings-toggle").click();
+if (await page.locator("#buildings-toggle").getAttribute("aria-pressed") !== "true") {
+  failures.push("Cyberpunk 3D buildings could not be enabled");
+}
+await page.waitForTimeout(900);
 const tacticalMiamiPath = new URL("cyberpunk-tactical-miami.png", outputDir);
 await page.screenshot({ path: tacticalMiamiPath.pathname });
 
