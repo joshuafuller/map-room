@@ -36,6 +36,7 @@ check_png_dimensions() {
 
 check_status / text/html
 check_status /manifest.json application/json
+check_status /regions.json application/json
 check_status /vendor/maplibre-gl.mjs application/javascript
 check_status /styles/daylight/style.json application/json
 check_status /styles/midnight/style.json application/json
@@ -60,6 +61,18 @@ for theme in daylight midnight cyberpunk cyberpunk-tactical; do
   check_png_dimensions "/styles/$theme/$high_zoom/$high_x/$high_y@2x.png" 512x512
 done
 
+for region in california florida; do
+  region_tile=$(python3 -c "import json; print(next(region['testTile'] for region in json.load(open('data/regions.json'))['regions'] if region['id'] == '$region'))")
+  check_status "/regions/$region.json" application/json
+  check_status "/data/$region.json" application/json
+  check_status "/data/$region/$region_tile.pbf" application/x-protobuf
+  for theme in daylight midnight cyberpunk cyberpunk-tactical; do
+    check_status "/styles/$region-$theme/style.json" application/json
+    check_status "/styles/$region-$theme/$region_tile@2x.png" image/png
+    check_png_dimensions "/styles/$region-$theme/$region_tile@2x.png" 512x512
+  done
+done
+
 daylight_sha=$(curl -fsS "$base_url/styles/daylight/$tile.png" | sha256sum | cut -d' ' -f1)
 midnight_sha=$(curl -fsS "$base_url/styles/midnight/$tile.png" | sha256sum | cut -d' ' -f1)
 cyberpunk_sha=$(curl -fsS "$base_url/styles/cyberpunk/$tile.png" | sha256sum | cut -d' ' -f1)
@@ -76,7 +89,7 @@ curl -fsS "$base_url/app.js" | grep -q '/vendor/maplibre-gl.mjs'
 curl -fsS "$base_url/" | grep -q '© OpenMapTiles · © OpenStreetMap contributors'
 printf 'PASS frontend uses local MapLibre and includes attribution\n'
 
-node -e "import('./web/atak.js').then(({buildAtakXml}) => { for (const theme of ['midnight', 'cyberpunk', 'cyberpunk-tactical']) { const xml = buildAtakXml(theme, '$base_url/'); if (!xml.includes('<tileType>png</tileType>') || !xml.includes('$base_url/styles/' + theme + '/{\$z}/{\$x}/{\$y}@2x.png')) process.exit(1); } })"
+node -e "import('./web/atak.js').then(({buildAtakXml}) => { for (const theme of ['midnight', 'cyberpunk', 'cyberpunk-tactical']) { const xml = buildAtakXml({ theme, region: 'florida', regionName: 'Florida', baseUrl: '$base_url/' }); if (!xml.includes('<tileType>png</tileType>') || !xml.includes('$base_url/styles/florida-' + theme + '/{\$z}/{\$x}/{\$y}@2x.png')) process.exit(1); } })"
 printf 'PASS generated ATAK XML has raster URL and zoom contract\n'
 
 external_urls=$(rg -n 'https?://' web styles \

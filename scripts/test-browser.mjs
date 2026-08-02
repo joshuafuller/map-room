@@ -27,6 +27,24 @@ await page.locator(".maplibregl-canvas").waitFor({ state: "visible" });
 await page.waitForFunction(() => document.querySelector("#region")?.textContent !== "Loading local map…");
 await page.waitForTimeout(1000);
 
+if (await page.locator("#region-select option").count() !== 2) {
+  failures.push("Region selector did not list both installed maps");
+}
+if (await page.locator("#region-select").inputValue() !== "california") {
+  failures.push("Region selector did not start on the configured default region");
+}
+const floridaStyleResponse = page.waitForResponse((response) => response.url().endsWith("/styles/florida-daylight/style.json"));
+await page.locator("#region-select").selectOption("florida");
+await floridaStyleResponse;
+await page.waitForFunction(() => document.querySelector("#region")?.textContent === "Florida");
+if (!requestedUrls.some((url) => url.includes("/styles/florida-daylight/"))) {
+  failures.push("Switching to Florida did not request its region-qualified style");
+}
+const californiaStyleResponse = page.waitForResponse((response) => response.url().endsWith("/styles/california-daylight/style.json"));
+await page.locator("#region-select").selectOption("california");
+await californiaStyleResponse;
+await page.waitForFunction(() => document.querySelector("#region")?.textContent === "California");
+
 if (await page.locator("#poi-controls").getAttribute("hidden") !== null) {
   failures.push("Daylight did not expose shared POI controls");
 }
@@ -34,12 +52,12 @@ if (await page.locator("#poi-controls").getAttribute("hidden") !== null) {
 const daylightPath = new URL("daylight.png", outputDir);
 await page.screenshot({ path: daylightPath.pathname });
 
-const rasterResponse = page.waitForResponse((response) => response.url().includes("/styles/daylight/") && response.url().endsWith("@2x.png"));
+const rasterResponse = page.waitForResponse((response) => response.url().includes("/styles/california-daylight/") && response.url().endsWith("@2x.png"));
 await page.locator('[data-mode="raster"]').click();
 await page.locator('[data-mode="raster"][aria-checked="true"]').waitFor();
 await rasterResponse;
 await page.waitForTimeout(500);
-if (!requestedUrls.some((url) => url.includes("/styles/daylight/") && url.endsWith("@2x.png"))) {
+if (!requestedUrls.some((url) => url.includes("/styles/california-daylight/") && url.endsWith("@2x.png"))) {
   failures.push("ATAK raster mode did not request rendered PNG tiles");
 }
 
@@ -74,14 +92,15 @@ await page.locator("#atak-download").click();
 const downloadedSource = await atakDownload;
 const downloadedPath = await downloadedSource.path();
 const downloadedXml = await readFile(downloadedPath, "utf8");
-if (downloadedSource.suggestedFilename() !== "map-room-cyberpunk-tactical.xml") {
-  failures.push("ATAK download did not use the selected theme XML filename");
+if (downloadedSource.suggestedFilename() !== "map-room-california-cyberpunk-tactical.xml") {
+  failures.push("ATAK download did not use the selected region and theme XML filename");
 }
 if (!downloadedXml.includes('<?xml version="1.0" encoding="UTF-8" standalone="yes"?>') ||
     !downloadedXml.includes("<tileUpdate>IfNoneMatch</tileUpdate>") ||
     !downloadedXml.includes("<ignoreErrors>false</ignoreErrors>") ||
     !downloadedXml.includes("<serverParts></serverParts>") ||
-    !downloadedXml.includes(`${baseUrl}/styles/cyberpunk-tactical/{$z}/{$x}/{$y}@2x.png`)) {
+    !downloadedXml.includes("<name>Map Room - California - Cyberpunk Tactical</name>") ||
+    !downloadedXml.includes(`${baseUrl}/styles/california-cyberpunk-tactical/{$z}/{$x}/{$y}@2x.png`)) {
   failures.push("ATAK download did not contain the hardened customMapSource contract");
 }
 if (await page.locator('[data-poi-preset="essential"]').getAttribute("aria-pressed") !== "true") {
@@ -100,7 +119,7 @@ await page.screenshot({ path: tacticalPath.pathname });
 if (await page.locator("#grid-toggle").getAttribute("aria-pressed") !== "false") {
   failures.push("Tactical coordinate grid was not disabled by default");
 }
-if (!(await page.locator('.swatch.cyberpunk-tactical').evaluate((element) => getComputedStyle(element).backgroundImage)).includes("/styles/cyberpunk-tactical/")) {
+if (!(await page.locator('.swatch.cyberpunk-tactical').evaluate((element) => getComputedStyle(element).backgroundImage)).includes("/styles/california-cyberpunk-tactical/")) {
   failures.push("Tactical preview card did not use a real local raster tile");
 }
 await page.locator("#grid-toggle").click();
@@ -109,11 +128,11 @@ if (await page.locator("#grid-toggle").getAttribute("aria-pressed") !== "true") 
 }
 await page.locator("#grid-toggle").click();
 
-const tacticalRasterResponse = page.waitForResponse((response) => response.url().includes("/styles/cyberpunk-tactical/") && response.url().endsWith("@2x.png"));
+const tacticalRasterResponse = page.waitForResponse((response) => response.url().includes("/styles/california-cyberpunk-tactical/") && response.url().endsWith("@2x.png"));
 await page.locator('[data-mode="raster"]').click();
 await page.locator('[data-mode="raster"][aria-checked="true"]').waitFor();
 await tacticalRasterResponse;
-const tacticalHighZoomResponse = page.waitForResponse((response) => /\/styles\/cyberpunk-tactical\/(?:19|20)\//.test(response.url()) && response.url().endsWith("@2x.png"));
+const tacticalHighZoomResponse = page.waitForResponse((response) => /\/styles\/california-cyberpunk-tactical\/(?:19|20)\//.test(response.url()) && response.url().endsWith("@2x.png"));
 await page.evaluate(() => { window.location.hash = "#20/37.7749/-122.4194"; });
 await tacticalHighZoomResponse;
 await page.waitForTimeout(500);
