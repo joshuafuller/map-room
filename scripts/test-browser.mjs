@@ -102,7 +102,9 @@ if (await page.locator("#atak-vector-map").getAttribute("href") !== "/atak/vecto
   failures.push("ATAK vector test did not link to the known-good Florida archive");
 }
 const vectorInstructions = await page.locator("#atak-vector-instructions").textContent();
-if (!vectorInstructions.includes("Set Layer Style") || !vectorInstructions.includes("Import File")) {
+if (!vectorInstructions.includes("Set Layer Style") ||
+    !vectorInstructions.includes("Import File") ||
+    !vectorInstructions.includes("not localhost")) {
   failures.push("ATAK vector workflow did not use the verified ATAK 5.8 menu labels");
 }
 const vectorStyleDownload = page.waitForEvent("download");
