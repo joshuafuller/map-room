@@ -33,8 +33,12 @@ check_status /styles/daylight/style.json application/json
 check_status /styles/midnight/style.json application/json
 check_status /styles/cyberpunk/style.json application/json
 check_status /styles/cyberpunk-tactical/style.json application/json
-check_status /styles/cyberpunk-tactical/sprite.json application/json
-check_status /styles/cyberpunk-tactical/sprite.png image/png
+for theme in daylight midnight cyberpunk cyberpunk-tactical; do
+  check_status "/styles/$theme/sprite.json" application/json
+  check_status "/styles/$theme/sprite.png" image/png
+  check_status "/styles/$theme/sprite@2x.json" application/json
+  check_status "/styles/$theme/sprite@2x.png" image/png
+done
 check_status /data/osm.json application/json
 check_status "/data/osm/$tile.pbf" application/x-protobuf
 check_status "/styles/daylight/$tile.png" image/png
