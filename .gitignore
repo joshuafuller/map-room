@@ -1,6 +1,7 @@
 data/*
 !data/.gitkeep
 node_modules/
+coverage/
 web/vendor/
 styles/regions/
 styles/collections/
