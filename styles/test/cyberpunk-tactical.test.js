@@ -51,8 +51,12 @@ test("generates Cyberpunk Tactical without changing the Classic core treatment",
   });
   const layerIds = tactical.layers.map(({ id }) => id);
   assert.ok(layerIds.indexOf("roads") < layerIds.indexOf("buildings-3d"));
+  assert.ok(layerIds.indexOf("road-labels") < layerIds.indexOf("buildings-3d"));
+  assert.ok(layerIds.indexOf("road-shields") < layerIds.indexOf("buildings-3d"));
+  assert.ok(layerIds.indexOf("house-numbers") < layerIds.indexOf("buildings-3d"));
   assert.ok(layerIds.indexOf("buildings-3d") < layerIds.indexOf("coordinate-grid"));
-  assert.ok(layerIds.indexOf("buildings-3d") < layerIds.indexOf("road-shields"));
+  assert.ok(layerIds.indexOf("buildings-3d") < layerIds.indexOf("poi-essential"));
+  assert.ok(layerIds.indexOf("buildings-3d") < layerIds.indexOf("place-labels"));
   assert.deepEqual(layers["roads-glow"].filter[2][1], ["motorway", "trunk", "primary"]);
   assert.ok(layers["roads-glow"].paint["line-opacity"] <= 0.4);
   assert.equal(layers["place-labels"].paint["text-halo-color"], "#03040b");

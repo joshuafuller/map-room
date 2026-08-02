@@ -47,7 +47,11 @@ test("generates a schema-compatible Cyberpunk style with restrained neon glow", 
   assert.equal(buildings3d.paint["fill-extrusion-opacity"], 0.94);
   assert.ok(layerIds.indexOf("roads") < layerIds.indexOf("buildings-3d"));
   assert.ok(layerIds.indexOf("rail") < layerIds.indexOf("buildings-3d"));
-  assert.ok(layerIds.indexOf("buildings-3d") < layerIds.indexOf("road-shields"));
+  assert.ok(layerIds.indexOf("road-labels") < layerIds.indexOf("buildings-3d"));
+  assert.ok(layerIds.indexOf("road-shields") < layerIds.indexOf("buildings-3d"));
+  assert.ok(layerIds.indexOf("house-numbers") < layerIds.indexOf("buildings-3d"));
+  assert.ok(layerIds.indexOf("buildings-3d") < layerIds.indexOf("poi-essential"));
+  assert.ok(layerIds.indexOf("buildings-3d") < layerIds.indexOf("place-labels"));
   assert.deepEqual(style.light, {
     anchor: "viewport", color: "#d8ccff", intensity: 0.72, position: [1.15, 210, 35]
   });
