@@ -85,10 +85,22 @@ test("transpiles roads and airports to ATAK's bundled legacy style dialect", () 
       id: "poi-airports",
       type: "symbol",
       source: "osm",
-      "source-layer": "aerodrome_label",
-      filter: ["in", ["get", "class"], ["literal", ["international", "regional"]]],
-      layout: { "icon-image": "poi-airport", "text-field": ["get", "name"] },
+      "source-layer": "aeroway",
+      filter: ["in", ["get", "class"], ["literal", ["aerodrome", "heliport"]]],
+      layout: { "icon-image": "poi-airport", "text-field": ["get", "ref"] },
       paint: { "text-color": "#00e5ff" }
+    },
+    {
+      id: "poi-essential",
+      type: "symbol",
+      source: "osm",
+      "source-layer": "poi",
+      filter: ["in", ["get", "class"], ["literal", ["hospital", "clinic", "fuel"]]],
+      layout: {
+        "icon-image": ["match", ["get", "class"], ["hospital", "clinic"], "poi-medical", "fuel", "poi-fuel", "poi-port"],
+        "text-field": ["coalesce", ["get", "name:latin"], ["get", "name"]]
+      },
+      paint: { "text-color": "#f4f7ff" }
     }
   ];
 
@@ -97,14 +109,24 @@ test("transpiles roads and airports to ATAK's bundled legacy style dialect", () 
     baseUrl: "http://maps.example.test:8088",
     sourceStyle: modernStyle
   });
-  const roads = style.layers.find(({ id }) => id === "roads");
+  const motorway = style.layers.find(({ id }) => id === "roads-motorway");
+  const primary = style.layers.find(({ id }) => id === "roads-primary");
   const airports = style.layers.find(({ id }) => id === "poi-airports");
+  const medical = style.layers.find(({ id }) => id === "poi-essential-medical");
+  const fuel = style.layers.find(({ id }) => id === "poi-essential-fuel");
 
-  assert.deepEqual(roads.filter, ["in", "class", "motorway", "primary"]);
-  assert.equal(roads.paint["line-color"], "#ff2aa3");
-  assert.deepEqual(roads.paint["line-width"], { base: 1, stops: [[7, 1], [16, 12]] });
-  assert.deepEqual(airports.filter, ["in", "class", "international", "regional"]);
+  assert.deepEqual(motorway.filter, ["in", "class", "motorway"]);
+  assert.equal(motorway.paint["line-color"], "#ff2aa3");
+  assert.deepEqual(motorway.paint["line-width"], { base: 1, stops: [[7, 1], [16, 12]] });
+  assert.deepEqual(primary.filter, ["in", "class", "primary"]);
+  assert.equal(primary.paint["line-color"], "#00e5ff");
+  assert.equal(airports["source-layer"], "aerodrome_label");
+  assert.equal(airports.filter, undefined);
   assert.equal(airports.layout["text-field"], "{name}");
+  assert.deepEqual(medical.filter, ["in", "class", "hospital", "clinic"]);
+  assert.equal(medical.layout["icon-image"], "poi-medical");
+  assert.deepEqual(fuel.filter, ["in", "class", "fuel"]);
+  assert.equal(fuel.layout["icon-image"], "poi-fuel");
   assert.doesNotMatch(JSON.stringify(style.layers), /\["(?:get|literal|match|coalesce|interpolate|case|step)"/);
 });
 
