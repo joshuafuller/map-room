@@ -8,7 +8,10 @@ const themes = {
     name: "Daylight",
     sources: { osm: { type: "vector", url: "mbtiles://{osm}" } },
     sprite: "/styles/daylight/sprite",
-    layers: []
+    layers: [
+      { id: "background", type: "background" },
+      { id: "roads", type: "line", source: "osm", "source-layer": "transportation" }
+    ]
   },
   "cyberpunk-tactical": {
     version: 8,
@@ -34,28 +37,34 @@ test("builds deterministic TileServer data and style entries for every region an
   assert.equal(config.data.california.mbtiles, "/data/archive/california.mbtiles");
   assert.equal(config.data.florida.mbtiles, "/data/archive/florida.mbtiles");
   assert.deepEqual(Object.keys(config.styles), [
-    "california-cyberpunk-tactical",
-    "california-daylight",
+    "all-cyberpunk-tactical",
+    "all-daylight",
     "cyberpunk-tactical",
-    "daylight",
-    "florida-cyberpunk-tactical",
-    "florida-daylight"
+    "daylight"
   ]);
-  assert.equal(config.styles.daylight.style, "regions/california/daylight.json");
-  assert.equal(config.styles["florida-daylight"].style, "regions/florida/daylight.json");
-  assert.equal(styles["regions/florida/daylight.json"].sources.osm.url, "mbtiles://{florida}");
-  assert.equal(styles["regions/florida/daylight.json"].sprite, "/styles/daylight/sprite");
+  assert.equal(config.styles.daylight.style, "collections/all/daylight.json");
+  assert.equal(config.styles["all-daylight"].style, "collections/all/daylight.json");
+  assert.deepEqual(styles["collections/all/daylight.json"].sources, {
+    california: { type: "vector", url: "mbtiles://{california}" },
+    florida: { type: "vector", url: "mbtiles://{florida}" }
+  });
+  assert.equal(styles["collections/all/daylight.json"].sprite, "/styles/daylight/sprite");
+  assert.deepEqual(styles["collections/all/daylight.json"].layers.map(({ id, source }) => ({ id, source })), [
+    { id: "background", source: undefined },
+    { id: "roads--california", source: "california" },
+    { id: "roads--florida", source: "florida" }
+  ]);
   assert.deepEqual(catalog.regions.map(({ id }) => id), ["california", "florida"]);
-  assert.equal(catalog.defaultRegion, "california");
+  assert.equal(catalog.defaultView, "all");
 });
 
 test("does not mutate source themes while producing isolated region variants", () => {
   const before = structuredClone(themes);
   const { styles } = buildRuntimeArtifacts({ registry, themes });
 
-  styles["regions/florida/daylight.json"].name = "changed";
+  styles["collections/all/daylight.json"].name = "changed";
   assert.deepEqual(themes, before);
-  assert.equal(styles["regions/california/daylight.json"].name, "Daylight — California");
+  assert.equal(styles["collections/all/cyberpunk-tactical.json"].name, "Cyberpunk Tactical — All installed maps");
 });
 
 test("rejects unsafe and duplicate region IDs, unknown defaults, and incomplete archives", () => {

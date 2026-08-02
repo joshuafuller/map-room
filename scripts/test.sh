@@ -48,8 +48,6 @@ for theme in daylight midnight cyberpunk cyberpunk-tactical; do
   check_status "/styles/$theme/sprite@2x.json" application/json
   check_status "/styles/$theme/sprite@2x.png" image/png
 done
-check_status /data/osm.json application/json
-check_status "/data/osm/$tile.pbf" application/x-protobuf
 check_status "/styles/daylight/$tile.png" image/png
 check_status "/styles/midnight/$tile.png" image/png
 check_status "/styles/cyberpunk/$tile.png" image/png
@@ -67,9 +65,9 @@ for region in california florida; do
   check_status "/data/$region.json" application/json
   check_status "/data/$region/$region_tile.pbf" application/x-protobuf
   for theme in daylight midnight cyberpunk cyberpunk-tactical; do
-    check_status "/styles/$region-$theme/style.json" application/json
-    check_status "/styles/$region-$theme/$region_tile@2x.png" image/png
-    check_png_dimensions "/styles/$region-$theme/$region_tile@2x.png" 512x512
+    check_status "/styles/all-$theme/style.json" application/json
+    check_status "/styles/all-$theme/$region_tile@2x.png" image/png
+    check_png_dimensions "/styles/all-$theme/$region_tile@2x.png" 512x512
   done
 done
 
@@ -89,7 +87,7 @@ curl -fsS "$base_url/app.js" | grep -q '/vendor/maplibre-gl.mjs'
 curl -fsS "$base_url/" | grep -q '© OpenMapTiles · © OpenStreetMap contributors'
 printf 'PASS frontend uses local MapLibre and includes attribution\n'
 
-node -e "import('./web/atak.js').then(({buildAtakXml}) => { for (const theme of ['midnight', 'cyberpunk', 'cyberpunk-tactical']) { const xml = buildAtakXml({ theme, region: 'florida', regionName: 'Florida', baseUrl: '$base_url/' }); if (!xml.includes('<tileType>png</tileType>') || !xml.includes('$base_url/styles/florida-' + theme + '/{\$z}/{\$x}/{\$y}@2x.png')) process.exit(1); } })"
+node -e "import('./web/atak.js').then(({buildAtakXml}) => { for (const theme of ['midnight', 'cyberpunk', 'cyberpunk-tactical']) { const xml = buildAtakXml({ theme, baseUrl: '$base_url/' }); if (!xml.includes('<tileType>png</tileType>') || !xml.includes('$base_url/styles/all-' + theme + '/{\$z}/{\$x}/{\$y}@2x.png') || (xml.match(/<customMapSource>/g) || []).length !== 1) process.exit(1); } })"
 printf 'PASS generated ATAK XML has raster URL and zoom contract\n'
 
 external_urls=$(rg -n 'https?://' web styles \
