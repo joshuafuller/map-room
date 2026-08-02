@@ -59,6 +59,21 @@ await page.screenshot({ path: cyberpunkPath.pathname });
 await page.locator('[data-theme="cyberpunk-tactical"]').click();
 await page.locator('[data-theme="cyberpunk-tactical"][aria-checked="true"]').waitFor();
 await page.waitForTimeout(1200);
+const atakDownload = page.waitForEvent("download");
+await page.locator("#atak-download").click();
+const downloadedSource = await atakDownload;
+const downloadedPath = await downloadedSource.path();
+const downloadedXml = await readFile(downloadedPath, "utf8");
+if (downloadedSource.suggestedFilename() !== "map-room-cyberpunk-tactical.xml") {
+  failures.push("ATAK download did not use the selected theme XML filename");
+}
+if (!downloadedXml.includes('<?xml version="1.0" encoding="UTF-8" standalone="yes"?>') ||
+    !downloadedXml.includes("<tileUpdate>IfNoneMatch</tileUpdate>") ||
+    !downloadedXml.includes("<ignoreErrors>false</ignoreErrors>") ||
+    !downloadedXml.includes("<serverParts></serverParts>") ||
+    !downloadedXml.includes(`${baseUrl}/styles/cyberpunk-tactical/{$z}/{$x}/{$y}@2x.png`)) {
+  failures.push("ATAK download did not contain the hardened customMapSource contract");
+}
 if (await page.locator('[data-poi-preset="essential"]').getAttribute("aria-pressed") !== "true") {
   failures.push("Essential POIs were not enabled by default");
 }
