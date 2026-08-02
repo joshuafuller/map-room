@@ -37,6 +37,10 @@ MapLibre GL JS: 6.1.0
   containing 27 layers, one Florida vector source, and absolute data, sprite,
   and glyph URLs.
 - The ATAK-targeted style compiler has 100% line, branch, and function coverage.
+- The compatibility compiler emits 53 Cyberpunk layers, including 18
+  hierarchy-specific road/glow/casing layers, runway and taxiway layers, a
+  dedicated aerodrome-label layer, category-specific POIs and shields, and no
+  modern expression operators absent from ATAK's bundled OMT style.
 
 Run the repeatable checks with:
 
@@ -52,6 +56,10 @@ npm run test:browser
 - Applying the corrected 27-layer Cyberpunk style in ATAK 5.8. The first
   device artifact was rejected because an implementation defect reduced it to
   one background layer and zero layers accepted by ATAK's style validator.
+- Confirming the 53-layer legacy-dialect revision renders the complete road,
+  aviation, label, shield, and POI hierarchy on the physical ATAK device. The
+  prior accepted revision rendered simple buildings but omitted roads and
+  airport symbols because ATAK ignored its newer MapLibre expressions.
 - ATAK area download followed by device airplane-mode use
 - PWA installation and browser-held offline map packages
 - Visual regression coverage beyond the inspected California and Florida views

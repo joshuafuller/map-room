@@ -33,6 +33,21 @@ based on the browser-visible Map Room origin. ATAK rejected the first device
 artifact because it contained only the background layer; runtime composition
 had renamed every authored `osm` source layer to a region-specific source.
 
+The second device result loaded the corrected document and rendered simple
+Cyberpunk building fills and outlines, but omitted roads and airport symbols.
+ATAK's bundled OMT style documents use the legacy Mapbox v8 dialect: property
+names appear directly in filters, zoom functions use `stops` objects, and text
+uses token fields. They do not use Map Room's newer MapLibre `get`, `literal`,
+`match`, `coalesce`, or `interpolate` expressions.
+
+The ATAK compiler therefore emits a compatibility-specific representation. It
+splits roads by hierarchy so each class retains its authored neon color and
+zoom-width curve, splits POI and shield categories so each retains its sprite,
+uses the dedicated `aerodrome_label` source layer for airport symbols, and
+converts runways, taxiways, filters, labels, and remaining zoom functions to
+the syntax demonstrated by ATAK's bundled style. The browser and raster styles
+remain unchanged.
+
 The operator imports the MBTiles archive, opens that vector layer's style
 options, and imports the generated JSON. Physical-device results must record
 import success, custom colors and symbols, sharp zoom behavior, and offline

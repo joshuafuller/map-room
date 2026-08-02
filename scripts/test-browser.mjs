@@ -118,8 +118,12 @@ if (downloadedVectorStyle.suggestedFilename() !== "map-room-cyberpunk-atak-vecto
     vectorStyle.sources.osm.url !== `${baseUrl}/data/florida.json` ||
     vectorStyle.sprite !== `${baseUrl}/styles/cyberpunk/sprite` ||
     vectorStyle.glyphs !== `${baseUrl}/fonts/{fontstack}/{range}.pbf` ||
-    vectorStyle.layers.length < 20 ||
-    !vectorStyle.layers.some((layer) => layer.id === "poi-essential") ||
+    vectorStyle.layers.length < 50 ||
+    !vectorStyle.layers.some((layer) => layer.id === "roads-motorway") ||
+    !vectorStyle.layers.some((layer) => layer.id === "roads-primary") ||
+    !vectorStyle.layers.some((layer) => layer.id === "poi-essential-fuel") ||
+    vectorStyle.layers.find((layer) => layer.id === "poi-airports")?.["source-layer"] !== "aerodrome_label" ||
+    /\["(?:get|literal|match|coalesce|interpolate|case|step)"/.test(JSON.stringify(vectorStyle.layers)) ||
     vectorStyle.layers.some((layer) => layer.source && layer.source !== "osm")) {
   failures.push("ATAK vector style download did not preserve the one-source custom-style contract");
 }
