@@ -12,6 +12,8 @@ test("builds local game-inspired shields and truthful POI categories", async () 
   const sprite = JSON.parse(await readFile("styles/cyberpunk-tactical/sprite.json", "utf8"));
   const designs = JSON.parse(await readFile("styles/cyberpunk-tactical/sprite-design.json", "utf8"));
   const png = await readFile("styles/cyberpunk-tactical/sprite.png");
+  const retinaSprite = JSON.parse(await readFile("styles/cyberpunk-tactical/sprite@2x.json", "utf8"));
+  const retinaPng = await readFile("styles/cyberpunk-tactical/sprite@2x.png");
   const html = await readFile("web/index.html", "utf8");
   const packageJson = JSON.parse(await readFile("package.json", "utf8"));
   const notices = await readFile("THIRD_PARTY_NOTICES.md", "utf8");
@@ -51,6 +53,8 @@ test("builds local game-inspired shields and truthful POI categories", async () 
     "poi-food", "poi-lodging", "poi-attraction", "poi-shopping", "poi-parking"
   ];
   assert.deepEqual(Object.keys(sprite).sort(), requiredSprites.sort());
+  assert.deepEqual(retinaSprite, sprite);
+  assert.deepEqual(retinaPng, png);
   assert.deepEqual(designs["poi-fuel"], {
     label: "Fuel",
     silhouette: ["pump-body", "display-window", "hose", "nozzle"],

@@ -21,7 +21,7 @@ check_status() {
 check_png_dimensions() {
   path=$1
   expected=$2
-  dimensions=$(curl -fsS "$base_url$path" | python3 -c 'import struct,sys; data=sys.stdin.buffer.read(24); print("%dx%d" % struct.unpack(">II", data[16:24]))')
+  dimensions=$(curl -fsS "$base_url$path" | python3 -c 'import struct,sys; data=sys.stdin.buffer.read(); print("%dx%d" % struct.unpack(">II", data[16:24]))')
   test "$dimensions" = "$expected"
   printf 'PASS %-44s %s\n' "$path dimensions" "$dimensions"
 }
@@ -42,8 +42,8 @@ check_status "/styles/midnight/$tile.png" image/png
 check_status "/styles/cyberpunk/$tile.png" image/png
 check_status "/styles/cyberpunk-tactical/$tile.png" image/png
 for theme in daylight midnight cyberpunk cyberpunk-tactical; do
-  check_status "/styles/$theme/512/$tile.png" image/png
-  check_png_dimensions "/styles/$theme/512/$tile.png" 512x512
+  check_status "/styles/$theme/$tile@2x.png" image/png
+  check_png_dimensions "/styles/$theme/$tile@2x.png" 512x512
 done
 
 daylight_sha=$(curl -fsS "$base_url/styles/daylight/$tile.png" | sha256sum | cut -d' ' -f1)
@@ -62,7 +62,7 @@ curl -fsS "$base_url/app.js" | grep -q '/vendor/maplibre-gl.mjs'
 curl -fsS "$base_url/" | grep -q '© OpenMapTiles · © OpenStreetMap contributors'
 printf 'PASS frontend uses local MapLibre and includes attribution\n'
 
-node -e "import('./web/atak.js').then(({buildAtakXml}) => { for (const theme of ['midnight', 'cyberpunk', 'cyberpunk-tactical']) { const xml = buildAtakXml(theme, '$base_url/'); if (!xml.includes('<tileType>png</tileType>') || !xml.includes('$base_url/styles/' + theme + '/512/{\$z}/{\$x}/{\$y}.png')) process.exit(1); } })"
+node -e "import('./web/atak.js').then(({buildAtakXml}) => { for (const theme of ['midnight', 'cyberpunk', 'cyberpunk-tactical']) { const xml = buildAtakXml(theme, '$base_url/'); if (!xml.includes('<tileType>png</tileType>') || !xml.includes('$base_url/styles/' + theme + '/{\$z}/{\$x}/{\$y}@2x.png')) process.exit(1); } })"
 printf 'PASS generated ATAK XML has raster URL and zoom contract\n'
 
 external_urls=$(rg -n 'https?://' web styles \
