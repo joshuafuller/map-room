@@ -3,6 +3,7 @@ import { buildAtakVectorDescriptor, buildAtakXml, RASTER_MAX_ZOOM, RASTER_PIXEL_
 import { buildAtakVectorStyle } from "/atak-vector.js";
 import { buildCoordinateGrid } from "/grid.js";
 import { buildingLayerIds } from "/buildings.js";
+import { poiLayerIds, poiLayerVisibility } from "/poi-visibility.js";
 
 const themes = {
   daylight: { name: "Daylight", color: "#f4f1ea" },
@@ -186,7 +187,16 @@ function updatePoiLayers() {
   if (activeMode !== "vector") return;
   for (const [preset, enabled] of Object.entries(poiPresets)) {
     const layer = `poi-${preset}`;
-    if (map.getLayer(layer)) map.setLayoutProperty(layer, "visibility", enabled ? "visible" : "none");
+    const hudLayer = `${layer}-hud`;
+    for (const layerId of poiLayerIds(map.getStyle(), layer)) {
+      map.setLayoutProperty(layerId, "visibility", poiLayerVisibility({ enabled, buildings3dEnabled, hud: false }));
+    }
+    for (const layerId of poiLayerIds(map.getStyle(), hudLayer)) {
+      map.setLayoutProperty(layerId, "visibility", poiLayerVisibility({ enabled, buildings3dEnabled, hud: true }));
+    }
+  }
+  for (const layerId of poiLayerIds(map.getStyle(), "poi-airports-hud")) {
+    map.setLayoutProperty(layerId, "visibility", buildings3dEnabled ? "visible" : "none");
   }
 }
 
@@ -347,6 +357,7 @@ document.querySelector("#buildings-toggle").addEventListener("click", () => {
   buildings3dEnabled = !buildings3dEnabled;
   updateBuildingControl();
   updateBuildingLayers();
+  updatePoiLayers();
   const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   map.easeTo({
     zoom: buildings3dEnabled ? Math.max(map.getZoom(), 15) : map.getZoom(),

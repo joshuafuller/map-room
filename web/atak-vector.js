@@ -200,7 +200,7 @@ export function buildAtakVectorStyle({ theme, baseUrl, sourceId = "florida", sou
   style.glyphs = `${base}/fonts/{fontstack}/{range}.pbf`;
   style.sources = { osm: { type: "vector", url: `${base}/data/${sourceId}.json` } };
   style.layers = style.layers
-    .filter((layer) => !layer.source || layer.source === authoredSource)
+    .filter((layer) => !layer.id.endsWith("-hud") && (!layer.source || layer.source === authoredSource))
     .map((layer) => {
       if (!layer.source) return layer;
       layer.source = "osm";

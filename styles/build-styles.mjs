@@ -326,6 +326,22 @@ function makeStyle(id, theme) {
     ]
   };
 
+  const poiHudLayers = featureLayers.symbols
+    .filter(({ id: layerId }) => layerId !== "road-shields")
+    .sort((left, right) => ["poi-essential", "poi-explore", "poi-airports"].indexOf(left.id)
+      - ["poi-essential", "poi-explore", "poi-airports"].indexOf(right.id))
+    .map((layer) => ({
+      ...structuredClone(layer),
+      id: `${layer.id}-hud`,
+      layout: {
+        ...structuredClone(layer.layout),
+        visibility: "none",
+        "icon-allow-overlap": true,
+        "icon-ignore-placement": true,
+        "icon-rotation-alignment": "viewport"
+      }
+    }));
+
   return {
     version: 8,
     name: theme.name,
@@ -413,11 +429,6 @@ function makeStyle(id, theme) {
         layout: { ...labelLayout, "text-font": ["Open Sans Italic"] },
         paint: { "text-color": theme.waterText, "text-halo-color": theme.textHalo, "text-halo-width": 1.4 }
       },
-      {
-        id: "place-labels", type: "symbol", source: "osm", "source-layer": "place",
-        layout: { ...labelLayout, "text-font": ["Open Sans Semibold"], "text-size": ["interpolate", ["linear"], ["zoom"], 4, 11, 12, 17] },
-        paint: { "text-color": theme.text, "text-halo-color": theme.textHalo, "text-halo-width": 1.8 }
-      },
       ...(theme.glow ? [{
         id: "buildings-3d", type: "fill-extrusion", source: "osm", "source-layer": "building", minzoom: 13,
         layout: { visibility: "none" },
@@ -425,10 +436,16 @@ function makeStyle(id, theme) {
           "fill-extrusion-color": extrusionColor(theme),
           "fill-extrusion-height": ["coalesce", ["get", "render_height"], 3],
           "fill-extrusion-base": ["coalesce", ["get", "render_min_height"], 0],
-          "fill-extrusion-opacity": 1,
+          "fill-extrusion-opacity": 0.82,
           "fill-extrusion-vertical-gradient": true
         }
-      }] : [])
+      }] : []),
+      {
+        id: "place-labels", type: "symbol", source: "osm", "source-layer": "place",
+        layout: { ...labelLayout, "text-font": ["Open Sans Semibold"], "text-size": ["interpolate", ["linear"], ["zoom"], 4, 11, 12, 17] },
+        paint: { "text-color": theme.text, "text-halo-color": theme.textHalo, "text-halo-width": 1.8 }
+      },
+      ...(theme.glow ? poiHudLayers : [])
     ]
   };
 }

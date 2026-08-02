@@ -1361,47 +1361,6 @@
       }
     },
     {
-      "id": "place-labels",
-      "type": "symbol",
-      "source": "osm",
-      "source-layer": "place",
-      "layout": {
-        "text-field": [
-          "coalesce",
-          [
-            "get",
-            "name:latin"
-          ],
-          [
-            "get",
-            "name"
-          ]
-        ],
-        "text-font": [
-          "Open Sans Semibold"
-        ],
-        "text-size": [
-          "interpolate",
-          [
-            "linear"
-          ],
-          [
-            "zoom"
-          ],
-          4,
-          11,
-          12,
-          17
-        ],
-        "text-max-width": 9
-      },
-      "paint": {
-        "text-color": "#f6f8ff",
-        "text-halo-color": "#03040b",
-        "text-halo-width": 1.8
-      }
-    },
-    {
       "id": "buildings-3d",
       "type": "fill-extrusion",
       "source": "osm",
@@ -1449,8 +1408,259 @@
           ],
           0
         ],
-        "fill-extrusion-opacity": 1,
+        "fill-extrusion-opacity": 0.82,
         "fill-extrusion-vertical-gradient": true
+      }
+    },
+    {
+      "id": "place-labels",
+      "type": "symbol",
+      "source": "osm",
+      "source-layer": "place",
+      "layout": {
+        "text-field": [
+          "coalesce",
+          [
+            "get",
+            "name:latin"
+          ],
+          [
+            "get",
+            "name"
+          ]
+        ],
+        "text-font": [
+          "Open Sans Semibold"
+        ],
+        "text-size": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          4,
+          11,
+          12,
+          17
+        ],
+        "text-max-width": 9
+      },
+      "paint": {
+        "text-color": "#f6f8ff",
+        "text-halo-color": "#03040b",
+        "text-halo-width": 1.8
+      }
+    },
+    {
+      "id": "poi-essential-hud",
+      "type": "symbol",
+      "source": "osm",
+      "source-layer": "poi",
+      "minzoom": 12,
+      "filter": [
+        "in",
+        [
+          "get",
+          "class"
+        ],
+        [
+          "literal",
+          [
+            "hospital",
+            "clinic",
+            "fire_station",
+            "police",
+            "fuel",
+            "harbor"
+          ]
+        ]
+      ],
+      "layout": {
+        "visibility": "none",
+        "icon-image": [
+          "match",
+          [
+            "get",
+            "class"
+          ],
+          [
+            "hospital",
+            "clinic"
+          ],
+          "poi-medical",
+          "fire_station",
+          "poi-fire",
+          "police",
+          "poi-police",
+          "fuel",
+          "poi-fuel",
+          "poi-port"
+        ],
+        "icon-size": 1.15,
+        "icon-allow-overlap": true,
+        "text-field": [
+          "coalesce",
+          [
+            "get",
+            "name:latin"
+          ],
+          [
+            "get",
+            "name"
+          ]
+        ],
+        "text-font": [
+          "Open Sans Semibold"
+        ],
+        "text-size": 11,
+        "text-offset": [
+          0,
+          2
+        ],
+        "text-anchor": "top",
+        "text-optional": true,
+        "icon-ignore-placement": true,
+        "icon-rotation-alignment": "viewport"
+      },
+      "paint": {
+        "text-color": "#f6f8ff",
+        "text-halo-color": "#03040b",
+        "text-halo-width": 1.6
+      }
+    },
+    {
+      "id": "poi-explore-hud",
+      "type": "symbol",
+      "source": "osm",
+      "source-layer": "poi",
+      "minzoom": 13,
+      "filter": [
+        "in",
+        [
+          "get",
+          "class"
+        ],
+        [
+          "literal",
+          [
+            "restaurant",
+            "fast_food",
+            "lodging",
+            "museum",
+            "attraction",
+            "grocery",
+            "shop",
+            "parking"
+          ]
+        ]
+      ],
+      "layout": {
+        "visibility": "none",
+        "icon-image": [
+          "match",
+          [
+            "get",
+            "class"
+          ],
+          [
+            "restaurant",
+            "fast_food"
+          ],
+          "poi-food",
+          "lodging",
+          "poi-lodging",
+          [
+            "museum",
+            "attraction"
+          ],
+          "poi-attraction",
+          [
+            "grocery",
+            "shop"
+          ],
+          "poi-shopping",
+          "poi-parking"
+        ],
+        "icon-size": 1.08,
+        "icon-allow-overlap": true,
+        "text-field": [
+          "coalesce",
+          [
+            "get",
+            "name:latin"
+          ],
+          [
+            "get",
+            "name"
+          ]
+        ],
+        "text-font": [
+          "Open Sans Semibold"
+        ],
+        "text-size": 10.5,
+        "text-offset": [
+          0,
+          1.9
+        ],
+        "text-anchor": "top",
+        "text-optional": true,
+        "icon-ignore-placement": true,
+        "icon-rotation-alignment": "viewport"
+      },
+      "paint": {
+        "text-color": "#f6f8ff",
+        "text-halo-color": "#03040b",
+        "text-halo-width": 1.5
+      }
+    },
+    {
+      "id": "poi-airports-hud",
+      "type": "symbol",
+      "source": "osm",
+      "source-layer": "aeroway",
+      "minzoom": 10,
+      "maxzoom": 12,
+      "filter": [
+        "in",
+        [
+          "get",
+          "class"
+        ],
+        [
+          "literal",
+          [
+            "aerodrome",
+            "heliport"
+          ]
+        ]
+      ],
+      "layout": {
+        "visibility": "none",
+        "icon-image": "poi-airport",
+        "icon-size": 1.1,
+        "text-field": [
+          "get",
+          "ref"
+        ],
+        "text-font": [
+          "Open Sans Semibold"
+        ],
+        "text-size": 11,
+        "text-offset": [
+          0,
+          2
+        ],
+        "text-anchor": "top",
+        "icon-allow-overlap": true,
+        "icon-ignore-placement": true,
+        "icon-rotation-alignment": "viewport"
+      },
+      "paint": {
+        "text-color": "#00eaff",
+        "text-halo-color": "#03040b",
+        "text-halo-width": 1.5
       }
     }
   ]
