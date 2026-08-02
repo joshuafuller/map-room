@@ -93,11 +93,13 @@ test("builds a stock ATAK stream descriptor for one self-hosted vector publicati
     numLevels: 15,
     content: "vector",
     mimeType: "application/vnd.mapbox-vector-tile",
-    metadata: {
-      styleSchema: "omt",
-      json: JSON.stringify({ vector_layers: floridaTileJson.vector_layers })
-    }
+    metadata: { styleSchema: "omt" }
   });
+
+  assert.ok(
+    Buffer.byteLength(`${JSON.stringify(descriptor, null, 2)}\n`) <= 8192,
+    "ATAK probes streaming descriptors through an 8 KiB reader"
+  );
 });
 
 test("preserves the published building schema required by 3D styles", () => {
@@ -106,12 +108,8 @@ test("preserves the published building schema required by 3D styles", () => {
     baseUrl: "http://maps.example.test:8088",
     tileJson: floridaTileJson
   });
-  const schema = JSON.parse(descriptor.metadata.json);
-  const building = schema.vector_layers.find(({ id }) => id === "building");
-
-  assert.equal(building.fields.render_height, "Number");
-  assert.equal(building.fields.render_min_height, "Number");
-  assert.equal(building.fields.hide_3d, "Boolean");
+  assert.equal(descriptor.metadata.styleSchema, "omt");
+  assert.equal("json" in descriptor.metadata, false);
 });
 
 test("fails closed for publications ATAK cannot safely stream", () => {
