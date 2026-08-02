@@ -24,8 +24,8 @@ services:
     command:
       - --config
       - /data/config.json
-      - --public_url
-      - http://localhost:8088
+    environment:
+      TILESERVER_GL_ALLOWED_HOSTS: ${MAP_ROOM_ALLOWED_HOSTS:-localhost,127.0.0.1}
     volumes:
       - ./data/runtime/config.json:/data/config.json:ro
       - ./data:/data/archive:ro

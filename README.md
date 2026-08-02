@@ -182,6 +182,16 @@ ATAK receives one XML per visual theme and one composed raster endpoint such as
 part of the same ATAK map layer. Unqualified style URLs remain compatibility
 aliases to that same composed map.
 
+Map Room keeps generated vector URLs on the requesting browser origin. For a
+stable DNS name, explicitly allow it when starting the stack:
+
+```sh
+MAP_ROOM_ALLOWED_HOSTS=maps.example.internal docker compose up -d --wait
+```
+
+Unlisted LAN addresses receive safe path-only URLs and still work from mobile
+browsers. Do not put a private deployment address into the repository.
+
 Preparation downloads source/build inputs and can require substantial time,
 storage, memory, and network transfer. Generated data is excluded from Git.
 
