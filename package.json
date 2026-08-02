@@ -10,7 +10,8 @@
   "scripts": {
     "build:styles": "node styles/build-styles.mjs",
     "test:unit": "node --test maintainer/test/*.test.js styles/test/*.test.js web/*.test.js",
-    "test:browser": "node scripts/test-browser.mjs"
+    "test:browser": "node scripts/test-browser.mjs",
+    "test:mobile": "node scripts/test-mobile.mjs"
   },
   "devDependencies": {
     "lucide-static": "1.28.0",

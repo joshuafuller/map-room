@@ -42,6 +42,16 @@ check_status /styles/daylight/style.json application/json
 check_status /styles/midnight/style.json application/json
 check_status /styles/cyberpunk/style.json application/json
 check_status /styles/cyberpunk-tactical/style.json application/json
+
+mobile_host=mobile.example.test:8088
+mobile_style="$tmp_dir/mobile-style.json"
+curl -fsS -H "Host: $mobile_host" "$base_url/styles/all-daylight/style.json" > "$mobile_style"
+if rg -q 'localhost' "$mobile_style"; then
+  printf 'FAIL remote-browser style redirected vector sources to localhost\n' >&2
+  exit 1
+fi
+python3 -c 'import json,sys; style=json.load(open(sys.argv[1])); assert all(source.get("url", "").startswith(("/data/", "http://mobile.example.test:8088/data/")) for source in style["sources"].values() if source.get("type") == "vector")' "$mobile_style"
+printf 'PASS remote-browser vector sources preserve the requesting origin\n'
 for theme in daylight midnight cyberpunk cyberpunk-tactical; do
   check_status "/styles/$theme/sprite.json" application/json
   check_status "/styles/$theme/sprite.png" image/png
