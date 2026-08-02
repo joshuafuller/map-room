@@ -213,6 +213,11 @@ then under **ATAK vector streaming**:
 6. Cache a small area in ATAK, disconnect it from Map Room, and separately
    record whether the cached area remains usable.
 
+ATAK 5.8 only probes the first 8 KiB of a candidate streaming descriptor. Map
+Room keeps the source JSON below that limit and references ATAK's built-in OMT
+schema instead of embedding the full TileJSON field catalog. If ATAK reported
+an older source file as unsupported, delete it and download a fresh copy.
+
 The complete MBTiles download remains available as an optional offline path; it
 is no longer required for connected use. The current **All installed maps**
 browser view composes multiple archives, so it is deliberately not offered as

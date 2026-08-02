@@ -102,7 +102,7 @@ test("builds a stock ATAK stream descriptor for one self-hosted vector publicati
   );
 });
 
-test("preserves the published building schema required by 3D styles", () => {
+test("selects ATAK's built-in OMT schema without embedding an oversized field catalog", () => {
   const descriptor = buildAtakVectorDescriptor({
     publication: { id: "florida", name: "Florida" },
     baseUrl: "http://maps.example.test:8088",

@@ -41,7 +41,7 @@ publication's actual TileJSON and the browser-visible Map Room origin.
 The descriptor uses schema `4.0.0`, `content: "vector"`, EPSG:3857, an implicit
 quadtree beginning at zoom zero, the publication's real maximum zoom,
 Web-Mercator-projected bounds, vector-tile MIME type, attribution, download/cache
-eligibility, and OMT vector-layer metadata. Its URL points directly to:
+eligibility, and ATAK's built-in OMT schema marker. Its URL points directly to:
 
 ```text
 /data/{publication}/{$z}/{$x}/{$y}.pbf
@@ -51,6 +51,13 @@ The exact dollar-prefixed placeholders are part of ATAK's contract. Publication
 IDs and origins are validated before being embedded. Query strings, fragments,
 credentials, unsafe IDs, malformed bounds, non-PBF sources, missing attribution,
 missing vector-layer metadata, and unsupported zoom contracts fail closed.
+
+ATAK 5.8 probes dataset descriptors through an 8 KiB bounded reader. The
+descriptor therefore does not duplicate TileJSON's expanded `vector_layers`
+field catalog: that made a Florida descriptor exceed the probe limit and ATAK
+reported the otherwise valid JSON as unsupported. `styleSchema: "omt"` selects
+ATAK's built-in OpenMapTiles schema directly and keeps the import document well
+inside the limit.
 
 Map Room generates the descriptor in the browser so the device-reachable origin
 matches the address the operator used. This follows ADR-0015. The website offers
@@ -89,8 +96,8 @@ because overlapping tile coordinates would discard features.
 
 Custom style import and property-driven extrusion remain device-test claims,
 not validated compatibility claims, until exercised on ATAK 5.8. Automated
-tests establish descriptor structure, endpoint availability, style compilation,
-and preservation of building schema metadata only.
+tests establish descriptor structure and probe size, endpoint availability,
+style compilation, and selection of ATAK's built-in OMT schema only.
 
 ## Rejected alternatives
 
@@ -104,4 +111,3 @@ and preservation of building schema metadata only.
   because it is currently multiple independent archives.
 - Merge existing MBTiles rows: rejected because overlapping tiles would be
   overwritten rather than feature-merged.
-

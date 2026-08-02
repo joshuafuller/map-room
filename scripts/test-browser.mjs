@@ -113,9 +113,10 @@ const vectorSourceDownload = page.waitForEvent("download");
 await page.locator("#atak-vector-source").click();
 const downloadedVectorSource = await vectorSourceDownload;
 const downloadedVectorSourcePath = await downloadedVectorSource.path();
-const vectorSource = JSON.parse(await readFile(downloadedVectorSourcePath, "utf8"));
-const advertisedSchema = JSON.parse(vectorSource.metadata.json);
+const vectorSourceDocument = await readFile(downloadedVectorSourcePath, "utf8");
+const vectorSource = JSON.parse(vectorSourceDocument);
 if (downloadedVectorSource.suggestedFilename() !== "map-room-florida-atak-vector.json" ||
+    Buffer.byteLength(vectorSourceDocument) > 8192 ||
     vectorSource.schema !== "4.0.0" ||
     vectorSource.title !== "Map Room - Florida" ||
     vectorSource.url !== `${baseUrl}/data/florida/{$z}/{$x}/{$y}.pbf` ||
@@ -125,9 +126,8 @@ if (downloadedVectorSource.suggestedFilename() !== "map-room-florida-atak-vector
     vectorSource.numLevels !== 15 ||
     vectorSource.downloadable !== true ||
     vectorSource.metadata.styleSchema !== "omt" ||
-    !advertisedSchema.vector_layers.some((layer) => layer.id === "building" &&
-      layer.fields.render_height === "Number" && layer.fields.render_min_height === "Number")) {
-  failures.push("ATAK vector source download did not preserve the remote PBF and 3D-building contract");
+    "json" in vectorSource.metadata) {
+  failures.push("ATAK vector source download did not preserve the importable remote PBF contract");
 }
 const vectorStyleDownload = page.waitForEvent("download");
 await page.locator("#atak-vector-style").click();

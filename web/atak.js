@@ -76,10 +76,7 @@ export function buildAtakVectorDescriptor({ publication, baseUrl, tileJson }) {
     numLevels: tileJson.maxzoom + 1,
     content: "vector",
     mimeType: "application/vnd.mapbox-vector-tile",
-    metadata: {
-      styleSchema: "omt",
-      json: JSON.stringify({ vector_layers: tileJson.vector_layers })
-    }
+    metadata: { styleSchema: "omt" }
   };
 }
 
