@@ -65,6 +65,49 @@ test("collapses a composed runtime style back to the selected ATAK archive", () 
   assert.equal(style.sources.osm.url, "http://maps.example.test:8088/data/florida.json");
 });
 
+test("transpiles roads and airports to ATAK's bundled legacy style dialect", () => {
+  const modernStyle = structuredClone(sourceStyle);
+  modernStyle.layers = [
+    sourceStyle.layers[0],
+    {
+      id: "roads",
+      type: "line",
+      source: "osm",
+      "source-layer": "transportation",
+      filter: ["in", ["get", "class"], ["literal", ["motorway", "primary"]]],
+      layout: { "line-cap": "round" },
+      paint: {
+        "line-color": ["match", ["get", "class"], "motorway", "#ff2aa3", "#00e5ff"],
+        "line-width": ["interpolate", ["linear"], ["zoom"], 7, 1, 16, 12]
+      }
+    },
+    {
+      id: "poi-airports",
+      type: "symbol",
+      source: "osm",
+      "source-layer": "aerodrome_label",
+      filter: ["in", ["get", "class"], ["literal", ["international", "regional"]]],
+      layout: { "icon-image": "poi-airport", "text-field": ["get", "name"] },
+      paint: { "text-color": "#00e5ff" }
+    }
+  ];
+
+  const style = buildAtakVectorStyle({
+    theme: "cyberpunk",
+    baseUrl: "http://maps.example.test:8088",
+    sourceStyle: modernStyle
+  });
+  const roads = style.layers.find(({ id }) => id === "roads");
+  const airports = style.layers.find(({ id }) => id === "poi-airports");
+
+  assert.deepEqual(roads.filter, ["in", "class", "motorway", "primary"]);
+  assert.equal(roads.paint["line-color"], "#ff2aa3");
+  assert.deepEqual(roads.paint["line-width"], { base: 1, stops: [[7, 1], [16, 12]] });
+  assert.deepEqual(airports.filter, ["in", "class", "international", "regional"]);
+  assert.equal(airports.layout["text-field"], "{name}");
+  assert.doesNotMatch(JSON.stringify(style.layers), /\["(?:get|literal|match|coalesce|interpolate|case|step)"/);
+});
+
 test("rejects untrusted origins, unknown themes, and malformed source styles", () => {
   for (const baseUrl of [
     "not a URL",
