@@ -133,13 +133,16 @@ button { font: inherit; }
   .topbar { top: 10px; left: 10px; right: 10px; }
   .freshness { display: none; }
   .panel { left: 10px; right: 10px; top: auto; bottom: 10px; width: auto; max-height: calc(100dvh - 110px); padding: 8px 13px 13px; overflow: hidden; transition: max-height .2s ease; }
-  .panel.collapsed { padding-bottom: 8px; }
+  .panel.collapsed { left: auto; width: 54px; height: 54px; padding: 0; border-color: transparent; border-radius: 50%; background: transparent; box-shadow: none; backdrop-filter: none; }
   .panel-toggle { position: relative; display: flex; align-items: center; justify-content: center; width: 100%; min-height: 44px; padding: 9px 38px; border: 0; color: var(--ink); background: transparent; cursor: pointer; font-size: 12px; font-weight: 750; }
   .sheet-grabber { position: absolute; top: 2px; left: 50%; width: 34px; height: 4px; border-radius: 999px; background: var(--line); transform: translateX(-50%); }
   .sheet-chevron { position: absolute; right: 10px; width: 8px; height: 8px; border-right: 2px solid var(--muted); border-bottom: 2px solid var(--muted); transform: rotate(45deg); transition: transform .2s ease; }
   .panel:not(.collapsed) .sheet-chevron { transform: rotate(225deg); }
   .panel-content { max-height: calc(100dvh - 175px); padding-top: 8px; overflow-y: auto; overscroll-behavior: contain; }
   .panel.collapsed .panel-content { display: none; }
+  .panel.collapsed .panel-toggle { width: 54px; min-height: 54px; padding: 0; border: 1px solid rgba(255,255,255,.72); border-radius: 50%; background: var(--paper); box-shadow: var(--shadow); }
+  .panel.collapsed .panel-toggle > span { display: none; }
+  .panel.collapsed .panel-toggle::before { content: ""; width: 20px; height: 16px; background: linear-gradient(currentColor,currentColor) 0 1px/20px 2px no-repeat, linear-gradient(currentColor,currentColor) 0 7px/20px 2px no-repeat, linear-gradient(currentColor,currentColor) 0 13px/20px 2px no-repeat; opacity: .72; }
   .themes { grid-template-columns: 1fr 1fr; }
   .mode-detail, .hint { display: none; }
   .action { width: calc(50% - 4px); }

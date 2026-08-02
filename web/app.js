@@ -26,6 +26,7 @@ const mobileLayout = window.matchMedia("(max-width: 680px)");
 function setPanelExpanded(expanded) {
   panel.classList.toggle("collapsed", !expanded);
   panelToggle.setAttribute("aria-expanded", String(expanded));
+  panelToggle.setAttribute("aria-label", expanded ? "Close map controls" : "Open map controls");
 }
 
 setPanelExpanded(!mobileLayout.matches);

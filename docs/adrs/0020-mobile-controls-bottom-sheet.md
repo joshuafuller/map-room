@@ -12,9 +12,10 @@ being the primary interface.
 ## Decision
 
 At widths of 680 CSS pixels or less, the controls become a bottom sheet that
-starts collapsed. Its 62-pixel handle identifies “Map controls,” exposes state
-through `aria-expanded`, and expands or collapses with one tap. Expanded content
-scrolls inside the available viewport instead of growing beyond it.
+starts completely hidden behind a 54-pixel floating controls button. The button
+has an explicit accessible label, exposes state through `aria-expanded`, and
+expands or collapses the sheet with one tap. Expanded content scrolls inside the
+available viewport instead of growing beyond it.
 
 Desktop controls remain expanded and the toggle is hidden. Crossing the mobile
 breakpoint resets the panel to the appropriate default. Motion is disabled when
@@ -28,8 +29,8 @@ but it can be dismissed immediately and never becomes taller than the available
 viewport.
 
 The initial mobile state favors map visibility over immediate exposure of all
-style and export choices. The persistent labeled handle keeps those choices
-discoverable.
+style and export choices. The persistent floating control keeps those choices
+discoverable without leaving a full-width bar across the map.
 
 ## Alternatives
 
