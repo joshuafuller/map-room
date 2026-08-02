@@ -16,7 +16,7 @@ test("generates one composed Cyberpunk ATAK map source for every installed regio
   assert.match(xml, /<serverParts><\/serverParts>/);
 });
 
-test("generates Cyberpunk Tactical ATAK XML as a separate map source", () => {
+test("generates Cyberpunk Tactical ATAK XML as one composed map source", () => {
   const xml = buildAtakXml({ theme: "cyberpunk-tactical", baseUrl: "https://maps.example.test/" });
 
   assert.match(xml, /<name>Map Room - Cyberpunk Tactical<\/name>/);
@@ -30,9 +30,16 @@ test("rejects base URLs that cannot identify a reachable HTTP tile server", () =
     "not a URL",
     "ftp://maps.example.test",
     "https://user:secret@maps.example.test",
+    "https://:secret@maps.example.test",
     "https://maps.example.test/?deployment=one",
     "https://maps.example.test/#fragment"
   ]) {
     assert.throws(() => buildAtakXml({ theme: "cyberpunk-tactical", baseUrl: invalid }), /ATAK base URL/);
   }
+});
+
+test("rejects an unknown theme and accepts a path-prefixed HTTP deployment", () => {
+  assert.throws(() => buildAtakXml({ theme: "missing", baseUrl: "https://maps.example.test" }), /Unknown ATAK theme/);
+  const xml = buildAtakXml({ theme: "daylight", baseUrl: "http://maps.example.test/map-room///" });
+  assert.match(xml, /http:\/\/maps\.example\.test\/map-room\/styles\/all-daylight/);
 });

@@ -13,6 +13,7 @@
     }
   },
   "glyphs": "{fontstack}/{range}.pbf",
+  "sprite": "/styles/daylight/sprite",
   "layers": [
     {
       "id": "background",
@@ -403,6 +404,507 @@
           3,
           2
         ]
+      }
+    },
+    {
+      "id": "airports",
+      "type": "fill",
+      "source": "osm",
+      "source-layer": "aeroway",
+      "minzoom": 8,
+      "filter": [
+        "in",
+        [
+          "get",
+          "class"
+        ],
+        [
+          "literal",
+          [
+            "aerodrome",
+            "heliport"
+          ]
+        ]
+      ],
+      "paint": {
+        "fill-color": "#e8b06d",
+        "fill-opacity": 0.11,
+        "fill-outline-color": "#e8b06d"
+      }
+    },
+    {
+      "id": "runways",
+      "type": "line",
+      "source": "osm",
+      "source-layer": "aeroway",
+      "minzoom": 9,
+      "filter": [
+        "==",
+        [
+          "get",
+          "class"
+        ],
+        "runway"
+      ],
+      "layout": {
+        "line-cap": "square",
+        "line-join": "round"
+      },
+      "paint": {
+        "line-color": "#293038",
+        "line-width": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          9,
+          1.2,
+          14,
+          4,
+          18,
+          9
+        ],
+        "line-opacity": 0.92
+      }
+    },
+    {
+      "id": "taxiways",
+      "type": "line",
+      "source": "osm",
+      "source-layer": "aeroway",
+      "minzoom": 12,
+      "filter": [
+        "==",
+        [
+          "get",
+          "class"
+        ],
+        "taxiway"
+      ],
+      "layout": {
+        "line-cap": "round",
+        "line-join": "round"
+      },
+      "paint": {
+        "line-color": "#e8b06d",
+        "line-width": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          12,
+          0.65,
+          18,
+          3.2
+        ],
+        "line-opacity": 0.48
+      }
+    },
+    {
+      "id": "operational-landmarks",
+      "type": "circle",
+      "source": "osm",
+      "source-layer": "poi",
+      "minzoom": 12,
+      "filter": [
+        "in",
+        [
+          "get",
+          "class"
+        ],
+        [
+          "literal",
+          [
+            "hospital",
+            "clinic",
+            "police",
+            "fire_station",
+            "harbor"
+          ]
+        ]
+      ],
+      "paint": {
+        "circle-color": [
+          "match",
+          [
+            "get",
+            "class"
+          ],
+          [
+            "hospital",
+            "clinic"
+          ],
+          "#d98357",
+          [
+            "police",
+            "fire_station"
+          ],
+          "#e8b06d",
+          "#8c8580"
+        ],
+        "circle-radius": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          12,
+          2,
+          16,
+          5
+        ],
+        "circle-stroke-color": "#fbfaf7",
+        "circle-stroke-width": 1.5
+      }
+    },
+    {
+      "id": "road-shields",
+      "type": "symbol",
+      "source": "osm",
+      "source-layer": "transportation_name",
+      "minzoom": 8,
+      "filter": [
+        "any",
+        [
+          "has",
+          "ref"
+        ],
+        [
+          "has",
+          "route_1_ref"
+        ]
+      ],
+      "layout": {
+        "symbol-placement": "line",
+        "symbol-spacing": 320,
+        "icon-image": [
+          "match",
+          [
+            "coalesce",
+            [
+              "get",
+              "route_1_network"
+            ],
+            [
+              "get",
+              "network"
+            ],
+            ""
+          ],
+          [
+            "US:I",
+            "us-interstate"
+          ],
+          "shield-interstate",
+          [
+            "US:US",
+            "us-highway"
+          ],
+          "shield-us",
+          [
+            "US:FL",
+            "us-state"
+          ],
+          "shield-state",
+          "US:FL:CR",
+          "shield-county",
+          "shield-state"
+        ],
+        "icon-size": 0.86,
+        "icon-rotation-alignment": "viewport",
+        "text-field": [
+          "coalesce",
+          [
+            "get",
+            "route_1_ref"
+          ],
+          [
+            "get",
+            "ref"
+          ]
+        ],
+        "text-font": [
+          "Open Sans Semibold"
+        ],
+        "text-size": 11.5,
+        "text-rotation-alignment": "viewport",
+        "text-allow-overlap": false
+      },
+      "paint": {
+        "text-color": [
+          "match",
+          [
+            "coalesce",
+            [
+              "get",
+              "route_1_network"
+            ],
+            [
+              "get",
+              "network"
+            ],
+            ""
+          ],
+          [
+            "US:US",
+            "us-highway"
+          ],
+          "#202830",
+          "#202830"
+        ],
+        "text-halo-color": [
+          "match",
+          [
+            "coalesce",
+            [
+              "get",
+              "route_1_network"
+            ],
+            [
+              "get",
+              "network"
+            ],
+            ""
+          ],
+          [
+            "US:US",
+            "us-highway"
+          ],
+          "#ffffff",
+          "#ffffff"
+        ],
+        "text-halo-width": [
+          "match",
+          [
+            "coalesce",
+            [
+              "get",
+              "route_1_network"
+            ],
+            [
+              "get",
+              "network"
+            ],
+            ""
+          ],
+          [
+            "US:US",
+            "us-highway"
+          ],
+          0.65,
+          1.8
+        ]
+      }
+    },
+    {
+      "id": "poi-essential",
+      "type": "symbol",
+      "source": "osm",
+      "source-layer": "poi",
+      "minzoom": 12,
+      "filter": [
+        "in",
+        [
+          "get",
+          "class"
+        ],
+        [
+          "literal",
+          [
+            "hospital",
+            "clinic",
+            "fire_station",
+            "police",
+            "fuel",
+            "harbor"
+          ]
+        ]
+      ],
+      "layout": {
+        "visibility": "visible",
+        "icon-image": [
+          "match",
+          [
+            "get",
+            "class"
+          ],
+          [
+            "hospital",
+            "clinic"
+          ],
+          "poi-medical",
+          "fire_station",
+          "poi-fire",
+          "police",
+          "poi-police",
+          "fuel",
+          "poi-fuel",
+          "poi-port"
+        ],
+        "icon-size": 1.15,
+        "icon-allow-overlap": false,
+        "text-field": [
+          "coalesce",
+          [
+            "get",
+            "name:latin"
+          ],
+          [
+            "get",
+            "name"
+          ]
+        ],
+        "text-font": [
+          "Open Sans Semibold"
+        ],
+        "text-size": 11,
+        "text-offset": [
+          0,
+          2
+        ],
+        "text-anchor": "top",
+        "text-optional": true
+      },
+      "paint": {
+        "text-color": "#293038",
+        "text-halo-color": "#fbfaf7",
+        "text-halo-width": 1.6
+      }
+    },
+    {
+      "id": "poi-airports",
+      "type": "symbol",
+      "source": "osm",
+      "source-layer": "aeroway",
+      "minzoom": 10,
+      "maxzoom": 12,
+      "filter": [
+        "in",
+        [
+          "get",
+          "class"
+        ],
+        [
+          "literal",
+          [
+            "aerodrome",
+            "heliport"
+          ]
+        ]
+      ],
+      "layout": {
+        "visibility": "visible",
+        "icon-image": "poi-airport",
+        "icon-size": 1.1,
+        "text-field": [
+          "get",
+          "ref"
+        ],
+        "text-font": [
+          "Open Sans Semibold"
+        ],
+        "text-size": 11,
+        "text-offset": [
+          0,
+          2
+        ],
+        "text-anchor": "top"
+      },
+      "paint": {
+        "text-color": "#e8b06d",
+        "text-halo-color": "#fbfaf7",
+        "text-halo-width": 1.5
+      }
+    },
+    {
+      "id": "poi-explore",
+      "type": "symbol",
+      "source": "osm",
+      "source-layer": "poi",
+      "minzoom": 13,
+      "filter": [
+        "in",
+        [
+          "get",
+          "class"
+        ],
+        [
+          "literal",
+          [
+            "restaurant",
+            "fast_food",
+            "lodging",
+            "museum",
+            "attraction",
+            "grocery",
+            "shop",
+            "parking"
+          ]
+        ]
+      ],
+      "layout": {
+        "visibility": "none",
+        "icon-image": [
+          "match",
+          [
+            "get",
+            "class"
+          ],
+          [
+            "restaurant",
+            "fast_food"
+          ],
+          "poi-food",
+          "lodging",
+          "poi-lodging",
+          [
+            "museum",
+            "attraction"
+          ],
+          "poi-attraction",
+          [
+            "grocery",
+            "shop"
+          ],
+          "poi-shopping",
+          "poi-parking"
+        ],
+        "icon-size": 1.08,
+        "icon-allow-overlap": false,
+        "text-field": [
+          "coalesce",
+          [
+            "get",
+            "name:latin"
+          ],
+          [
+            "get",
+            "name"
+          ]
+        ],
+        "text-font": [
+          "Open Sans Semibold"
+        ],
+        "text-size": 10.5,
+        "text-offset": [
+          0,
+          1.9
+        ],
+        "text-anchor": "top",
+        "text-optional": true
+      },
+      "paint": {
+        "text-color": "#293038",
+        "text-halo-color": "#fbfaf7",
+        "text-halo-width": 1.5
       }
     },
     {

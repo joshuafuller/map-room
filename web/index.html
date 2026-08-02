@@ -24,6 +24,13 @@
     </header>
 
     <aside class="panel" aria-label="Map controls">
+      <p class="eyebrow">Map view</p>
+      <label class="region-picker">
+        <span class="sr-only">Map view</span>
+        <select id="region-select" aria-label="Map view"></select>
+      </label>
+
+      <div class="rule"></div>
       <p class="eyebrow">Tile delivery</p>
       <div class="mode-switch" role="radiogroup" aria-label="Tile delivery mode">
         <button class="mode selected" data-mode="vector" role="radio" aria-checked="true">Vector</button>
@@ -65,7 +72,7 @@
 
       <div class="rule"></div>
       <p class="eyebrow">Take it with you</p>
-      <button id="atak-download" class="action primary">Download for ATAK</button>
+      <button id="atak-download" class="action primary">Download all for ATAK</button>
       <button id="copy-raster" class="action">Copy raster tile URL</button>
       <p class="hint">ATAK can cache a selected area and zoom range for offline use.</p>
     </aside>

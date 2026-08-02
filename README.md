@@ -97,22 +97,28 @@ prototype. It is not a production release.**
 The prototype has demonstrated:
 
 - Geofabrik PBF to OpenMapTiles-compatible MBTiles generation with Planetiler;
-- vector and server-rendered raster delivery through TileServer GL;
+- vector delivery from native OpenMapTiles data through z14 and crisp
+  server-rendered HiDPI raster delivery through z20 via TileServer GL;
 - a self-contained MapLibre browser viewer;
 - Daylight and Midnight visual themes;
 - browser preview of the same PNG/XYZ raster route currently generated for
   ATAK configuration;
+- one composed browser/ATAK map layer spanning independently managed Florida
+  and California archives;
 - operation on an isolated container network with no outbound route.
 
 The prototype has **not** yet validated:
 
 - importing and caching its configuration on a real supported ATAK release;
 - strict OSGeo TMS delivery—the current ATAK/browser raster prototype is XYZ;
-- the no-expertise maintainer interface;
-- multiple provider selections and concurrent published maps;
+- the no-expertise maintainer workflow for acquiring new maps from the website;
 - automatic acquisition, update, atomic promotion, rollback, and retention;
 - authentication, backup/restore, observability, or production packaging;
 - any non-Geofabrik source adapter.
+
+Raster zooms 15–20 render the z14 vector archive at progressively closer map
+scales. They keep geometry, labels, and symbols sharp, but cannot restore source
+features that the z14 tile-generation profile omitted.
 
 See [prototype evidence](TEST_RESULTS.md) for the exact tested boundary.
 
@@ -152,6 +158,29 @@ Florida is also supported as a larger development fixture:
 ```sh
 ./scripts/prepare-fixture.sh florida
 ```
+
+### Serve multiple installed regions
+
+Map Room can keep multiple regional MBTiles archives online in one process.
+Each archive needs a matching manifest named with a stable lowercase ID:
+
+```sh
+mkdir -p data/regions
+./scripts/write-manifest.py data/florida.mbtiles data/regions/florida.json Florida
+./scripts/write-manifest.py data/california.mbtiles data/regions/california.json California
+MAP_ROOM_DEFAULT_REGION=california docker compose up -d --wait
+```
+
+The startup configuration service discovers every regional manifest and
+archive, then composes them into the same logical map layer automatically. Open
+<http://localhost:8088> and use **Map view** to frame all maps, Florida, or
+California. This control moves the camera; it does not replace the underlying
+layer.
+
+ATAK receives one XML per visual theme and one composed raster endpoint such as
+`/styles/all-cyberpunk-tactical/...`. Florida and California therefore remain
+part of the same ATAK map layer. Unqualified style URLs remain compatibility
+aliases to that same composed map.
 
 Preparation downloads source/build inputs and can require substantial time,
 storage, memory, and network transfer. Generated data is excluded from Git.

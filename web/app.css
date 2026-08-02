@@ -13,6 +13,7 @@
 html, body, #map { width: 100%; height: 100%; margin: 0; }
 body { overflow: hidden; color: var(--ink); background: #dfe5e7; }
 button { font: inherit; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 
 .topbar {
   position: fixed;
@@ -77,6 +78,10 @@ button { font: inherit; }
 }
 
 .eyebrow { margin: 0 0 10px; color: var(--muted); font-size: 10px; font-weight: 750; letter-spacing: .13em; text-transform: uppercase; }
+.region-picker { position: relative; display: block; }
+.region-picker::after { content: ""; position: absolute; right: 13px; top: 50%; width: 7px; height: 7px; border-right: 2px solid var(--muted); border-bottom: 2px solid var(--muted); transform: translateY(-70%) rotate(45deg); pointer-events: none; }
+#region-select { width: 100%; appearance: none; padding: 11px 36px 11px 12px; border: 1px solid var(--line); border-radius: 11px; color: var(--ink); background: rgba(255,255,255,.54); cursor: pointer; font: inherit; font-size: 12px; font-weight: 700; }
+#region-select:focus-visible { outline: 2px solid rgba(0,165,184,.7); outline-offset: 2px; }
 .mode-switch { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; border: 1px solid var(--line); border-radius: 12px; background: rgba(80,90,96,.06); }
 .mode { padding: 8px 7px; border: 0; border-radius: 8px; color: var(--muted); background: transparent; cursor: pointer; font-size: 11px; font-weight: 700; }
 .mode.selected { color: #fff; background: #1f313b; box-shadow: 0 3px 10px rgba(19,31,39,.18); }

@@ -5,7 +5,7 @@ const atakThemes = {
   "cyberpunk-tactical": { name: "Cyberpunk Tactical", color: "#03040b" }
 };
 
-export const RASTER_MAX_ZOOM = 18;
+export const RASTER_MAX_ZOOM = 20;
 export const RASTER_PIXEL_RATIO = "@2x";
 
 function normalizeBaseUrl(baseUrl) {
@@ -21,9 +21,9 @@ function normalizeBaseUrl(baseUrl) {
   return `${parsed.origin}${parsed.pathname.replace(/\/+$/, "")}`;
 }
 
-export function buildAtakXml(id, baseUrl) {
-  const theme = atakThemes[id];
-  if (!theme) throw new Error(`Unknown ATAK theme: ${id}`);
+export function buildAtakXml({ theme: themeId, baseUrl }) {
+  const theme = atakThemes[themeId];
+  if (!theme) throw new Error(`Unknown ATAK theme: ${themeId}`);
   const base = normalizeBaseUrl(baseUrl);
   return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <customMapSource>
@@ -32,7 +32,7 @@ export function buildAtakXml(id, baseUrl) {
   <maxZoom>${RASTER_MAX_ZOOM}</maxZoom>
   <tileType>png</tileType>
   <tileUpdate>IfNoneMatch</tileUpdate>
-  <url>${base}/styles/${id}/{$z}/{$x}/{$y}${RASTER_PIXEL_RATIO}.png</url>
+  <url>${base}/styles/all-${themeId}/{$z}/{$x}/{$y}${RASTER_PIXEL_RATIO}.png</url>
   <backgroundColor>${theme.color}</backgroundColor>
   <ignoreErrors>false</ignoreErrors>
   <serverParts></serverParts>

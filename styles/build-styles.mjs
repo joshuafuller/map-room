@@ -26,7 +26,12 @@ const themes = {
     rail: "#8c8580",
     text: "#293038",
     textHalo: "#fbfaf7",
-    waterText: "#356c89"
+    waterText: "#356c89",
+    symbols: {
+      markerFill: "#ffffff", shieldFill: "#ffffff", frame: "#293038", shadow: "#fbfaf7",
+      emergency: "#c52f58", service: "#00748a", utility: "#9a6800", leisure: "#6946a5",
+      onMarker: "#202830", onLight: "#202830", lightFill: "#ffffff"
+    }
   },
   midnight: {
     name: "Midnight",
@@ -48,7 +53,12 @@ const themes = {
     rail: "#6d7780",
     text: "#e2e8ec",
     textHalo: "#111a22",
-    waterText: "#79b9d4"
+    waterText: "#79b9d4",
+    symbols: {
+      markerFill: "#101820", shieldFill: "#101820", frame: "#e2e8ec", shadow: "#0c1117",
+      emergency: "#f08a74", service: "#55c8dc", utility: "#e1c45a", leisure: "#a98be0",
+      onMarker: "#f4f7f9", onLight: "#182028", lightFill: "#f4f7f9"
+    }
   },
   cyberpunk: {
     name: "Cyberpunk",
@@ -73,7 +83,12 @@ const themes = {
     text: "#f4f7ff",
     textHalo: "#080912",
     waterText: "#70f7ff",
-    glow: true
+    glow: true,
+    symbols: {
+      markerFill: "#060711", shieldFill: "#060711", frame: "#f4f7ff", shadow: "#03040b",
+      emergency: "#ff2aa3", service: "#00e5ff", utility: "#f7e65b", leisure: "#9d5cff",
+      onMarker: "#f4f7ff", onLight: "#080912", lightFill: "#f4f7ff"
+    }
   },
   "cyberpunk-tactical": {
     name: "Cyberpunk Tactical",
@@ -100,7 +115,12 @@ const themes = {
     textHalo: "#03040b",
     waterText: "#70f6ff",
     glow: true,
-    tactical: true
+    tactical: true,
+    symbols: {
+      markerFill: "#060711", shieldFill: "#03040b", frame: "#f6f8ff", shadow: "#03040b",
+      emergency: "#ff2a9f", service: "#00eaff", utility: "#f2dc58", leisure: "#8c62f4",
+      onMarker: "#f6f8ff", onLight: "#03040b", lightFill: "#f6f8ff"
+    }
   }
 };
 
@@ -188,8 +208,8 @@ function makeStyle(id, theme) {
     }
   ] : [];
 
-  const tacticalLayers = theme.tactical ? {
-    urban: [{
+  const featureLayers = {
+    urban: theme.tactical ? [{
       id: "urban-glow", type: "circle", source: "osm", "source-layer": "place", maxzoom: 11,
       filter: ["in", ["get", "class"], ["literal", ["city", "town"]]],
       paint: {
@@ -198,23 +218,23 @@ function makeStyle(id, theme) {
         "circle-blur": 0.92,
         "circle-opacity": ["interpolate", ["linear"], ["zoom"], 4, 0.04, 8, 0.12, 11, 0]
       }
-    }],
-    coastline: [{
+    }] : [],
+    coastline: theme.tactical ? [{
       id: "coastline-glow", type: "line", source: "osm", "source-layer": "water",
       paint: { "line-color": theme.waterLine, "line-width": 5, "line-blur": 5, "line-opacity": 0.28 }
-    }],
+    }] : [],
     landmarks: [
       {
         id: "airports", type: "fill", source: "osm", "source-layer": "aeroway", minzoom: 8,
         filter: ["in", ["get", "class"], ["literal", ["aerodrome", "heliport"]]],
         paint: { "fill-color": theme.primary, "fill-opacity": 0.11, "fill-outline-color": theme.primary }
       },
-      {
+      ...(theme.glow ? [{
         id: "runway-glow", type: "line", source: "osm", "source-layer": "aeroway", minzoom: 9,
         filter: ["==", ["get", "class"], "runway"],
         layout: { "line-cap": "round", "line-join": "round" },
         paint: { "line-color": theme.primary, "line-width": ["interpolate", ["linear"], ["zoom"], 9, 5, 16, 18], "line-blur": 5, "line-opacity": 0.28 }
-      },
+      }] : []),
       {
         id: "runways", type: "line", source: "osm", "source-layer": "aeroway", minzoom: 9,
         filter: ["==", ["get", "class"], "runway"],
@@ -233,11 +253,11 @@ function makeStyle(id, theme) {
         paint: { "circle-color": ["match", ["get", "class"], ["hospital", "clinic"], theme.motorway, ["police", "fire_station"], theme.primary, theme.rail], "circle-radius": ["interpolate", ["linear"], ["zoom"], 12, 2, 16, 5], "circle-stroke-color": theme.textHalo, "circle-stroke-width": 1.5 }
       }
     ],
-    grid: [{
+    grid: theme.tactical ? [{
       id: "coordinate-grid", type: "line", source: "coordinate-grid", minzoom: 14,
       layout: { visibility: "none" },
       paint: { "line-color": theme.primary, "line-width": 0.8, "line-dasharray": [2, 3], "line-opacity": 0.24 }
-    }],
+    }] : [],
     symbols: [
       {
         id: "road-shields", type: "symbol", source: "osm", "source-layer": "transportation_name", minzoom: 8,
@@ -253,8 +273,8 @@ function makeStyle(id, theme) {
           "text-rotation-alignment": "viewport", "text-allow-overlap": false
         },
         paint: {
-          "text-color": ["match", ["coalesce", ["get", "route_1_network"], ["get", "network"], ""], ["US:US", "us-highway"], theme.textHalo, theme.text],
-          "text-halo-color": ["match", ["coalesce", ["get", "route_1_network"], ["get", "network"], ""], ["US:US", "us-highway"], theme.text, theme.textHalo],
+          "text-color": ["match", ["coalesce", ["get", "route_1_network"], ["get", "network"], ""], ["US:US", "us-highway"], theme.symbols.onLight, theme.symbols.onMarker],
+          "text-halo-color": ["match", ["coalesce", ["get", "route_1_network"], ["get", "network"], ""], ["US:US", "us-highway"], theme.symbols.lightFill, theme.symbols.shieldFill],
           "text-halo-width": ["match", ["coalesce", ["get", "route_1_network"], ["get", "network"], ""], ["US:US", "us-highway"], 0.65, 1.8]
         }
       },
@@ -287,7 +307,7 @@ function makeStyle(id, theme) {
         paint: { "text-color": theme.text, "text-halo-color": theme.textHalo, "text-halo-width": 1.5 }
       }
     ]
-  } : { urban: [], coastline: [], landmarks: [], grid: [], symbols: [] };
+  };
 
   return {
     version: 8,
@@ -306,10 +326,10 @@ function makeStyle(id, theme) {
       ...(theme.tactical ? { "coordinate-grid": { type: "geojson", data: { type: "FeatureCollection", features: [] } } } : {})
     },
     glyphs: "{fontstack}/{range}.pbf",
-    ...(theme.tactical ? { sprite: "/styles/cyberpunk-tactical/sprite" } : {}),
+    sprite: `/styles/${id}/sprite`,
     layers: [
       { id: "background", type: "background", paint: { "background-color": theme.background } },
-      ...tacticalLayers.urban,
+      ...featureLayers.urban,
       {
         id: "landuse", type: "fill", source: "osm", "source-layer": "landuse",
         paint: {
@@ -324,7 +344,7 @@ function makeStyle(id, theme) {
       },
       { id: "parks", type: "fill", source: "osm", "source-layer": "park", paint: { "fill-color": theme.park, "fill-opacity": 0.82 } },
       { id: "water", type: "fill", source: "osm", "source-layer": "water", paint: { "fill-color": theme.water } },
-      ...tacticalLayers.coastline,
+      ...featureLayers.coastline,
       ...glowLayers.filter(({ id: layerId }) => layerId === "waterway-glow"),
       { id: "waterways", type: "line", source: "osm", "source-layer": "waterway", paint: { "line-color": theme.waterLine, "line-width": ["interpolate", ["linear"], ["zoom"], 8, 0.5, 15, 2.2] } },
       {
@@ -354,9 +374,9 @@ function makeStyle(id, theme) {
         filter: ["==", ["get", "class"], "rail"],
         paint: { "line-color": theme.rail, "line-width": ["interpolate", ["linear"], ["zoom"], 8, 0.5, 15, 2], "line-dasharray": [3, 2] }
       },
-      ...tacticalLayers.landmarks,
-      ...tacticalLayers.grid,
-      ...tacticalLayers.symbols,
+      ...featureLayers.landmarks,
+      ...featureLayers.grid,
+      ...featureLayers.symbols,
       {
         id: "road-labels", type: "symbol", source: "osm", "source-layer": "transportation_name", minzoom: 12,
         layout: { ...labelLayout, "symbol-placement": "line", "text-size": 11 },
@@ -385,6 +405,6 @@ for (const [id, theme] of Object.entries(themes)) {
   const output = resolve(here, id, "style.json");
   await mkdir(dirname(output), { recursive: true });
   await writeFile(output, `${JSON.stringify(makeStyle(id, theme), null, 2)}\n`);
-  if (theme.tactical) await buildSpriteAtlas(dirname(output));
+  await buildSpriteAtlas(dirname(output), theme.symbols);
   console.log(`wrote ${output}`);
 }
