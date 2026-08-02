@@ -21,17 +21,16 @@ const allViewPadding = () => window.innerWidth <= 680
   : { top: 90, right: 340, bottom: 70, left: 70 };
 const panel = document.querySelector(".panel");
 const panelToggle = document.querySelector("#panel-toggle");
-const mobileLayout = window.matchMedia("(max-width: 680px)");
 
 function setPanelExpanded(expanded) {
   panel.classList.toggle("collapsed", !expanded);
   panelToggle.setAttribute("aria-expanded", String(expanded));
   panelToggle.setAttribute("aria-label", expanded ? "Close map controls" : "Open map controls");
+  document.documentElement.dataset.controlsExpanded = String(expanded);
 }
 
-setPanelExpanded(!mobileLayout.matches);
+setPanelExpanded(false);
 panelToggle.addEventListener("click", () => setPanelExpanded(panelToggle.getAttribute("aria-expanded") !== "true"));
-mobileLayout.addEventListener("change", (event) => setPanelExpanded(!event.matches));
 
 function styleId(theme = activeTheme) {
   return `all-${theme}`;

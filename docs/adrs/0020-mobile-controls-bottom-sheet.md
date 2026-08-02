@@ -1,4 +1,4 @@
-# ADR-0020: Collapse map controls into a mobile bottom sheet
+# ADR-0020: Collapse map controls behind a floating control
 
 Status: Proposed
 
@@ -11,22 +11,21 @@ being the primary interface.
 
 ## Decision
 
-At widths of 680 CSS pixels or less, the controls become a bottom sheet that
-starts completely hidden behind a 54-pixel floating controls button. The button
-has an explicit accessible label, exposes state through `aria-expanded`, and
-expands or collapses the sheet with one tap. Expanded content scrolls inside the
-available viewport instead of growing beyond it.
+At every viewport size, the controls start completely hidden behind a 54-pixel
+floating controls button. The button has an explicit accessible label, exposes
+state through `aria-expanded`, and expands or collapses the panel with one tap.
+On mobile, expanded content scrolls inside the available viewport instead of
+growing beyond it.
 
-Desktop controls remain expanded and the toggle is hidden. Crossing the mobile
-breakpoint resets the panel to the appropriate default. Motion is disabled when
-the user requests reduced motion.
+Desktop and mobile use the same closed-by-default interaction. Motion is
+disabled when the user requests reduced motion.
 
 ## Consequences
 
-Mobile users retain nearly the entire viewport for map gestures and can still
-reach every control. Expanding the sheet intentionally covers part of the map,
-but it can be dismissed immediately and never becomes taller than the available
-viewport.
+Users retain nearly the entire viewport for map gestures and can still reach
+every control. Expanding the panel intentionally covers part of the map, but it
+can be dismissed immediately; on mobile it never becomes taller than the
+available viewport.
 
 The initial mobile state favors map visibility over immediate exposure of all
 style and export choices. The persistent floating control keeps those choices
