@@ -29,12 +29,40 @@ test("builds a one-source ATAK style with Map Room symbology and reachable asset
 
   assert.equal(style.version, 8);
   assert.equal(style.name, "Map Room - Cyberpunk Tactical - ATAK Vector");
-  assert.deepEqual(style.sources, { osm: { type: "vector" } });
+  assert.deepEqual(style.sources, {
+    osm: { type: "vector", url: "https://maps.example.test/map-room/data/florida.json" }
+  });
   assert.equal(style.sprite, "https://maps.example.test/map-room/styles/cyberpunk-tactical/sprite");
   assert.equal(style.glyphs, "https://maps.example.test/map-room/fonts/{fontstack}/{range}.pbf");
   assert.deepEqual(style.layers.map(({ id }) => id), ["background", "roads", "poi-essential", "aeroway-runway"]);
   assert.equal(style.layers.find(({ id }) => id === "poi-essential").layout["icon-image"], "poi-fuel");
   assert.equal(style.layers.find(({ id }) => id === "background").paint["background-color"], "#03040b");
+});
+
+test("collapses a composed runtime style back to the selected ATAK archive", () => {
+  const composedStyle = structuredClone(sourceStyle);
+  composedStyle.sources = {
+    california: { type: "vector", url: "http://localhost/data/california.json" },
+    florida: { type: "vector", url: "http://localhost/data/florida.json" }
+  };
+  composedStyle.layers = [
+    sourceStyle.layers[0],
+    { ...sourceStyle.layers[1], id: "roads--california", source: "california" },
+    { ...sourceStyle.layers[1], id: "roads--florida", source: "florida" },
+    { ...sourceStyle.layers[3], id: "poi-essential--florida", source: "florida" }
+  ];
+
+  const style = buildAtakVectorStyle({
+    theme: "cyberpunk-tactical",
+    baseUrl: "http://maps.example.test:8088",
+    sourceId: "florida",
+    sourceStyle: composedStyle
+  });
+
+  assert.deepEqual(style.layers.map(({ id }) => id), ["background", "roads", "poi-essential"]);
+  assert.equal(style.layers.filter((layer) => layer.source === "osm").length, 2);
+  assert.equal(style.layers.some((layer) => layer.source === "california" || layer.source === "florida"), false);
+  assert.equal(style.sources.osm.url, "http://maps.example.test:8088/data/florida.json");
 });
 
 test("rejects untrusted origins, unknown themes, and malformed source styles", () => {
