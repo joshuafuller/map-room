@@ -982,28 +982,6 @@
       }
     },
     {
-      "id": "house-numbers",
-      "type": "symbol",
-      "source": "osm",
-      "source-layer": "housenumber",
-      "minzoom": 14,
-      "layout": {
-        "text-field": [
-          "get",
-          "housenumber"
-        ],
-        "text-font": [
-          "Open Sans Regular"
-        ],
-        "text-size": 9
-      },
-      "paint": {
-        "text-color": "#f4f7ff",
-        "text-halo-color": "#080912",
-        "text-halo-width": 1
-      }
-    },
-    {
       "id": "poi-essential",
       "type": "symbol",
       "source": "osm",
@@ -1297,6 +1275,28 @@
         ],
         "fill-extrusion-opacity": 0.82,
         "fill-extrusion-vertical-gradient": true
+      }
+    },
+    {
+      "id": "house-numbers",
+      "type": "symbol",
+      "source": "osm",
+      "source-layer": "housenumber",
+      "minzoom": 14,
+      "layout": {
+        "text-field": [
+          "get",
+          "housenumber"
+        ],
+        "text-font": [
+          "Open Sans Regular"
+        ],
+        "text-size": 9
+      },
+      "paint": {
+        "text-color": "#f4f7ff",
+        "text-halo-color": "#080912",
+        "text-halo-width": 1
       }
     },
     {

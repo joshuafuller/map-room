@@ -1077,28 +1077,6 @@
       }
     },
     {
-      "id": "house-numbers",
-      "type": "symbol",
-      "source": "osm",
-      "source-layer": "housenumber",
-      "minzoom": 14,
-      "layout": {
-        "text-field": [
-          "get",
-          "housenumber"
-        ],
-        "text-font": [
-          "Open Sans Regular"
-        ],
-        "text-size": 9
-      },
-      "paint": {
-        "text-color": "#f6f8ff",
-        "text-halo-color": "#03040b",
-        "text-halo-width": 1
-      }
-    },
-    {
       "id": "coordinate-grid",
       "type": "line",
       "source": "coordinate-grid",
@@ -1410,6 +1388,28 @@
         ],
         "fill-extrusion-opacity": 0.82,
         "fill-extrusion-vertical-gradient": true
+      }
+    },
+    {
+      "id": "house-numbers",
+      "type": "symbol",
+      "source": "osm",
+      "source-layer": "housenumber",
+      "minzoom": 14,
+      "layout": {
+        "text-field": [
+          "get",
+          "housenumber"
+        ],
+        "text-font": [
+          "Open Sans Regular"
+        ],
+        "text-size": 9
+      },
+      "paint": {
+        "text-color": "#f6f8ff",
+        "text-halo-color": "#03040b",
+        "text-halo-width": 1
       }
     },
     {

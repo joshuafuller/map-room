@@ -342,6 +342,12 @@ function makeStyle(id, theme) {
       }
     }));
 
+  const houseNumberLayer = {
+    id: "house-numbers", type: "symbol", source: "osm", "source-layer": "housenumber", minzoom: 14,
+    layout: { "text-field": ["get", "housenumber"], "text-font": ["Open Sans Regular"], "text-size": 9 },
+    paint: { "text-color": theme.text, "text-halo-color": theme.textHalo, "text-halo-width": 1 }
+  };
+
   return {
     version: 8,
     name: theme.name,
@@ -417,11 +423,7 @@ function makeStyle(id, theme) {
         layout: { ...labelLayout, "symbol-placement": "line", "text-size": 11 },
         paint: { "text-color": theme.text, "text-halo-color": theme.textHalo, "text-halo-width": 1.5 }
       },
-      {
-        id: "house-numbers", type: "symbol", source: "osm", "source-layer": "housenumber", minzoom: 14,
-        layout: { "text-field": ["get", "housenumber"], "text-font": ["Open Sans Regular"], "text-size": 9 },
-        paint: { "text-color": theme.text, "text-halo-color": theme.textHalo, "text-halo-width": 1 }
-      },
+      ...(!theme.glow ? [houseNumberLayer] : []),
       ...featureLayers.grid,
       ...featureLayers.symbols.filter(({ id: layerId }) => layerId !== "road-shields"),
       {
@@ -440,6 +442,7 @@ function makeStyle(id, theme) {
           "fill-extrusion-vertical-gradient": true
         }
       }] : []),
+      ...(theme.glow ? [houseNumberLayer] : []),
       {
         id: "place-labels", type: "symbol", source: "osm", "source-layer": "place",
         layout: { ...labelLayout, "text-font": ["Open Sans Semibold"], "text-size": ["interpolate", ["linear"], ["zoom"], 4, 11, 12, 17] },
