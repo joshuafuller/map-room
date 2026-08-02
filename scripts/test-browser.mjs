@@ -27,6 +27,21 @@ await page.locator(".maplibregl-canvas").waitFor({ state: "visible" });
 await page.waitForFunction(() => document.querySelector("#region")?.textContent !== "Loading local map…");
 await page.waitForTimeout(1000);
 
+const collapsedPanel = await page.locator(".panel").evaluate((panel) => ({
+  width: panel.getBoundingClientRect().width,
+  height: panel.getBoundingClientRect().height
+}));
+if (collapsedPanel.width > 64 || collapsedPanel.height > 64) {
+  failures.push(`desktop controls did not start as a compact floating button (${collapsedPanel.width}x${collapsedPanel.height})`);
+}
+if (await page.locator("#panel-toggle").getAttribute("aria-expanded") !== "false") {
+  failures.push("desktop controls did not start collapsed");
+}
+await page.locator("#panel-toggle").click();
+if (await page.locator("#panel-toggle").getAttribute("aria-expanded") !== "true") {
+  failures.push("desktop controls could not be expanded");
+}
+
 if (await page.locator("#region-select option").count() !== 3) {
   failures.push("Map view selector did not list the composed map and both regional views");
 }
