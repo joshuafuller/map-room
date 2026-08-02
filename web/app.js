@@ -1,5 +1,5 @@
 import * as maplibregl from "/vendor/maplibre-gl.mjs";
-import { buildAtakXml, RASTER_MAX_ZOOM, RASTER_PIXEL_RATIO } from "/atak.js";
+import { buildAtakVectorDescriptor, buildAtakXml, RASTER_MAX_ZOOM, RASTER_PIXEL_RATIO } from "/atak.js";
 import { buildAtakVectorStyle } from "/atak-vector.js";
 import { buildCoordinateGrid } from "/grid.js";
 
@@ -54,6 +54,32 @@ function updateRegionPresentation() {
   }
 }
 
+function vectorPublication() {
+  return activeView === "all" ? null : regionCatalog.get(activeView);
+}
+
+function updateAtakVectorPresentation() {
+  const publication = vectorPublication();
+  const sourceButton = document.querySelector("#atak-vector-source");
+  const styleButton = document.querySelector("#atak-vector-style");
+  const archiveLink = document.querySelector("#atak-vector-map");
+  const instructions = document.querySelector("#atak-vector-instructions");
+  sourceButton.disabled = !publication;
+  styleButton.disabled = !publication;
+  archiveLink.hidden = !publication;
+  if (!publication) {
+    sourceButton.textContent = "Select one vector map to stream";
+    instructions.textContent = "Choose an individual published map above. Map Room will generate a tiny ATAK source document that streams PBF tiles and can cache an area offline.";
+    return;
+  }
+  const name = publication.name ?? publication.region;
+  sourceButton.textContent = `1. Stream ${name} in ATAK`;
+  archiveLink.href = `/atak/vector/${publication.id}.mbtiles`;
+  archiveLink.download = `map-room-${publication.id}-vector.mbtiles`;
+  archiveLink.textContent = `3. Optional offline ${name} MBTiles`;
+  instructions.innerHTML = `Import the small vector-source JSON in ATAK, then open that layer's options, select <strong>Set Layer Style</strong>, choose <strong>Import File</strong>, and import the Cyberpunk style. Open this page through the Map Room computer's LAN address, not localhost. ATAK may cache a selected area for offline use without downloading the complete archive.`;
+}
+
 try {
   const response = await fetch("/regions.json", { cache: "no-store" });
   const catalog = await response.json();
@@ -82,6 +108,7 @@ try {
   selector.value = activeView;
   selector.disabled = catalog.regions.length === 0;
   updateRegionPresentation();
+  updateAtakVectorPresentation();
 } catch {
   document.querySelector("#region-select").hidden = true;
   document.querySelector("#freshness").textContent = "Freshness unavailable";
@@ -210,6 +237,7 @@ function selectView(id) {
   activeView = id;
   manifest = catalogRegion;
   updateRegionPresentation();
+  updateAtakVectorPresentation();
   if (id === "all" && manifest.bounds) {
     map.fitBounds(manifest.bounds, { padding: allViewPadding(), duration: 0 });
   } else {
@@ -244,7 +272,33 @@ document.querySelector("#atak-download").addEventListener("click", () => {
   toast("ATAK map source downloaded");
 });
 
+function downloadJson(payload, filename) {
+  const blob = new Blob([`${JSON.stringify(payload, null, 2)}\n`], { type: "application/json" });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = filename;
+  link.click();
+  URL.revokeObjectURL(link.href);
+}
+
+document.querySelector("#atak-vector-source").addEventListener("click", async () => {
+  const publication = vectorPublication();
+  if (!publication) return;
+  const response = await fetch(`/data/${publication.id}.json`);
+  if (!response.ok) throw new Error(`Could not load ${publication.name} TileJSON`);
+  const tileJson = await response.json();
+  const descriptor = buildAtakVectorDescriptor({
+    publication,
+    baseUrl: window.location.origin,
+    tileJson
+  });
+  downloadJson(descriptor, `map-room-${publication.id}-atak-vector.json`);
+  toast(`${publication.name} ATAK vector source downloaded`);
+});
+
 document.querySelector("#atak-vector-style").addEventListener("click", async () => {
+  const publication = vectorPublication();
+  if (!publication) return;
   const theme = "cyberpunk";
   const response = await fetch(`/styles/${theme}/style.json`);
   if (!response.ok) throw new Error(`Could not load ${theme} style`);
@@ -252,15 +306,10 @@ document.querySelector("#atak-vector-style").addEventListener("click", async () 
   const style = buildAtakVectorStyle({
     theme,
     baseUrl: window.location.origin,
-    sourceId: "florida",
+    sourceId: publication.id,
     sourceStyle
   });
-  const blob = new Blob([`${JSON.stringify(style, null, 2)}\n`], { type: "application/json" });
-  const link = document.createElement("a");
-  link.href = URL.createObjectURL(blob);
-  link.download = `map-room-${theme}-atak-vector.json`;
-  link.click();
-  URL.revokeObjectURL(link.href);
+  downloadJson(style, `map-room-${theme}-atak-vector.json`);
   toast("Cyberpunk ATAK vector style downloaded");
 });
 

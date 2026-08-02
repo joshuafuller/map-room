@@ -82,10 +82,11 @@
       <button id="copy-raster" class="action">Copy raster tile URL</button>
       <p class="hint">ATAK can cache a selected area and zoom range for offline use.</p>
       <div class="rule"></div>
-      <p class="eyebrow">ATAK vector test</p>
-      <a id="atak-vector-map" class="action primary" href="/atak/vector/florida.mbtiles" download>1. Download Florida vector map</a>
+      <p class="eyebrow">ATAK vector streaming</p>
+      <button id="atak-vector-source" class="action primary" type="button" disabled>Select one vector map to stream</button>
       <button id="atak-vector-style" class="action">2. Download Cyberpunk style</button>
-      <p id="atak-vector-instructions" class="hint">Open this page through the Map Room computer's LAN address, not localhost. Import the MBTiles file in ATAK. Open that layer's options, select <strong>Set Layer Style</strong>, then <strong>Import File</strong> and choose the downloaded Map Room JSON. This first device test is Florida only.</p>
+      <a id="atak-vector-map" class="action" href="/atak/vector/florida.mbtiles" download hidden>3. Optional offline MBTiles</a>
+      <p id="atak-vector-instructions" class="hint">Choose an individual published map above. Map Room will generate a tiny ATAK source document that streams PBF tiles and can cache an area offline.</p>
       </div>
     </aside>
 

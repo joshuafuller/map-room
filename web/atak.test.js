@@ -84,10 +84,10 @@ test("builds a stock ATAK stream descriptor for one self-hosted vector publicati
     overlay: false,
     srs: "EPSG:3857",
     bounds: {
-      minX: -9874448.741464712,
-      minY: 2715074.947410229,
-      maxX: -8652148.635580221,
-      maxY: 3633138.124066736
+      minX: -9874452.941869117,
+      minY: 2714842.168027307,
+      maxX: -8652150.46142517,
+      maxY: 3633147.8477424732
     },
     isQuadtree: true,
     numLevels: 15,
@@ -127,6 +127,9 @@ test("fails closed for publications ATAK cannot safely stream", () => {
   assert.throws(() => buildAtakVectorDescriptor({ ...valid, tileJson: { ...floridaTileJson, minzoom: 1 } }), /zoom zero/);
   assert.throws(() => buildAtakVectorDescriptor({ ...valid, tileJson: { ...floridaTileJson, maxzoom: 31 } }), /zoom range/);
   assert.throws(() => buildAtakVectorDescriptor({ ...valid, tileJson: { ...floridaTileJson, bounds: [1, 2, 3] } }), /bounds/);
+  assert.throws(() => buildAtakVectorDescriptor({ ...valid, tileJson: { ...floridaTileJson, bounds: [-88, 32, -89, 31] } }), /bounds/);
   assert.throws(() => buildAtakVectorDescriptor({ ...valid, tileJson: { ...floridaTileJson, vector_layers: [] } }), /vector layer metadata/);
+  assert.throws(() => buildAtakVectorDescriptor({ ...valid, tileJson: { ...floridaTileJson, id: "california" } }), /match its TileJSON ID/);
+  assert.throws(() => buildAtakVectorDescriptor({ ...valid, tileJson: { ...floridaTileJson, attribution: "" } }), /attribution/);
   assert.throws(() => buildAtakVectorDescriptor({ ...valid, baseUrl: "https://maps.example.test/?token=secret" }), /ATAK base URL/);
 });

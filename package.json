@@ -10,10 +10,12 @@
   "scripts": {
     "build:styles": "node styles/build-styles.mjs",
     "test:unit": "node --test maintainer/test/*.test.js styles/test/*.test.js web/*.test.js",
+    "test:coverage:atak": "c8 --all --include=web/atak.js --check-coverage --lines 100 --statements 100 --functions 100 --branches 100 node --test web/atak.test.js",
     "test:browser": "node scripts/test-browser.mjs",
     "test:mobile": "node scripts/test-mobile.mjs"
   },
   "devDependencies": {
+    "c8": "^10.1.3",
     "lucide-static": "1.28.0",
     "playwright": "1.62.1",
     "sharp": "0.35.3"
