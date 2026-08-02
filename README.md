@@ -192,28 +192,33 @@ MAP_ROOM_ALLOWED_HOSTS=maps.example.internal docker compose up -d --wait
 Unlisted LAN addresses receive safe path-only URLs and still work from mobile
 browsers. Do not put a private deployment address into the repository.
 
-### Validate native vectors in ATAK 5.8
+### Validate streaming native vectors in ATAK 5.8
 
 This is a device-validation workflow, not yet a claim of validated ATAK
 support. Open Map Room from the ATAK device using the server computer's LAN
 address, such as `http://SERVER-LAN-IP:8088`; do not use `localhost`, because
-the downloaded Cyberpunk style points back to Map Room for data, sprites, and
-glyphs.
+the downloaded vector source and Cyberpunk style point back to Map Room for
+PBF tiles, sprites, and glyphs.
 
-Expand **Map controls**, then under **ATAK vector test**:
+Expand **Map controls**, select an individual published map under **Map view**,
+then under **ATAK vector streaming**:
 
-1. Download the Florida vector map and Cyberpunk style.
-2. In ATAK's Import Manager, import `map-room-florida-vector.mbtiles`.
-3. Find the imported layer under **Mapbox Vector Tiles** and open its options.
-4. Select **Set Layer Style**, then **Import File**, and choose
+1. Download the small ATAK vector source and Cyberpunk style JSON files.
+2. In ATAK's Import Manager, import `map-room-florida-atak-vector.json`.
+3. Find the streamed layer under **Mapbox Vector Tiles** and open its options.
+4. Select **Set Layer Style**, choose **Import File**, and select
    `map-room-cyberpunk-atak-vector.json`.
-5. Verify roads, labels, POIs, shields, airports, sharp zooming, and offline map
-   data. Sprites and glyphs remain server-hosted for this first test.
+5. Verify roads, labels, POIs, shields, airports, height-aware buildings, sharp
+   zooming, and online PBF requests.
+6. Cache a small area in ATAK, disconnect it from Map Room, and separately
+   record whether the cached area remains usable.
 
-The Florida archive is served directly from generated data and is not copied
-into source control. Combining multiple selected regions into one ATAK vector
-layer will be implemented by building those upstream inputs together after
-this physical-device path is validated.
+The complete MBTiles download remains available as an optional offline path; it
+is no longer required for connected use. The current **All installed maps**
+browser view composes multiple archives, so it is deliberately not offered as
+one remote vector source. Combining selected regions into one ATAK vector layer
+requires rebuilding those upstream inputs into one publication rather than
+merging SQLite rows.
 
 Preparation downloads source/build inputs and can require substantial time,
 storage, memory, and network transfer. Generated data is excluded from Git.
@@ -225,6 +230,7 @@ storage, memory, and network transfer. Generated data is excluded from Git.
 ./scripts/test-offline.sh
 npx playwright install chromium # first browser-test run only
 npm run test:browser
+npm run test:coverage:atak
 ```
 
 Stop it with:
