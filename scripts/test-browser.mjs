@@ -219,6 +219,13 @@ const buildingZoom = Number((await page.evaluate(() => window.location.hash)).sl
 if (buildingZoom < 15) {
   failures.push(`Cyberpunk 3D buildings remained below a legible zoom (${buildingZoom})`);
 }
+const composedBuildingLayers = await page.evaluate(async () => {
+  const style = await fetch("/styles/all-cyberpunk-tactical/style.json").then((response) => response.json());
+  return style.layers.filter(({ id }) => id.startsWith("buildings-3d--"));
+});
+if (composedBuildingLayers.length !== 2 || composedBuildingLayers.some((layer) => layer.type !== "fill-extrusion")) {
+  failures.push("composed Cyberpunk Tactical map did not publish one 3D building layer per installed region");
+}
 const tacticalMiamiPath = new URL("cyberpunk-tactical-miami.png", outputDir);
 await page.screenshot({ path: tacticalMiamiPath.pathname });
 

@@ -18,7 +18,9 @@ const themes = {
     name: "Cyberpunk Tactical",
     sources: { osm: { type: "vector", url: "mbtiles://{osm}" } },
     sprite: "/styles/cyberpunk-tactical/sprite",
-    layers: []
+    layers: [
+      { id: "buildings-3d", type: "fill-extrusion", source: "osm", "source-layer": "building", layout: { visibility: "none" } }
+    ]
   }
 };
 
@@ -53,6 +55,10 @@ test("builds deterministic TileServer data and style entries for every region an
     { id: "background", source: undefined },
     { id: "roads--california", source: "california" },
     { id: "roads--florida", source: "florida" }
+  ]);
+  assert.deepEqual(styles["collections/all/cyberpunk-tactical.json"].layers.map(({ id }) => id), [
+    "buildings-3d--california",
+    "buildings-3d--florida"
   ]);
   assert.deepEqual(catalog.regions.map(({ id }) => id), ["california", "florida"]);
   assert.equal(catalog.defaultView, "all");
