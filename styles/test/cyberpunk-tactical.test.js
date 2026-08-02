@@ -42,7 +42,7 @@ test("generates Cyberpunk Tactical without changing the Classic core treatment",
   assert.equal(layers["buildings-3d"].layout.visibility, "none");
   assert.deepEqual(layers["buildings-3d"].paint["fill-extrusion-height"], ["coalesce", ["get", "render_height"], 3]);
   assert.deepEqual(layers["buildings-3d"].paint["fill-extrusion-base"], ["coalesce", ["get", "render_min_height"], 0]);
-  assert.equal(layers["buildings-3d"].paint["fill-extrusion-opacity"], 1);
+  assert.equal(layers["buildings-3d"].paint["fill-extrusion-opacity"], 0.82);
   assert.deepEqual(layers["buildings-3d"].paint["fill-extrusion-color"], [
     "interpolate", ["linear"], ["coalesce", ["get", "render_height"], 3],
     0, "#151a35", 30, "#193454", 100, "#176278", 220, "#00dff7"
@@ -60,8 +60,15 @@ test("generates Cyberpunk Tactical without changing the Classic core treatment",
   assert.ok(layerIds.indexOf("poi-explore") < layerIds.indexOf("buildings-3d"));
   assert.ok(layerIds.indexOf("poi-airports") < layerIds.indexOf("buildings-3d"));
   assert.ok(layerIds.indexOf("water-labels") < layerIds.indexOf("buildings-3d"));
-  assert.ok(layerIds.indexOf("place-labels") < layerIds.indexOf("buildings-3d"));
-  assert.equal(layerIds.indexOf("buildings-3d"), layerIds.length - 1);
+  assert.ok(layerIds.indexOf("buildings-3d") < layerIds.indexOf("place-labels"));
+  assert.deepEqual(layerIds.slice(layerIds.indexOf("buildings-3d") + 1), [
+    "place-labels", "poi-essential-hud", "poi-explore-hud", "poi-airports-hud"
+  ]);
+  for (const id of ["poi-essential-hud", "poi-explore-hud", "poi-airports-hud"]) {
+    assert.equal(layers[id].type, "symbol");
+    assert.equal(layers[id].layout.visibility, "none");
+    assert.equal("text-field" in layers[id].layout, false);
+  }
   assert.deepEqual(layers["roads-glow"].filter[2][1], ["motorway", "trunk", "primary"]);
   assert.ok(layers["roads-glow"].paint["line-opacity"] <= 0.4);
   assert.equal(layers["place-labels"].paint["text-halo-color"], "#03040b");

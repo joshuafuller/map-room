@@ -198,6 +198,7 @@ test("compiles the complete authored Cyberpunk theme without unsupported express
     sourceStyle: completeStyle
   });
   const ids = new Set(style.layers.map(({ id }) => id));
+  assert.equal([...ids].some((id) => id.endsWith("-hud")), false);
 
   for (const required of [
     "roads-motorway", "roads-primary", "roads-secondary", "roads-tertiary", "roads-minor", "roads-path",

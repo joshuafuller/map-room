@@ -44,7 +44,7 @@ test("generates a schema-compatible Cyberpunk style with restrained neon glow", 
     "interpolate", ["linear"], ["coalesce", ["get", "render_height"], 3],
     0, "#211d3e", 30, "#2d3469", 100, "#6438a5", 220, "#ff2aa3"
   ]);
-  assert.equal(buildings3d.paint["fill-extrusion-opacity"], 1);
+  assert.equal(buildings3d.paint["fill-extrusion-opacity"], 0.82);
   assert.ok(layerIds.indexOf("roads") < layerIds.indexOf("buildings-3d"));
   assert.ok(layerIds.indexOf("rail") < layerIds.indexOf("buildings-3d"));
   assert.ok(layerIds.indexOf("road-labels") < layerIds.indexOf("buildings-3d"));
@@ -54,8 +54,16 @@ test("generates a schema-compatible Cyberpunk style with restrained neon glow", 
   assert.ok(layerIds.indexOf("poi-explore") < layerIds.indexOf("buildings-3d"));
   assert.ok(layerIds.indexOf("poi-airports") < layerIds.indexOf("buildings-3d"));
   assert.ok(layerIds.indexOf("water-labels") < layerIds.indexOf("buildings-3d"));
-  assert.ok(layerIds.indexOf("place-labels") < layerIds.indexOf("buildings-3d"));
-  assert.equal(layerIds.indexOf("buildings-3d"), layerIds.length - 1);
+  assert.ok(layerIds.indexOf("buildings-3d") < layerIds.indexOf("place-labels"));
+  assert.deepEqual(layerIds.slice(layerIds.indexOf("buildings-3d") + 1), [
+    "place-labels", "poi-essential-hud", "poi-explore-hud", "poi-airports-hud"
+  ]);
+  for (const id of ["poi-essential-hud", "poi-explore-hud", "poi-airports-hud"]) {
+    const hud = style.layers.find((layer) => layer.id === id);
+    assert.equal(hud.type, "symbol");
+    assert.equal(hud.layout.visibility, "none");
+    assert.equal("text-field" in hud.layout, false);
+  }
   assert.deepEqual(style.light, {
     anchor: "viewport", color: "#d8ccff", intensity: 0.72, position: [1.15, 210, 35]
   });
