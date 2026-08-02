@@ -1004,58 +1004,6 @@
       }
     },
     {
-      "id": "buildings-3d",
-      "type": "fill-extrusion",
-      "source": "osm",
-      "source-layer": "building",
-      "minzoom": 13,
-      "layout": {
-        "visibility": "none"
-      },
-      "paint": {
-        "fill-extrusion-color": [
-          "interpolate",
-          [
-            "linear"
-          ],
-          [
-            "coalesce",
-            [
-              "get",
-              "render_height"
-            ],
-            3
-          ],
-          0,
-          "#211d3e",
-          30,
-          "#2d3469",
-          100,
-          "#6438a5",
-          220,
-          "#ff2aa3"
-        ],
-        "fill-extrusion-height": [
-          "coalesce",
-          [
-            "get",
-            "render_height"
-          ],
-          3
-        ],
-        "fill-extrusion-base": [
-          "coalesce",
-          [
-            "get",
-            "render_min_height"
-          ],
-          0
-        ],
-        "fill-extrusion-opacity": 0.94,
-        "fill-extrusion-vertical-gradient": true
-      }
-    },
-    {
       "id": "poi-essential",
       "type": "symbol",
       "source": "osm",
@@ -1338,6 +1286,58 @@
         "text-color": "#f4f7ff",
         "text-halo-color": "#080912",
         "text-halo-width": 1.8
+      }
+    },
+    {
+      "id": "buildings-3d",
+      "type": "fill-extrusion",
+      "source": "osm",
+      "source-layer": "building",
+      "minzoom": 13,
+      "layout": {
+        "visibility": "none"
+      },
+      "paint": {
+        "fill-extrusion-color": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "coalesce",
+            [
+              "get",
+              "render_height"
+            ],
+            3
+          ],
+          0,
+          "#211d3e",
+          30,
+          "#2d3469",
+          100,
+          "#6438a5",
+          220,
+          "#ff2aa3"
+        ],
+        "fill-extrusion-height": [
+          "coalesce",
+          [
+            "get",
+            "render_height"
+          ],
+          3
+        ],
+        "fill-extrusion-base": [
+          "coalesce",
+          [
+            "get",
+            "render_min_height"
+          ],
+          0
+        ],
+        "fill-extrusion-opacity": 1,
+        "fill-extrusion-vertical-gradient": true
       }
     }
   ]

@@ -406,17 +406,6 @@ function makeStyle(id, theme) {
         layout: { "text-field": ["get", "housenumber"], "text-font": ["Open Sans Regular"], "text-size": 9 },
         paint: { "text-color": theme.text, "text-halo-color": theme.textHalo, "text-halo-width": 1 }
       },
-      ...(theme.glow ? [{
-        id: "buildings-3d", type: "fill-extrusion", source: "osm", "source-layer": "building", minzoom: 13,
-        layout: { visibility: "none" },
-        paint: {
-          "fill-extrusion-color": extrusionColor(theme),
-          "fill-extrusion-height": ["coalesce", ["get", "render_height"], 3],
-          "fill-extrusion-base": ["coalesce", ["get", "render_min_height"], 0],
-          "fill-extrusion-opacity": 0.94,
-          "fill-extrusion-vertical-gradient": true
-        }
-      }] : []),
       ...featureLayers.grid,
       ...featureLayers.symbols.filter(({ id: layerId }) => layerId !== "road-shields"),
       {
@@ -428,7 +417,18 @@ function makeStyle(id, theme) {
         id: "place-labels", type: "symbol", source: "osm", "source-layer": "place",
         layout: { ...labelLayout, "text-font": ["Open Sans Semibold"], "text-size": ["interpolate", ["linear"], ["zoom"], 4, 11, 12, 17] },
         paint: { "text-color": theme.text, "text-halo-color": theme.textHalo, "text-halo-width": 1.8 }
-      }
+      },
+      ...(theme.glow ? [{
+        id: "buildings-3d", type: "fill-extrusion", source: "osm", "source-layer": "building", minzoom: 13,
+        layout: { visibility: "none" },
+        paint: {
+          "fill-extrusion-color": extrusionColor(theme),
+          "fill-extrusion-height": ["coalesce", ["get", "render_height"], 3],
+          "fill-extrusion-base": ["coalesce", ["get", "render_min_height"], 0],
+          "fill-extrusion-opacity": 1,
+          "fill-extrusion-vertical-gradient": true
+        }
+      }] : [])
     ]
   };
 }
