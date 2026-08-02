@@ -113,8 +113,8 @@ const tacticalRasterResponse = page.waitForResponse((response) => response.url()
 await page.locator('[data-mode="raster"]').click();
 await page.locator('[data-mode="raster"][aria-checked="true"]').waitFor();
 await tacticalRasterResponse;
-const tacticalHighZoomResponse = page.waitForResponse((response) => /\/styles\/cyberpunk-tactical\/(?:1[5-8])\//.test(response.url()) && response.url().endsWith("@2x.png"));
-await page.evaluate(() => { window.location.hash = "#17/25.775/-80.19"; });
+const tacticalHighZoomResponse = page.waitForResponse((response) => /\/styles\/cyberpunk-tactical\/(?:19|20)\//.test(response.url()) && response.url().endsWith("@2x.png"));
+await page.evaluate(() => { window.location.hash = "#20/37.7749/-122.4194"; });
 await tacticalHighZoomResponse;
 await page.waitForTimeout(500);
 const tacticalRasterMiamiPath = new URL("cyberpunk-tactical-miami-raster.png", outputDir);

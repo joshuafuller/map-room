@@ -3,6 +3,14 @@ set -eu
 
 base_url=${BASE_URL:-http://localhost:8088}
 tile=$(python3 -c "import json; print(json.load(open('data/manifest.json'))['testTile'])")
+tile_zoom=${tile%%/*}
+tile_remainder=${tile#*/}
+tile_x=${tile_remainder%%/*}
+tile_y=${tile_remainder#*/}
+high_zoom=20
+high_scale=$((1 << (high_zoom - tile_zoom)))
+high_x=$((tile_x * high_scale + high_scale / 2))
+high_y=$((tile_y * high_scale + high_scale / 2))
 tmp_dir=$(mktemp -d)
 trap 'rm -rf "$tmp_dir"' EXIT
 
@@ -48,6 +56,8 @@ check_status "/styles/cyberpunk-tactical/$tile.png" image/png
 for theme in daylight midnight cyberpunk cyberpunk-tactical; do
   check_status "/styles/$theme/$tile@2x.png" image/png
   check_png_dimensions "/styles/$theme/$tile@2x.png" 512x512
+  check_status "/styles/$theme/$high_zoom/$high_x/$high_y@2x.png" image/png
+  check_png_dimensions "/styles/$theme/$high_zoom/$high_x/$high_y@2x.png" 512x512
 done
 
 daylight_sha=$(curl -fsS "$base_url/styles/daylight/$tile.png" | sha256sum | cut -d' ' -f1)
