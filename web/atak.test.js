@@ -7,7 +7,7 @@ test("generates Cyberpunk ATAK XML for the exact PNG XYZ preview route", () => {
 
   assert.match(xml, /<name>Map Room - Cyberpunk<\/name>/);
   assert.match(xml, /<tileType>png<\/tileType>/);
-  assert.match(xml, /https:\/\/maps\.example\.test\/styles\/cyberpunk\/\{\$z\}\/\{\$x\}\/\{\$y\}\.png/);
+  assert.match(xml, /https:\/\/maps\.example\.test\/styles\/cyberpunk\/512\/\{\$z\}\/\{\$x\}\/\{\$y\}\.png/);
   assert.match(xml, /<backgroundColor>#060711<\/backgroundColor>/);
 });
 
@@ -15,7 +15,7 @@ test("generates Cyberpunk Tactical ATAK XML as a separate map source", () => {
   const xml = buildAtakXml("cyberpunk-tactical", "https://maps.example.test/");
 
   assert.match(xml, /<name>Map Room - Cyberpunk Tactical<\/name>/);
-  assert.match(xml, /https:\/\/maps\.example\.test\/styles\/cyberpunk-tactical\/\{\$z\}\/\{\$x\}\/\{\$y\}\.png/);
+  assert.match(xml, /https:\/\/maps\.example\.test\/styles\/cyberpunk-tactical\/512\/\{\$z\}\/\{\$x\}\/\{\$y\}\.png/);
   assert.match(xml, /<backgroundColor>#03040b<\/backgroundColor>/);
   assert.match(xml, /<maxZoom>18<\/maxZoom>/);
 });

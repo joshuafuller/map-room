@@ -30,12 +30,12 @@ await page.waitForTimeout(1000);
 const daylightPath = new URL("daylight.png", outputDir);
 await page.screenshot({ path: daylightPath.pathname });
 
-const rasterResponse = page.waitForResponse((response) => response.url().includes("/styles/daylight/") && response.url().endsWith(".png"));
+const rasterResponse = page.waitForResponse((response) => response.url().includes("/styles/daylight/512/") && response.url().endsWith(".png"));
 await page.locator('[data-mode="raster"]').click();
 await page.locator('[data-mode="raster"][aria-checked="true"]').waitFor();
 await rasterResponse;
 await page.waitForTimeout(500);
-if (!requestedUrls.some((url) => url.includes("/styles/daylight/") && url.endsWith(".png"))) {
+if (!requestedUrls.some((url) => url.includes("/styles/daylight/512/") && url.endsWith(".png"))) {
   failures.push("ATAK raster mode did not request rendered PNG tiles");
 }
 
@@ -84,11 +84,11 @@ if (await page.locator("#grid-toggle").getAttribute("aria-pressed") !== "true") 
 }
 await page.locator("#grid-toggle").click();
 
-const tacticalRasterResponse = page.waitForResponse((response) => response.url().includes("/styles/cyberpunk-tactical/") && response.url().endsWith(".png"));
+const tacticalRasterResponse = page.waitForResponse((response) => response.url().includes("/styles/cyberpunk-tactical/512/") && response.url().endsWith(".png"));
 await page.locator('[data-mode="raster"]').click();
 await page.locator('[data-mode="raster"][aria-checked="true"]').waitFor();
 await tacticalRasterResponse;
-const tacticalHighZoomResponse = page.waitForResponse((response) => /\/styles\/cyberpunk-tactical\/(?:1[5-8])\//.test(response.url()) && response.url().endsWith(".png"));
+const tacticalHighZoomResponse = page.waitForResponse((response) => /\/styles\/cyberpunk-tactical\/512\/(?:1[5-8])\//.test(response.url()) && response.url().endsWith(".png"));
 await page.evaluate(() => { window.location.hash = "#17/25.775/-80.19"; });
 await tacticalHighZoomResponse;
 await page.waitForTimeout(500);
