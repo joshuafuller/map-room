@@ -98,6 +98,22 @@ await page.screenshot({ path: cyberpunkPath.pathname });
 await page.locator('[data-theme="cyberpunk-tactical"]').click();
 await page.locator('[data-theme="cyberpunk-tactical"][aria-checked="true"]').waitFor();
 await page.waitForTimeout(1200);
+if (await page.locator("#atak-vector-map").getAttribute("href") !== "/atak/vector/florida.mbtiles") {
+  failures.push("ATAK vector test did not link to the known-good Florida archive");
+}
+const vectorStyleDownload = page.waitForEvent("download");
+await page.locator("#atak-vector-style").click();
+const downloadedVectorStyle = await vectorStyleDownload;
+const downloadedVectorStylePath = await downloadedVectorStyle.path();
+const vectorStyle = JSON.parse(await readFile(downloadedVectorStylePath, "utf8"));
+if (downloadedVectorStyle.suggestedFilename() !== "map-room-cyberpunk-tactical-atak-vector.json" ||
+    vectorStyle.name !== "Map Room - Cyberpunk Tactical - ATAK Vector" ||
+    Object.keys(vectorStyle.sources).length !== 1 ||
+    vectorStyle.sprite !== `${baseUrl}/styles/cyberpunk-tactical/sprite` ||
+    vectorStyle.glyphs !== `${baseUrl}/fonts/{fontstack}/{range}.pbf` ||
+    vectorStyle.layers.some((layer) => layer.source && layer.source !== "osm")) {
+  failures.push("ATAK vector style download did not preserve the one-source custom-style contract");
+}
 const atakDownload = page.waitForEvent("download");
 await page.locator("#atak-download").click();
 const downloadedSource = await atakDownload;

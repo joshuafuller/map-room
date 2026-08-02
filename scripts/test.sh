@@ -43,6 +43,16 @@ check_status /styles/midnight/style.json application/json
 check_status /styles/cyberpunk/style.json application/json
 check_status /styles/cyberpunk-tactical/style.json application/json
 
+atak_vector_headers="$tmp_dir/atak-vector-headers"
+atak_vector_byte="$tmp_dir/atak-vector-byte"
+atak_vector_status=$(curl -sS -r 0-0 -D "$atak_vector_headers" -o "$atak_vector_byte" -w '%{http_code}' "$base_url/atak/vector/florida.mbtiles")
+test "$atak_vector_status" = "206"
+test "$(wc -c < "$atak_vector_byte")" = "1"
+tr -d '\r' < "$atak_vector_headers" | grep -qi '^content-type: application/vnd.mapbox-vector-tile'
+tr -d '\r' < "$atak_vector_headers" | grep -qi '^content-disposition: attachment; filename="map-room-florida-vector.mbtiles"'
+tr -d '\r' < "$atak_vector_headers" | grep -qi '^accept-ranges: bytes'
+printf 'PASS ATAK vector archive supports a resumable download\n'
+
 mobile_host=mobile.example.test:8088
 mobile_style="$tmp_dir/mobile-style.json"
 curl -fsS -H "Host: $mobile_host" "$base_url/styles/all-daylight/style.json" > "$mobile_style"
