@@ -42,6 +42,13 @@ test("generates Cyberpunk Tactical without changing the Classic core treatment",
   assert.equal(layers["buildings-3d"].layout.visibility, "none");
   assert.deepEqual(layers["buildings-3d"].paint["fill-extrusion-height"], ["coalesce", ["get", "render_height"], 3]);
   assert.deepEqual(layers["buildings-3d"].paint["fill-extrusion-base"], ["coalesce", ["get", "render_min_height"], 0]);
+  assert.deepEqual(layers["buildings-3d"].paint["fill-extrusion-color"], [
+    "interpolate", ["linear"], ["coalesce", ["get", "render_height"], 3],
+    0, "#151a35", 30, "#193454", 100, "#176278", 220, "#00dff7"
+  ]);
+  assert.deepEqual(tactical.light, {
+    anchor: "viewport", color: "#8feeff", intensity: 0.72, position: [1.15, 210, 35]
+  });
   assert.deepEqual(layers["roads-glow"].filter[2][1], ["motorway", "trunk", "primary"]);
   assert.ok(layers["roads-glow"].paint["line-opacity"] <= 0.4);
   assert.equal(layers["place-labels"].paint["text-halo-color"], "#03040b");

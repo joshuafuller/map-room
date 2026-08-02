@@ -205,7 +205,7 @@ await page.screenshot({ path: tacticalRasterMiamiPath.pathname });
 await page.locator('[data-mode="vector"]').click();
 await page.locator('[data-mode="vector"][aria-checked="true"]').waitFor();
 await page.waitForTimeout(700);
-await page.evaluate(() => { window.location.hash = "#13.2/25.775/-80.19"; });
+await page.evaluate(() => { window.location.hash = "#12/25.775/-80.19"; });
 await page.waitForTimeout(1600);
 if (await page.locator("#buildings-toggle").getAttribute("hidden") !== null) {
   failures.push("Cyberpunk Tactical did not expose the 3D building control");
@@ -214,7 +214,11 @@ await page.locator("#buildings-toggle").click();
 if (await page.locator("#buildings-toggle").getAttribute("aria-pressed") !== "true") {
   failures.push("Cyberpunk 3D buildings could not be enabled");
 }
-await page.waitForTimeout(900);
+await page.waitForTimeout(1100);
+const buildingZoom = Number((await page.evaluate(() => window.location.hash)).slice(1).split("/")[0]);
+if (buildingZoom < 15) {
+  failures.push(`Cyberpunk 3D buildings remained below a legible zoom (${buildingZoom})`);
+}
 const tacticalMiamiPath = new URL("cyberpunk-tactical-miami.png", outputDir);
 await page.screenshot({ path: tacticalMiamiPath.pathname });
 

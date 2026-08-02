@@ -40,8 +40,14 @@ test("generates a schema-compatible Cyberpunk style with restrained neon glow", 
   assert.equal(buildings3d.layout.visibility, "none");
   assert.deepEqual(buildings3d.paint["fill-extrusion-height"], ["coalesce", ["get", "render_height"], 3]);
   assert.deepEqual(buildings3d.paint["fill-extrusion-base"], ["coalesce", ["get", "render_min_height"], 0]);
-  assert.equal(buildings3d.paint["fill-extrusion-color"], "#17152d");
+  assert.deepEqual(buildings3d.paint["fill-extrusion-color"], [
+    "interpolate", ["linear"], ["coalesce", ["get", "render_height"], 3],
+    0, "#211d3e", 30, "#2d3469", 100, "#6438a5", 220, "#ff2aa3"
+  ]);
   assert.equal(buildings3d.paint["fill-extrusion-opacity"], 0.94);
+  assert.deepEqual(style.light, {
+    anchor: "viewport", color: "#d8ccff", intensity: 0.72, position: [1.15, 210, 35]
+  });
   assert.equal(labels.paint["text-color"], "#f4f7ff");
   assert.doesNotMatch(JSON.stringify(style), /https?:\/\//);
 });
