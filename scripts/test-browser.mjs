@@ -98,6 +98,8 @@ await page.screenshot({ path: cyberpunkPath.pathname });
 await page.locator('[data-theme="cyberpunk-tactical"]').click();
 await page.locator('[data-theme="cyberpunk-tactical"][aria-checked="true"]').waitFor();
 await page.waitForTimeout(1200);
+await page.locator("#region-select").selectOption("florida");
+await page.waitForFunction(() => document.querySelector("#region")?.textContent === "Florida");
 if (await page.locator("#atak-vector-map").getAttribute("href") !== "/atak/vector/florida.mbtiles") {
   failures.push("ATAK vector test did not link to the known-good Florida archive");
 }
@@ -106,6 +108,26 @@ if (!vectorInstructions.includes("Set Layer Style") ||
     !vectorInstructions.includes("Import File") ||
     !vectorInstructions.includes("not localhost")) {
   failures.push("ATAK vector workflow did not use the verified ATAK 5.8 menu labels");
+}
+const vectorSourceDownload = page.waitForEvent("download");
+await page.locator("#atak-vector-source").click();
+const downloadedVectorSource = await vectorSourceDownload;
+const downloadedVectorSourcePath = await downloadedVectorSource.path();
+const vectorSource = JSON.parse(await readFile(downloadedVectorSourcePath, "utf8"));
+const advertisedSchema = JSON.parse(vectorSource.metadata.json);
+if (downloadedVectorSource.suggestedFilename() !== "map-room-florida-atak-vector.json" ||
+    vectorSource.schema !== "4.0.0" ||
+    vectorSource.title !== "Map Room - Florida" ||
+    vectorSource.url !== `${baseUrl}/data/florida/{$z}/{$x}/{$y}.pbf` ||
+    vectorSource.content !== "vector" ||
+    vectorSource.mimeType !== "application/vnd.mapbox-vector-tile" ||
+    vectorSource.srs !== "EPSG:3857" ||
+    vectorSource.numLevels !== 15 ||
+    vectorSource.downloadable !== true ||
+    vectorSource.metadata.styleSchema !== "omt" ||
+    !advertisedSchema.vector_layers.some((layer) => layer.id === "building" &&
+      layer.fields.render_height === "Number" && layer.fields.render_min_height === "Number")) {
+  failures.push("ATAK vector source download did not preserve the remote PBF and 3D-building contract");
 }
 const vectorStyleDownload = page.waitForEvent("download");
 await page.locator("#atak-vector-style").click();
