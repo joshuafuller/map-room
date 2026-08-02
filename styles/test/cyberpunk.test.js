@@ -60,9 +60,11 @@ test("generates a schema-compatible Cyberpunk style with restrained neon glow", 
   ]);
   for (const id of ["poi-essential-hud", "poi-explore-hud", "poi-airports-hud"]) {
     const hud = style.layers.find((layer) => layer.id === id);
+    const base = style.layers.find((layer) => layer.id === id.replace("-hud", ""));
     assert.equal(hud.type, "symbol");
     assert.equal(hud.layout.visibility, "none");
-    assert.equal("text-field" in hud.layout, false);
+    assert.deepEqual(hud.layout["text-field"], base.layout["text-field"]);
+    assert.deepEqual(hud.paint, base.paint);
   }
   assert.deepEqual(style.light, {
     anchor: "viewport", color: "#d8ccff", intensity: 0.72, position: [1.15, 210, 35]

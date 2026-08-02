@@ -65,9 +65,11 @@ test("generates Cyberpunk Tactical without changing the Classic core treatment",
     "place-labels", "poi-essential-hud", "poi-explore-hud", "poi-airports-hud"
   ]);
   for (const id of ["poi-essential-hud", "poi-explore-hud", "poi-airports-hud"]) {
+    const base = layers[id.replace("-hud", "")];
     assert.equal(layers[id].type, "symbol");
     assert.equal(layers[id].layout.visibility, "none");
-    assert.equal("text-field" in layers[id].layout, false);
+    assert.deepEqual(layers[id].layout["text-field"], base.layout["text-field"]);
+    assert.deepEqual(layers[id].paint, base.paint);
   }
   assert.deepEqual(layers["roads-glow"].filter[2][1], ["motorway", "trunk", "primary"]);
   assert.ok(layers["roads-glow"].paint["line-opacity"] <= 0.4);
