@@ -208,5 +208,13 @@ test("compiles the complete authored Cyberpunk theme without unsupported express
   ]) assert.equal(ids.has(required), true, `missing ${required}`);
 
   assert.equal(style.layers.find(({ id }) => id === "poi-airports")["source-layer"], "aerodrome_label");
+  const buildings3d = style.layers.find(({ id }) => id === "buildings-3d");
+  assert.equal(buildings3d.layout.visibility, "visible");
+  assert.deepEqual(buildings3d.paint["fill-extrusion-height"], {
+    property: "render_height", type: "identity", default: 3
+  });
+  assert.deepEqual(buildings3d.paint["fill-extrusion-base"], {
+    property: "render_min_height", type: "identity", default: 0
+  });
   assert.doesNotMatch(JSON.stringify(style.layers), /\["(?:get|literal|match|coalesce|interpolate|case|step)"/);
 });
