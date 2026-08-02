@@ -155,6 +155,11 @@ function atakLayers(layers) {
       delete layer.filter;
       layer.layout["text-field"] = "{name}";
     }
+    if (layer.id === "buildings-3d") {
+      layer.layout.visibility = "visible";
+      layer.paint["fill-extrusion-height"] = { property: "render_height", type: "identity", default: 3 };
+      layer.paint["fill-extrusion-base"] = { property: "render_min_height", type: "identity", default: 0 };
+    }
     return legacyLayer(layer);
   });
 }
