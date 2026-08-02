@@ -24,7 +24,13 @@ test("builds local game-inspired shields and truthful POI categories", async () 
   const layers = Object.fromEntries(style.layers.map((layer) => [layer.id, layer]));
   assert.equal(layers["road-shields"].type, "symbol");
   assert.ok(layers["road-shields"].layout["icon-size"] >= 0.8);
-  assert.ok(layers["road-shields"].layout["text-size"] >= 11);
+  assert.deepEqual(layers["road-shields"].layout["text-size"], [
+    "step",
+    ["length", ["to-string", ["coalesce", ["get", "route_1_ref"], ["get", "ref"], ""]]],
+    16,
+    3, 13.5,
+    5, 11.5
+  ]);
   assert.ok(Array.isArray(layers["road-shields"].paint["text-halo-color"]));
   assert.match(JSON.stringify(layers["road-shields"].paint["text-halo-color"]), /#f6f8ff/);
   assert.match(JSON.stringify(layers["road-shields"].paint["text-halo-color"]), /#03040b/);
