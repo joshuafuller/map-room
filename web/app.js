@@ -14,6 +14,7 @@ let activeTheme = "daylight";
 let activeMode = "vector";
 let activeView = "all";
 let gridEnabled = false;
+let buildings3dEnabled = false;
 const poiPresets = { essential: true, explore: false };
 const regionCatalog = new Map();
 let manifest = null;
@@ -159,6 +160,18 @@ function updateGridControl() {
   button.setAttribute("aria-pressed", String(gridEnabled));
 }
 
+function updateBuildingControl() {
+  const button = document.querySelector("#buildings-toggle");
+  button.hidden = activeMode !== "vector" || !["cyberpunk", "cyberpunk-tactical"].includes(activeTheme);
+  button.setAttribute("aria-pressed", String(buildings3dEnabled));
+}
+
+function updateBuildingLayers() {
+  if (map.getLayer("buildings-3d")) {
+    map.setLayoutProperty("buildings-3d", "visibility", buildings3dEnabled ? "visible" : "none");
+  }
+}
+
 function updatePoiControls() {
   document.querySelector("#poi-controls").hidden = activeMode !== "vector";
   document.querySelectorAll("[data-poi-preset]").forEach((button) => {
@@ -195,12 +208,14 @@ function applyMapStyle() {
   map.setStyle(style);
   map.once("style.load", () => {
     updateCoordinateGrid();
+    updateBuildingLayers();
     updatePoiLayers();
   });
   document.documentElement.style.colorScheme = activeTheme === "daylight" ? "light" : "dark";
   document.querySelector('meta[name="theme-color"]').content = themes[activeTheme].color;
   document.documentElement.dataset.mapTheme = activeTheme;
   updateGridControl();
+  updateBuildingControl();
   updatePoiControls();
 }
 
@@ -325,6 +340,19 @@ document.querySelector("#grid-toggle").addEventListener("click", () => {
   toast(gridEnabled ? "Coordinate grid enabled" : "Coordinate grid disabled");
 });
 
+document.querySelector("#buildings-toggle").addEventListener("click", () => {
+  buildings3dEnabled = !buildings3dEnabled;
+  updateBuildingControl();
+  updateBuildingLayers();
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  map.easeTo({
+    pitch: buildings3dEnabled ? 48 : 0,
+    bearing: buildings3dEnabled ? -12 : 0,
+    duration: reduceMotion ? 0 : 650
+  });
+  toast(`3D buildings ${buildings3dEnabled ? "enabled" : "disabled"}`);
+});
+
 document.querySelectorAll("[data-poi-preset]").forEach((button) => {
   button.addEventListener("click", () => {
     const preset = button.dataset.poiPreset;
@@ -337,3 +365,4 @@ document.querySelectorAll("[data-poi-preset]").forEach((button) => {
 
 map.on("moveend", updateCoordinateGrid);
 updatePoiControls();
+updateBuildingControl();

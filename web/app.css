@@ -115,6 +115,7 @@ button { font: inherit; }
 .grid-toggle[hidden] { display: none; }
 .grid-toggle[aria-pressed="true"] { color: #00a5b8; border-color: rgba(0,234,255,.5); background: rgba(0,234,255,.1); box-shadow: 0 0 14px rgba(0,234,255,.12); }
 .grid-icon { width: 13px; height: 13px; border: 1px solid currentColor; background: linear-gradient(90deg, transparent 45%, currentColor 46% 54%, transparent 55%), linear-gradient(transparent 45%, currentColor 46% 54%, transparent 55%); opacity: .8; }
+.building-icon { width: 13px; height: 13px; border: 1px solid currentColor; border-top-width: 4px; box-shadow: inset 4px 0 0 transparent, inset 5px 0 0 currentColor, inset 9px 0 0 transparent; opacity: .8; transform: skewY(-8deg); }
 .poi-controls { margin-top: 13px; padding-top: 12px; border-top: 1px solid var(--line); }
 .poi-controls[hidden] { display: none; }
 .intel-switch { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
