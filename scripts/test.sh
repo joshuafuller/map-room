@@ -50,7 +50,7 @@ test "$atak_vector_status" = "206"
 test "$(wc -c < "$atak_vector_byte")" = "1"
 tr -d '\r' < "$atak_vector_headers" | grep -qi '^content-type: application/vnd.mapbox-vector-tile'
 tr -d '\r' < "$atak_vector_headers" | grep -qi '^content-disposition: attachment; filename="map-room-florida-vector.mbtiles"'
-tr -d '\r' < "$atak_vector_headers" | grep -qi '^accept-ranges: bytes'
+tr -d '\r' < "$atak_vector_headers" | grep -qi '^content-range: bytes 0-0/'
 printf 'PASS ATAK vector archive supports a resumable download\n'
 
 mobile_host=mobile.example.test:8088

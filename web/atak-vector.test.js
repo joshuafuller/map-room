@@ -83,6 +83,15 @@ test("rejects untrusted origins, unknown themes, and malformed source styles", (
     () => buildAtakVectorStyle({ theme: "cyberpunk", baseUrl: "https://maps.example.test", sourceStyle: null }),
     /Mapbox Style Specification v8/
   );
+  assert.throws(
+    () => buildAtakVectorStyle({
+      theme: "cyberpunk",
+      baseUrl: "https://maps.example.test",
+      sourceId: "florida",
+      sourceStyle: { ...sourceStyle, sources: { california: { type: "vector" } } }
+    }),
+    /ATAK vector source is unavailable: florida/
+  );
 });
 
 test("does not mutate the browser style while producing the ATAK document", () => {

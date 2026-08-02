@@ -1,5 +1,6 @@
 import * as maplibregl from "/vendor/maplibre-gl.mjs";
 import { buildAtakXml, RASTER_MAX_ZOOM, RASTER_PIXEL_RATIO } from "/atak.js";
+import { buildAtakVectorStyle } from "/atak-vector.js";
 import { buildCoordinateGrid } from "/grid.js";
 
 const themes = {
@@ -241,6 +242,26 @@ document.querySelector("#atak-download").addEventListener("click", () => {
   link.click();
   URL.revokeObjectURL(link.href);
   toast("ATAK map source downloaded");
+});
+
+document.querySelector("#atak-vector-style").addEventListener("click", async () => {
+  const theme = "cyberpunk";
+  const response = await fetch(`/styles/${theme}/style.json`);
+  if (!response.ok) throw new Error(`Could not load ${theme} style`);
+  const sourceStyle = await response.json();
+  const style = buildAtakVectorStyle({
+    theme,
+    baseUrl: window.location.origin,
+    sourceId: "florida",
+    sourceStyle
+  });
+  const blob = new Blob([`${JSON.stringify(style, null, 2)}\n`], { type: "application/json" });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = `map-room-${theme}-atak-vector.json`;
+  link.click();
+  URL.revokeObjectURL(link.href);
+  toast("Cyberpunk ATAK vector style downloaded");
 });
 
 document.querySelector("#copy-raster").addEventListener("click", async () => {

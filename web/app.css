@@ -73,7 +73,9 @@ button { font: inherit; }
   right: 22px;
   top: 86px;
   width: 270px;
+  max-height: calc(100dvh - 108px);
   padding: 18px;
+  overflow: hidden;
   border-radius: 20px;
 }
 .panel.collapsed { width: 54px; height: 54px; padding: 0; border-color: transparent; border-radius: 50%; background: transparent; box-shadow: none; backdrop-filter: none; }
@@ -85,6 +87,7 @@ button { font: inherit; }
 .panel.collapsed .panel-toggle { width: 54px; min-height: 54px; padding: 0; border: 1px solid rgba(255,255,255,.72); border-radius: 50%; background: var(--paper); box-shadow: var(--shadow); }
 .panel.collapsed .panel-toggle > span { display: none; }
 .panel.collapsed .panel-toggle::before { content: ""; width: 20px; height: 16px; background: linear-gradient(currentColor,currentColor) 0 1px/20px 2px no-repeat, linear-gradient(currentColor,currentColor) 0 7px/20px 2px no-repeat, linear-gradient(currentColor,currentColor) 0 13px/20px 2px no-repeat; opacity: .72; }
+.panel-content { max-height: calc(100dvh - 188px); overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; }
 
 .eyebrow { margin: 0 0 10px; color: var(--muted); font-size: 10px; font-weight: 750; letter-spacing: .13em; text-transform: uppercase; }
 .region-picker { position: relative; display: block; }
@@ -123,7 +126,7 @@ button { font: inherit; }
 .theme[data-theme="cyberpunk-tactical"].selected { animation: tactical-pulse 2.8s ease-in-out infinite; }
 @keyframes tactical-pulse { 0%, 100% { box-shadow: 0 0 0 rgba(0,234,255,0); } 50% { box-shadow: 0 0 18px rgba(0,234,255,.13); } }
 .rule { height: 1px; background: var(--line); margin: 16px 0; }
-.action { width: 100%; margin-top: 7px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 11px; color: var(--ink); background: rgba(255,255,255,.54); cursor: pointer; font-size: 12px; font-weight: 650; }
+.action { display: inline-block; width: 100%; margin-top: 7px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 11px; color: var(--ink); background: rgba(255,255,255,.54); cursor: pointer; font-size: 12px; font-weight: 650; text-align: center; text-decoration: none; }
 .action:hover { transform: translateY(-1px); }
 .action.primary { border-color: #1f313b; color: #fff; background: #1f313b; }
 .hint { margin: 10px 2px 0; color: var(--muted); font-size: 10px; line-height: 1.45; }

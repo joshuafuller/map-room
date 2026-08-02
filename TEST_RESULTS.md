@@ -32,6 +32,11 @@ MapLibre GL JS: 6.1.0
 - Chromium rendered the MapLibre canvas, local region catalog, map controls,
   and all themes without page or request failures. Choosing Florida or
   California moved the camera while retaining the composed style.
+- The ATAK vector device-test route serves the 655 MB Florida MBTiles archive
+  with resumable byte ranges. The browser generates a Cyberpunk Mapbox v8 style
+  containing 27 layers, one Florida vector source, and absolute data, sprite,
+  and glyph URLs.
+- The ATAK-targeted style compiler has 100% line, branch, and function coverage.
 
 Run the repeatable checks with:
 
@@ -44,6 +49,9 @@ npm run test:browser
 ## Not yet validated
 
 - Importing the generated XML into an actual supported ATAK release
+- Applying the corrected 27-layer Cyberpunk style in ATAK 5.8. The first
+  device artifact was rejected because an implementation defect reduced it to
+  one background layer and zero layers accepted by ATAK's style validator.
 - ATAK area download followed by device airplane-mode use
 - PWA installation and browser-held offline map packages
 - Visual regression coverage beyond the inspected California and Florida views
