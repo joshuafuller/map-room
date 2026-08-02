@@ -54,7 +54,7 @@ test("generates Cyberpunk Tactical without changing the Classic core treatment",
   assert.ok(layerIds.indexOf("roads") < layerIds.indexOf("buildings-3d"));
   assert.ok(layerIds.indexOf("road-labels") < layerIds.indexOf("buildings-3d"));
   assert.ok(layerIds.indexOf("road-shields") < layerIds.indexOf("buildings-3d"));
-  assert.ok(layerIds.indexOf("house-numbers") < layerIds.indexOf("buildings-3d"));
+  assert.ok(layerIds.indexOf("buildings-3d") < layerIds.indexOf("house-numbers"));
   assert.ok(layerIds.indexOf("coordinate-grid") < layerIds.indexOf("buildings-3d"));
   assert.ok(layerIds.indexOf("poi-essential") < layerIds.indexOf("buildings-3d"));
   assert.ok(layerIds.indexOf("poi-explore") < layerIds.indexOf("buildings-3d"));
@@ -62,7 +62,7 @@ test("generates Cyberpunk Tactical without changing the Classic core treatment",
   assert.ok(layerIds.indexOf("water-labels") < layerIds.indexOf("buildings-3d"));
   assert.ok(layerIds.indexOf("buildings-3d") < layerIds.indexOf("place-labels"));
   assert.deepEqual(layerIds.slice(layerIds.indexOf("buildings-3d") + 1), [
-    "place-labels", "poi-essential-hud", "poi-explore-hud", "poi-airports-hud"
+    "house-numbers", "place-labels", "poi-essential-hud", "poi-explore-hud", "poi-airports-hud"
   ]);
   for (const id of ["poi-essential-hud", "poi-explore-hud", "poi-airports-hud"]) {
     const base = layers[id.replace("-hud", "")];

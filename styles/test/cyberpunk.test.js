@@ -49,14 +49,14 @@ test("generates a schema-compatible Cyberpunk style with restrained neon glow", 
   assert.ok(layerIds.indexOf("rail") < layerIds.indexOf("buildings-3d"));
   assert.ok(layerIds.indexOf("road-labels") < layerIds.indexOf("buildings-3d"));
   assert.ok(layerIds.indexOf("road-shields") < layerIds.indexOf("buildings-3d"));
-  assert.ok(layerIds.indexOf("house-numbers") < layerIds.indexOf("buildings-3d"));
+  assert.ok(layerIds.indexOf("buildings-3d") < layerIds.indexOf("house-numbers"));
   assert.ok(layerIds.indexOf("poi-essential") < layerIds.indexOf("buildings-3d"));
   assert.ok(layerIds.indexOf("poi-explore") < layerIds.indexOf("buildings-3d"));
   assert.ok(layerIds.indexOf("poi-airports") < layerIds.indexOf("buildings-3d"));
   assert.ok(layerIds.indexOf("water-labels") < layerIds.indexOf("buildings-3d"));
   assert.ok(layerIds.indexOf("buildings-3d") < layerIds.indexOf("place-labels"));
   assert.deepEqual(layerIds.slice(layerIds.indexOf("buildings-3d") + 1), [
-    "place-labels", "poi-essential-hud", "poi-explore-hud", "poi-airports-hud"
+    "house-numbers", "place-labels", "poi-essential-hud", "poi-explore-hud", "poi-airports-hud"
   ]);
   for (const id of ["poi-essential-hud", "poi-explore-hud", "poi-airports-hud"]) {
     const hud = style.layers.find((layer) => layer.id === id);
