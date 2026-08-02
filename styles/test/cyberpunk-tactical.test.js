@@ -54,9 +54,13 @@ test("generates Cyberpunk Tactical without changing the Classic core treatment",
   assert.ok(layerIds.indexOf("road-labels") < layerIds.indexOf("buildings-3d"));
   assert.ok(layerIds.indexOf("road-shields") < layerIds.indexOf("buildings-3d"));
   assert.ok(layerIds.indexOf("house-numbers") < layerIds.indexOf("buildings-3d"));
-  assert.ok(layerIds.indexOf("buildings-3d") < layerIds.indexOf("coordinate-grid"));
-  assert.ok(layerIds.indexOf("buildings-3d") < layerIds.indexOf("poi-essential"));
-  assert.ok(layerIds.indexOf("buildings-3d") < layerIds.indexOf("place-labels"));
+  assert.ok(layerIds.indexOf("coordinate-grid") < layerIds.indexOf("buildings-3d"));
+  assert.ok(layerIds.indexOf("poi-essential") < layerIds.indexOf("buildings-3d"));
+  assert.ok(layerIds.indexOf("poi-explore") < layerIds.indexOf("buildings-3d"));
+  assert.ok(layerIds.indexOf("poi-airports") < layerIds.indexOf("buildings-3d"));
+  assert.ok(layerIds.indexOf("water-labels") < layerIds.indexOf("buildings-3d"));
+  assert.ok(layerIds.indexOf("place-labels") < layerIds.indexOf("buildings-3d"));
+  assert.equal(layerIds.indexOf("buildings-3d"), layerIds.length - 1);
   assert.deepEqual(layers["roads-glow"].filter[2][1], ["motorway", "trunk", "primary"]);
   assert.ok(layers["roads-glow"].paint["line-opacity"] <= 0.4);
   assert.equal(layers["place-labels"].paint["text-halo-color"], "#03040b");
