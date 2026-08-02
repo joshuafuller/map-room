@@ -23,7 +23,13 @@
       <div class="freshness"><span class="status-dot"></span><span id="freshness">Checking data</span></div>
     </header>
 
-    <aside class="panel" aria-label="Map controls">
+    <aside class="panel collapsed" aria-label="Map controls">
+      <button id="panel-toggle" class="panel-toggle" type="button" aria-expanded="false" aria-controls="panel-content">
+        <span class="sheet-grabber" aria-hidden="true"></span>
+        <span>Map controls</span>
+        <span class="sheet-chevron" aria-hidden="true"></span>
+      </button>
+      <div id="panel-content" class="panel-content">
       <p class="eyebrow">Map view</p>
       <label class="region-picker">
         <span class="sr-only">Map view</span>
@@ -75,6 +81,7 @@
       <button id="atak-download" class="action primary">Download all for ATAK</button>
       <button id="copy-raster" class="action">Copy raster tile URL</button>
       <p class="hint">ATAK can cache a selected area and zoom range for offline use.</p>
+      </div>
     </aside>
 
     <div class="attribution">© OpenMapTiles · © OpenStreetMap contributors</div>

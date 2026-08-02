@@ -19,6 +19,18 @@ let manifest = null;
 const allViewPadding = () => window.innerWidth <= 680
   ? { top: 80, right: 40, bottom: 190, left: 40 }
   : { top: 90, right: 340, bottom: 70, left: 70 };
+const panel = document.querySelector(".panel");
+const panelToggle = document.querySelector("#panel-toggle");
+const mobileLayout = window.matchMedia("(max-width: 680px)");
+
+function setPanelExpanded(expanded) {
+  panel.classList.toggle("collapsed", !expanded);
+  panelToggle.setAttribute("aria-expanded", String(expanded));
+}
+
+setPanelExpanded(!mobileLayout.matches);
+panelToggle.addEventListener("click", () => setPanelExpanded(panelToggle.getAttribute("aria-expanded") !== "true"));
+mobileLayout.addEventListener("change", (event) => setPanelExpanded(!event.matches));
 
 function styleId(theme = activeTheme) {
   return `all-${theme}`;

@@ -76,6 +76,7 @@ button { font: inherit; }
   padding: 18px;
   border-radius: 20px;
 }
+.panel-toggle { display: none; }
 
 .eyebrow { margin: 0 0 10px; color: var(--muted); font-size: 10px; font-weight: 750; letter-spacing: .13em; text-transform: uppercase; }
 .region-picker { position: relative; display: block; }
@@ -125,13 +126,20 @@ button { font: inherit; }
 
 @media (prefers-reduced-motion: reduce) {
   .theme[data-theme="cyberpunk-tactical"].selected { animation: none; }
-  #toast, .action { transition: none; }
+  #toast, .action, .panel, .sheet-chevron { transition: none; }
 }
 
 @media (max-width: 680px) {
   .topbar { top: 10px; left: 10px; right: 10px; }
   .freshness { display: none; }
-  .panel { left: 10px; right: 10px; top: auto; bottom: 10px; width: auto; padding: 13px; }
+  .panel { left: 10px; right: 10px; top: auto; bottom: 10px; width: auto; max-height: calc(100dvh - 110px); padding: 8px 13px 13px; overflow: hidden; transition: max-height .2s ease; }
+  .panel.collapsed { padding-bottom: 8px; }
+  .panel-toggle { position: relative; display: flex; align-items: center; justify-content: center; width: 100%; min-height: 44px; padding: 9px 38px; border: 0; color: var(--ink); background: transparent; cursor: pointer; font-size: 12px; font-weight: 750; }
+  .sheet-grabber { position: absolute; top: 2px; left: 50%; width: 34px; height: 4px; border-radius: 999px; background: var(--line); transform: translateX(-50%); }
+  .sheet-chevron { position: absolute; right: 10px; width: 8px; height: 8px; border-right: 2px solid var(--muted); border-bottom: 2px solid var(--muted); transform: rotate(45deg); transition: transform .2s ease; }
+  .panel:not(.collapsed) .sheet-chevron { transform: rotate(225deg); }
+  .panel-content { max-height: calc(100dvh - 175px); padding-top: 8px; overflow-y: auto; overscroll-behavior: contain; }
+  .panel.collapsed .panel-content { display: none; }
   .themes { grid-template-columns: 1fr 1fr; }
   .mode-detail, .hint { display: none; }
   .action { width: calc(50% - 4px); }
