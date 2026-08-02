@@ -395,6 +395,17 @@ function makeStyle(id, theme) {
         paint: { "line-color": theme.rail, "line-width": ["interpolate", ["linear"], ["zoom"], 8, 0.5, 15, 2], "line-dasharray": [3, 2] }
       },
       ...featureLayers.landmarks,
+      ...featureLayers.symbols.filter(({ id: layerId }) => layerId === "road-shields"),
+      {
+        id: "road-labels", type: "symbol", source: "osm", "source-layer": "transportation_name", minzoom: 12,
+        layout: { ...labelLayout, "symbol-placement": "line", "text-size": 11 },
+        paint: { "text-color": theme.text, "text-halo-color": theme.textHalo, "text-halo-width": 1.5 }
+      },
+      {
+        id: "house-numbers", type: "symbol", source: "osm", "source-layer": "housenumber", minzoom: 14,
+        layout: { "text-field": ["get", "housenumber"], "text-font": ["Open Sans Regular"], "text-size": 9 },
+        paint: { "text-color": theme.text, "text-halo-color": theme.textHalo, "text-halo-width": 1 }
+      },
       ...(theme.glow ? [{
         id: "buildings-3d", type: "fill-extrusion", source: "osm", "source-layer": "building", minzoom: 13,
         layout: { visibility: "none" },
@@ -407,12 +418,7 @@ function makeStyle(id, theme) {
         }
       }] : []),
       ...featureLayers.grid,
-      ...featureLayers.symbols,
-      {
-        id: "road-labels", type: "symbol", source: "osm", "source-layer": "transportation_name", minzoom: 12,
-        layout: { ...labelLayout, "symbol-placement": "line", "text-size": 11 },
-        paint: { "text-color": theme.text, "text-halo-color": theme.textHalo, "text-halo-width": 1.5 }
-      },
+      ...featureLayers.symbols.filter(({ id: layerId }) => layerId !== "road-shields"),
       {
         id: "water-labels", type: "symbol", source: "osm", "source-layer": "water_name",
         layout: { ...labelLayout, "text-font": ["Open Sans Italic"] },
@@ -422,11 +428,6 @@ function makeStyle(id, theme) {
         id: "place-labels", type: "symbol", source: "osm", "source-layer": "place",
         layout: { ...labelLayout, "text-font": ["Open Sans Semibold"], "text-size": ["interpolate", ["linear"], ["zoom"], 4, 11, 12, 17] },
         paint: { "text-color": theme.text, "text-halo-color": theme.textHalo, "text-halo-width": 1.8 }
-      },
-      {
-        id: "house-numbers", type: "symbol", source: "osm", "source-layer": "housenumber", minzoom: 14,
-        layout: { "text-field": ["get", "housenumber"], "text-font": ["Open Sans Regular"], "text-size": 9 },
-        paint: { "text-color": theme.text, "text-halo-color": theme.textHalo, "text-halo-width": 1 }
       }
     ]
   };

@@ -787,58 +787,6 @@
       }
     },
     {
-      "id": "buildings-3d",
-      "type": "fill-extrusion",
-      "source": "osm",
-      "source-layer": "building",
-      "minzoom": 13,
-      "layout": {
-        "visibility": "none"
-      },
-      "paint": {
-        "fill-extrusion-color": [
-          "interpolate",
-          [
-            "linear"
-          ],
-          [
-            "coalesce",
-            [
-              "get",
-              "render_height"
-            ],
-            3
-          ],
-          0,
-          "#211d3e",
-          30,
-          "#2d3469",
-          100,
-          "#6438a5",
-          220,
-          "#ff2aa3"
-        ],
-        "fill-extrusion-height": [
-          "coalesce",
-          [
-            "get",
-            "render_height"
-          ],
-          3
-        ],
-        "fill-extrusion-base": [
-          "coalesce",
-          [
-            "get",
-            "render_min_height"
-          ],
-          0
-        ],
-        "fill-extrusion-opacity": 0.94,
-        "fill-extrusion-vertical-gradient": true
-      }
-    },
-    {
       "id": "road-shields",
       "type": "symbol",
       "source": "osm",
@@ -1000,6 +948,111 @@
           0.4,
           1.25
         ]
+      }
+    },
+    {
+      "id": "road-labels",
+      "type": "symbol",
+      "source": "osm",
+      "source-layer": "transportation_name",
+      "minzoom": 12,
+      "layout": {
+        "text-field": [
+          "coalesce",
+          [
+            "get",
+            "name:latin"
+          ],
+          [
+            "get",
+            "name"
+          ]
+        ],
+        "text-font": [
+          "Open Sans Regular"
+        ],
+        "text-size": 11,
+        "text-max-width": 9,
+        "symbol-placement": "line"
+      },
+      "paint": {
+        "text-color": "#f4f7ff",
+        "text-halo-color": "#080912",
+        "text-halo-width": 1.5
+      }
+    },
+    {
+      "id": "house-numbers",
+      "type": "symbol",
+      "source": "osm",
+      "source-layer": "housenumber",
+      "minzoom": 14,
+      "layout": {
+        "text-field": [
+          "get",
+          "housenumber"
+        ],
+        "text-font": [
+          "Open Sans Regular"
+        ],
+        "text-size": 9
+      },
+      "paint": {
+        "text-color": "#f4f7ff",
+        "text-halo-color": "#080912",
+        "text-halo-width": 1
+      }
+    },
+    {
+      "id": "buildings-3d",
+      "type": "fill-extrusion",
+      "source": "osm",
+      "source-layer": "building",
+      "minzoom": 13,
+      "layout": {
+        "visibility": "none"
+      },
+      "paint": {
+        "fill-extrusion-color": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "coalesce",
+            [
+              "get",
+              "render_height"
+            ],
+            3
+          ],
+          0,
+          "#211d3e",
+          30,
+          "#2d3469",
+          100,
+          "#6438a5",
+          220,
+          "#ff2aa3"
+        ],
+        "fill-extrusion-height": [
+          "coalesce",
+          [
+            "get",
+            "render_height"
+          ],
+          3
+        ],
+        "fill-extrusion-base": [
+          "coalesce",
+          [
+            "get",
+            "render_min_height"
+          ],
+          0
+        ],
+        "fill-extrusion-opacity": 0.94,
+        "fill-extrusion-vertical-gradient": true
       }
     },
     {
@@ -1206,37 +1259,6 @@
       }
     },
     {
-      "id": "road-labels",
-      "type": "symbol",
-      "source": "osm",
-      "source-layer": "transportation_name",
-      "minzoom": 12,
-      "layout": {
-        "text-field": [
-          "coalesce",
-          [
-            "get",
-            "name:latin"
-          ],
-          [
-            "get",
-            "name"
-          ]
-        ],
-        "text-font": [
-          "Open Sans Regular"
-        ],
-        "text-size": 11,
-        "text-max-width": 9,
-        "symbol-placement": "line"
-      },
-      "paint": {
-        "text-color": "#f4f7ff",
-        "text-halo-color": "#080912",
-        "text-halo-width": 1.5
-      }
-    },
-    {
       "id": "water-labels",
       "type": "symbol",
       "source": "osm",
@@ -1316,28 +1338,6 @@
         "text-color": "#f4f7ff",
         "text-halo-color": "#080912",
         "text-halo-width": 1.8
-      }
-    },
-    {
-      "id": "house-numbers",
-      "type": "symbol",
-      "source": "osm",
-      "source-layer": "housenumber",
-      "minzoom": 14,
-      "layout": {
-        "text-field": [
-          "get",
-          "housenumber"
-        ],
-        "text-font": [
-          "Open Sans Regular"
-        ],
-        "text-size": 9
-      },
-      "paint": {
-        "text-color": "#f4f7ff",
-        "text-halo-color": "#080912",
-        "text-halo-width": 1
       }
     }
   ]

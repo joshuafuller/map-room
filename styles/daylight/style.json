@@ -730,6 +730,59 @@
       }
     },
     {
+      "id": "road-labels",
+      "type": "symbol",
+      "source": "osm",
+      "source-layer": "transportation_name",
+      "minzoom": 12,
+      "layout": {
+        "text-field": [
+          "coalesce",
+          [
+            "get",
+            "name:latin"
+          ],
+          [
+            "get",
+            "name"
+          ]
+        ],
+        "text-font": [
+          "Open Sans Regular"
+        ],
+        "text-size": 11,
+        "text-max-width": 9,
+        "symbol-placement": "line"
+      },
+      "paint": {
+        "text-color": "#293038",
+        "text-halo-color": "#fbfaf7",
+        "text-halo-width": 1.5
+      }
+    },
+    {
+      "id": "house-numbers",
+      "type": "symbol",
+      "source": "osm",
+      "source-layer": "housenumber",
+      "minzoom": 14,
+      "layout": {
+        "text-field": [
+          "get",
+          "housenumber"
+        ],
+        "text-font": [
+          "Open Sans Regular"
+        ],
+        "text-size": 9
+      },
+      "paint": {
+        "text-color": "#293038",
+        "text-halo-color": "#fbfaf7",
+        "text-halo-width": 1
+      }
+    },
+    {
       "id": "poi-essential",
       "type": "symbol",
       "source": "osm",
@@ -933,37 +986,6 @@
       }
     },
     {
-      "id": "road-labels",
-      "type": "symbol",
-      "source": "osm",
-      "source-layer": "transportation_name",
-      "minzoom": 12,
-      "layout": {
-        "text-field": [
-          "coalesce",
-          [
-            "get",
-            "name:latin"
-          ],
-          [
-            "get",
-            "name"
-          ]
-        ],
-        "text-font": [
-          "Open Sans Regular"
-        ],
-        "text-size": 11,
-        "text-max-width": 9,
-        "symbol-placement": "line"
-      },
-      "paint": {
-        "text-color": "#293038",
-        "text-halo-color": "#fbfaf7",
-        "text-halo-width": 1.5
-      }
-    },
-    {
       "id": "water-labels",
       "type": "symbol",
       "source": "osm",
@@ -1043,28 +1065,6 @@
         "text-color": "#293038",
         "text-halo-color": "#fbfaf7",
         "text-halo-width": 1.8
-      }
-    },
-    {
-      "id": "house-numbers",
-      "type": "symbol",
-      "source": "osm",
-      "source-layer": "housenumber",
-      "minzoom": 14,
-      "layout": {
-        "text-field": [
-          "get",
-          "housenumber"
-        ],
-        "text-font": [
-          "Open Sans Regular"
-        ],
-        "text-size": 9
-      },
-      "paint": {
-        "text-color": "#293038",
-        "text-halo-color": "#fbfaf7",
-        "text-halo-width": 1
       }
     }
   ]
