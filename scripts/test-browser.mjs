@@ -101,6 +101,10 @@ await page.waitForTimeout(1200);
 if (await page.locator("#atak-vector-map").getAttribute("href") !== "/atak/vector/florida.mbtiles") {
   failures.push("ATAK vector test did not link to the known-good Florida archive");
 }
+const vectorInstructions = await page.locator("#atak-vector-instructions").textContent();
+if (!vectorInstructions.includes("Set Layer Style") || !vectorInstructions.includes("Import File")) {
+  failures.push("ATAK vector workflow did not use the verified ATAK 5.8 menu labels");
+}
 const vectorStyleDownload = page.waitForEvent("download");
 await page.locator("#atak-vector-style").click();
 const downloadedVectorStyle = await vectorStyleDownload;
