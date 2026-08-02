@@ -23,6 +23,16 @@
   },
   "glyphs": "{fontstack}/{range}.pbf",
   "sprite": "/styles/cyberpunk-tactical/sprite",
+  "light": {
+    "anchor": "viewport",
+    "color": "#8feeff",
+    "intensity": 0.72,
+    "position": [
+      1.15,
+      210,
+      35
+    ]
+  },
   "layers": [
     {
       "id": "background",
@@ -254,7 +264,28 @@
         "visibility": "none"
       },
       "paint": {
-        "fill-extrusion-color": "#101225",
+        "fill-extrusion-color": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "coalesce",
+            [
+              "get",
+              "render_height"
+            ],
+            3
+          ],
+          0,
+          "#151a35",
+          30,
+          "#193454",
+          100,
+          "#176278",
+          220,
+          "#00dff7"
+        ],
         "fill-extrusion-height": [
           "coalesce",
           [

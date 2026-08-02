@@ -84,6 +84,10 @@ const themes = {
     textHalo: "#080912",
     waterText: "#70f7ff",
     glow: true,
+    extrusion: {
+      colors: [0, "#211d3e", 30, "#2d3469", 100, "#6438a5", 220, "#ff2aa3"],
+      light: "#d8ccff"
+    },
     symbols: {
       markerFill: "#060711", shieldFill: "#060711", frame: "#f4f7ff", shadow: "#03040b",
       emergency: "#ff2aa3", service: "#00e5ff", utility: "#f7e65b", leisure: "#9d5cff",
@@ -116,6 +120,10 @@ const themes = {
     waterText: "#70f6ff",
     glow: true,
     tactical: true,
+    extrusion: {
+      colors: [0, "#151a35", 30, "#193454", 100, "#176278", 220, "#00dff7"],
+      light: "#8feeff"
+    },
     symbols: {
       markerFill: "#060711", shieldFill: "#03040b", frame: "#f6f8ff", shadow: "#03040b",
       emergency: "#ff2a9f", service: "#00eaff", utility: "#f2dc58", leisure: "#8c62f4",
@@ -132,6 +140,11 @@ const roadColor = (theme) => [
   "tertiary", theme.tertiary ?? theme.minor,
   ["path", "track"], theme.path ?? theme.minor,
   theme.minor
+];
+
+const extrusionColor = (theme) => [
+  "interpolate", ["linear"], ["coalesce", ["get", "render_height"], 3],
+  ...theme.extrusion.colors
 ];
 
 const roadWidth = [
@@ -327,6 +340,9 @@ function makeStyle(id, theme) {
     },
     glyphs: "{fontstack}/{range}.pbf",
     sprite: `/styles/${id}/sprite`,
+    ...(theme.extrusion ? {
+      light: { anchor: "viewport", color: theme.extrusion.light, intensity: 0.72, position: [1.15, 210, 35] }
+    } : {}),
     layers: [
       { id: "background", type: "background", paint: { "background-color": theme.background } },
       ...featureLayers.urban,
@@ -355,7 +371,7 @@ function makeStyle(id, theme) {
         id: "buildings-3d", type: "fill-extrusion", source: "osm", "source-layer": "building", minzoom: 13,
         layout: { visibility: "none" },
         paint: {
-          "fill-extrusion-color": theme.building,
+          "fill-extrusion-color": extrusionColor(theme),
           "fill-extrusion-height": ["coalesce", ["get", "render_height"], 3],
           "fill-extrusion-base": ["coalesce", ["get", "render_min_height"], 0],
           "fill-extrusion-opacity": 0.94,

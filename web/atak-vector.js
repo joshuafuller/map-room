@@ -159,6 +159,10 @@ function atakLayers(layers) {
       layer.layout.visibility = "visible";
       layer.paint["fill-extrusion-height"] = { property: "render_height", type: "identity", default: 3 };
       layer.paint["fill-extrusion-base"] = { property: "render_min_height", type: "identity", default: 0 };
+      const browserColor = layer.paint["fill-extrusion-color"];
+      if (Array.isArray(browserColor) && browserColor[0] === "interpolate") {
+        layer.paint["fill-extrusion-color"] = browserColor.at(-3);
+      }
     }
     return legacyLayer(layer);
   });

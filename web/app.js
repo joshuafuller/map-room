@@ -2,6 +2,7 @@ import * as maplibregl from "/vendor/maplibre-gl.mjs";
 import { buildAtakVectorDescriptor, buildAtakXml, RASTER_MAX_ZOOM, RASTER_PIXEL_RATIO } from "/atak.js";
 import { buildAtakVectorStyle } from "/atak-vector.js";
 import { buildCoordinateGrid } from "/grid.js";
+import { buildingLayerIds } from "/buildings.js";
 
 const themes = {
   daylight: { name: "Daylight", color: "#f4f1ea" },
@@ -167,8 +168,10 @@ function updateBuildingControl() {
 }
 
 function updateBuildingLayers() {
-  if (map.getLayer("buildings-3d")) {
-    map.setLayoutProperty("buildings-3d", "visibility", buildings3dEnabled ? "visible" : "none");
+  for (const layerId of buildingLayerIds(map.getStyle())) {
+    if (map.getLayer(layerId)) {
+      map.setLayoutProperty(layerId, "visibility", buildings3dEnabled ? "visible" : "none");
+    }
   }
 }
 
@@ -346,8 +349,9 @@ document.querySelector("#buildings-toggle").addEventListener("click", () => {
   updateBuildingLayers();
   const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   map.easeTo({
-    pitch: buildings3dEnabled ? 48 : 0,
-    bearing: buildings3dEnabled ? -12 : 0,
+    zoom: buildings3dEnabled ? Math.max(map.getZoom(), 15) : map.getZoom(),
+    pitch: buildings3dEnabled ? 58 : 0,
+    bearing: buildings3dEnabled ? -18 : 0,
     duration: reduceMotion ? 0 : 650
   });
   toast(`3D buildings ${buildings3dEnabled ? "enabled" : "disabled"}`);

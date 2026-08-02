@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { mkdir, readFile } from "node:fs/promises";
 import { chromium } from "playwright";
+import sharp from "sharp";
 
 const baseUrl = process.env.BASE_URL ?? "http://localhost:8088";
 const outputDir = new URL("../data/browser-test/", import.meta.url);
@@ -226,6 +227,15 @@ const composedBuildingLayers = await page.evaluate(async () => {
 if (composedBuildingLayers.length !== 2 || composedBuildingLayers.some((layer) => layer.type !== "fill-extrusion")) {
   failures.push("composed Cyberpunk Tactical map did not publish one 3D building layer per installed region");
 }
+await page.locator("#buildings-toggle").click();
+await page.evaluate(() => { window.location.hash = "#16/25.775/-80.19/-18/58"; });
+await page.waitForTimeout(1600);
+const buildingsOffPath = new URL("cyberpunk-tactical-buildings-off.png", outputDir);
+const buildingsOnPath = new URL("cyberpunk-tactical-buildings-on.png", outputDir);
+await page.locator(".maplibregl-canvas").screenshot({ path: buildingsOffPath.pathname });
+await page.locator("#buildings-toggle").click();
+await page.waitForTimeout(1600);
+await page.locator(".maplibregl-canvas").screenshot({ path: buildingsOnPath.pathname });
 const tacticalMiamiPath = new URL("cyberpunk-tactical-miami.png", outputDir);
 await page.screenshot({ path: tacticalMiamiPath.pathname });
 
@@ -236,6 +246,22 @@ const cyberpunkDigest = await digest(cyberpunkPath);
 const tacticalDigest = await digest(tacticalPath);
 const tacticalMiamiDigest = await digest(tacticalMiamiPath);
 const tacticalRasterMiamiDigest = await digest(tacticalRasterMiamiPath);
+
+const buildingsOff = await sharp(buildingsOffPath.pathname).raw().toBuffer({ resolveWithObject: true });
+const buildingsOn = await sharp(buildingsOnPath.pathname).raw().toBuffer();
+let changedBuildingPixels = 0;
+let buildingColorDelta = 0;
+for (let index = 0; index < buildingsOff.data.length; index += 4) {
+  const delta = Math.abs(buildingsOff.data[index] - buildingsOn[index])
+    + Math.abs(buildingsOff.data[index + 1] - buildingsOn[index + 1])
+    + Math.abs(buildingsOff.data[index + 2] - buildingsOn[index + 2]);
+  if (delta > 30) changedBuildingPixels += 1;
+  buildingColorDelta += delta;
+}
+const buildingPixelCount = buildingsOff.info.width * buildingsOff.info.height;
+if (changedBuildingPixels < 100000 || buildingColorDelta / buildingPixelCount < 10) {
+  failures.push(`3D building toggle did not visibly change the map (${changedBuildingPixels} pixels)`);
+}
 
 if (daylightDigest === midnightDigest) failures.push("theme screenshots are identical");
 if (daylightDigest === cyberpunkDigest || midnightDigest === cyberpunkDigest) failures.push("Cyberpunk screenshot is not visually distinct");
