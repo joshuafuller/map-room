@@ -371,17 +371,6 @@ function makeStyle(id, theme) {
         id: "buildings", type: "fill", source: "osm", "source-layer": "building", minzoom: 13,
         paint: { "fill-color": theme.building, "fill-outline-color": theme.buildingOutline, "fill-opacity": 0.9 }
       },
-      ...(theme.glow ? [{
-        id: "buildings-3d", type: "fill-extrusion", source: "osm", "source-layer": "building", minzoom: 13,
-        layout: { visibility: "none" },
-        paint: {
-          "fill-extrusion-color": extrusionColor(theme),
-          "fill-extrusion-height": ["coalesce", ["get", "render_height"], 3],
-          "fill-extrusion-base": ["coalesce", ["get", "render_min_height"], 0],
-          "fill-extrusion-opacity": 0.94,
-          "fill-extrusion-vertical-gradient": true
-        }
-      }] : []),
       {
         id: "boundaries", type: "line", source: "osm", "source-layer": "boundary",
         paint: { "line-color": theme.boundary, "line-width": ["interpolate", ["linear"], ["zoom"], 3, 0.5, 12, 1.6], "line-dasharray": [4, 2], "line-opacity": 0.8 }
@@ -406,6 +395,17 @@ function makeStyle(id, theme) {
         paint: { "line-color": theme.rail, "line-width": ["interpolate", ["linear"], ["zoom"], 8, 0.5, 15, 2], "line-dasharray": [3, 2] }
       },
       ...featureLayers.landmarks,
+      ...(theme.glow ? [{
+        id: "buildings-3d", type: "fill-extrusion", source: "osm", "source-layer": "building", minzoom: 13,
+        layout: { visibility: "none" },
+        paint: {
+          "fill-extrusion-color": extrusionColor(theme),
+          "fill-extrusion-height": ["coalesce", ["get", "render_height"], 3],
+          "fill-extrusion-base": ["coalesce", ["get", "render_min_height"], 0],
+          "fill-extrusion-opacity": 0.94,
+          "fill-extrusion-vertical-gradient": true
+        }
+      }] : []),
       ...featureLayers.grid,
       ...featureLayers.symbols,
       {
