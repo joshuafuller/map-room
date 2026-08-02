@@ -112,11 +112,14 @@ await page.locator("#atak-vector-style").click();
 const downloadedVectorStyle = await vectorStyleDownload;
 const downloadedVectorStylePath = await downloadedVectorStyle.path();
 const vectorStyle = JSON.parse(await readFile(downloadedVectorStylePath, "utf8"));
-if (downloadedVectorStyle.suggestedFilename() !== "map-room-cyberpunk-tactical-atak-vector.json" ||
-    vectorStyle.name !== "Map Room - Cyberpunk Tactical - ATAK Vector" ||
+if (downloadedVectorStyle.suggestedFilename() !== "map-room-cyberpunk-atak-vector.json" ||
+    vectorStyle.name !== "Map Room - Cyberpunk Classic - ATAK Vector" ||
     Object.keys(vectorStyle.sources).length !== 1 ||
-    vectorStyle.sprite !== `${baseUrl}/styles/cyberpunk-tactical/sprite` ||
+    vectorStyle.sources.osm.url !== `${baseUrl}/data/florida.json` ||
+    vectorStyle.sprite !== `${baseUrl}/styles/cyberpunk/sprite` ||
     vectorStyle.glyphs !== `${baseUrl}/fonts/{fontstack}/{range}.pbf` ||
+    vectorStyle.layers.length < 20 ||
+    !vectorStyle.layers.some((layer) => layer.id === "poi-essential") ||
     vectorStyle.layers.some((layer) => layer.source && layer.source !== "osm")) {
   failures.push("ATAK vector style download did not preserve the one-source custom-style contract");
 }
