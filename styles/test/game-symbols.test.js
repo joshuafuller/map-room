@@ -1,10 +1,12 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import { execFile } from "node:child_process";
 import { readFile } from "node:fs/promises";
 import { promisify } from "node:util";
 
 const execute = promisify(execFile);
+const themeIds = ["daylight", "midnight", "cyberpunk", "cyberpunk-tactical"];
 
 test("builds local game-inspired shields and truthful POI categories", async () => {
   await execute(process.execPath, ["styles/build-styles.mjs"]);
@@ -75,4 +77,42 @@ test("builds local game-inspired shields and truthful POI categories", async () 
   assert.equal(layers.taxiways.paint["line-color"], "#00eaff");
   assert.match(html, /data-poi-preset="essential"/);
   assert.match(html, /data-poi-preset="explore"/);
+});
+
+test("builds the same information contract with distinct sprites for every theme", async () => {
+  await execute(process.execPath, ["styles/build-styles.mjs"]);
+  const spriteDigests = new Set();
+  let canonicalSemantics;
+
+  for (const id of themeIds) {
+    const style = JSON.parse(await readFile(`styles/${id}/style.json`, "utf8"));
+    const layers = Object.fromEntries(style.layers.map((layer) => [layer.id, layer]));
+    const sprite = JSON.parse(await readFile(`styles/${id}/sprite.json`, "utf8"));
+    const retinaSprite = JSON.parse(await readFile(`styles/${id}/sprite@2x.json`, "utf8"));
+    const png = await readFile(`styles/${id}/sprite.png`);
+    const retinaPng = await readFile(`styles/${id}/sprite@2x.png`);
+
+    assert.equal(style.sprite, `/styles/${id}/sprite`);
+    for (const layerId of ["road-shields", "poi-essential", "poi-explore", "poi-airports", "airports", "runways", "taxiways"]) {
+      assert.ok(layers[layerId], `${id} is missing ${layerId}`);
+    }
+    assert.equal(layers["poi-essential"].layout.visibility, "visible");
+    assert.equal(layers["poi-explore"].layout.visibility, "none");
+    assert.deepEqual(retinaSprite, sprite);
+    assert.deepEqual(retinaPng, png);
+    spriteDigests.add(createHash("sha256").update(png).digest("hex"));
+
+    const semantics = {
+      shields: layers["road-shields"].filter,
+      essential: layers["poi-essential"].filter,
+      explore: layers["poi-explore"].filter,
+      airports: layers["poi-airports"].filter,
+      runways: layers.runways.filter,
+      taxiways: layers.taxiways.filter
+    };
+    canonicalSemantics ??= semantics;
+    assert.deepEqual(semantics, canonicalSemantics);
+  }
+
+  assert.equal(spriteDigests.size, themeIds.length);
 });

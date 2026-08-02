@@ -27,6 +27,10 @@ await page.locator(".maplibregl-canvas").waitFor({ state: "visible" });
 await page.waitForFunction(() => document.querySelector("#region")?.textContent !== "Loading local map…");
 await page.waitForTimeout(1000);
 
+if (await page.locator("#poi-controls").getAttribute("hidden") !== null) {
+  failures.push("Daylight did not expose shared POI controls");
+}
+
 const daylightPath = new URL("daylight.png", outputDir);
 await page.screenshot({ path: daylightPath.pathname });
 
@@ -45,6 +49,9 @@ await page.locator('[data-mode="vector"][aria-checked="true"]').waitFor();
 await page.locator('[data-theme="midnight"]').click();
 await page.locator('[data-theme="midnight"][aria-checked="true"]').waitFor();
 await page.waitForTimeout(1200);
+if (await page.locator("#poi-controls").getAttribute("hidden") !== null) {
+  failures.push("Midnight did not expose shared POI controls");
+}
 
 const midnightPath = new URL("midnight.png", outputDir);
 await page.screenshot({ path: midnightPath.pathname });
@@ -52,6 +59,9 @@ await page.screenshot({ path: midnightPath.pathname });
 await page.locator('[data-theme="cyberpunk"]').click();
 await page.locator('[data-theme="cyberpunk"][aria-checked="true"]').waitFor();
 await page.waitForTimeout(1200);
+if (await page.locator("#poi-controls").getAttribute("hidden") !== null) {
+  failures.push("Cyberpunk Classic did not expose shared POI controls");
+}
 
 const cyberpunkPath = new URL("cyberpunk.png", outputDir);
 await page.screenshot({ path: cyberpunkPath.pathname });

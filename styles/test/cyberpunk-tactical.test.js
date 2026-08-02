@@ -1,23 +1,23 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { createHash } from "node:crypto";
 import { execFile } from "node:child_process";
 import { readFile } from "node:fs/promises";
 import { promisify } from "node:util";
 
 const execute = promisify(execFile);
-const classicDigest = "2dfea4a0ade55a78823d71483725196ae2201b0be2b15ceec83b52af87afd882";
-
-test("generates an additive Cyberpunk Tactical style without changing Classic", async () => {
+test("generates Cyberpunk Tactical without changing the Classic core treatment", async () => {
   await execute(process.execPath, ["styles/build-styles.mjs"]);
 
-  const classic = await readFile("styles/cyberpunk/style.json");
+  const classic = JSON.parse(await readFile("styles/cyberpunk/style.json", "utf8"));
   const tactical = JSON.parse(await readFile("styles/cyberpunk-tactical/style.json", "utf8"));
   const config = JSON.parse(await readFile("config.json", "utf8"));
   const html = await readFile("web/index.html", "utf8");
   const css = await readFile("web/app.css", "utf8");
 
-  assert.equal(createHash("sha256").update(classic).digest("hex"), classicDigest);
+  const classicLayers = Object.fromEntries(classic.layers.map((layer) => [layer.id, layer]));
+  assert.equal(classicLayers.background.paint["background-color"], "#060711");
+  assert.equal(classicLayers["roads-glow"].paint["line-blur"], 3);
+  assert.equal(classicLayers["place-labels"].paint["text-color"], "#f4f7ff");
   assert.equal(tactical.name, "Cyberpunk Tactical");
   assert.equal(tactical.metadata["map-room:theme"], "cyberpunk-tactical");
   assert.equal(tactical.metadata["map-room:style-version"], "1.0.0");
