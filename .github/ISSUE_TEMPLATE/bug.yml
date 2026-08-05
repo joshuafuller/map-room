@@ -35,3 +35,17 @@ body:
     attributes:
       label: ATAK evidence, if applicable
       description: ATAK version, Android version, device model, import path, connected result, cache result, and disconnected result.
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance Criteria
+      description: List the observable behavior that will demonstrate the defect is fixed.
+    validations:
+      required: true
+  - type: textarea
+    id: done
+    attributes:
+      label: Definition of Done
+      description: List required regression tests, verification, documentation, and evidence.
+    validations:
+      required: true

@@ -1,0 +1,33 @@
+name: Task, maintenance, or documentation
+description: Track non-feature work with an explicit completion contract
+title: "task: "
+labels: []
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or required outcome
+      description: Explain why this work is needed and who or what it affects.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance Criteria
+      description: List observable outcomes another person can verify.
+    validations:
+      required: true
+  - type: textarea
+    id: done
+    attributes:
+      label: Definition of Done
+      description: List the implementation, tests, documentation, review, and evidence required before closure.
+    validations:
+      required: true
+  - type: textarea
+    id: boundaries
+    attributes:
+      label: Scope and validation boundaries
+      description: Identify non-goals, unvalidated claims, public-data concerns, or follow-up work.
+    validations:
+      required: true
