@@ -20,7 +20,10 @@
           <span id="region">Loading local map…</span>
         </div>
       </div>
-      <div class="freshness"><span class="status-dot"></span><span id="freshness">Checking data</span></div>
+      <div class="topbar-actions">
+        <button id="manage-maps" class="manage-button" type="button">Manage maps</button>
+        <div class="freshness"><span class="status-dot"></span><span id="freshness">Checking data</span></div>
+      </div>
     </header>
 
     <aside class="panel collapsed" aria-label="Map controls">
@@ -128,8 +131,55 @@
       </div>
     </aside>
 
+    <dialog id="map-manager" class="manager-dialog" aria-labelledby="manager-title">
+      <div class="manager-header">
+        <div><p class="eyebrow">Map library</p><h2 id="manager-title">Manage maps</h2></div>
+        <button id="manager-close" class="icon-button" type="button" aria-label="Close map manager">×</button>
+      </div>
+      <p class="manager-warning"><strong>Trusted local network only.</strong> Map administration does not have user authentication yet.</p>
+      <section class="manager-section" aria-labelledby="add-map-title">
+        <h3 id="add-map-title">Add a map</h3>
+        <form id="map-create-form">
+          <label>Source
+            <select id="map-source-type" name="sourceType">
+              <option value="catalog">Worldwide regional catalog</option>
+              <option value="upload">Upload a local .osm.pbf</option>
+              <option value="url">Approved HTTPS .osm.pbf URL</option>
+            </select>
+          </label>
+          <div id="catalog-fields" class="source-fields">
+            <label>Find a region<input id="catalog-search" type="search" placeholder="Florida, Germany, Japan…" autocomplete="off" /></label>
+            <label>Region<select id="catalog-region" name="catalogId" required><option value="">Loading regions…</option></select></label>
+            <p id="catalog-summary" class="catalog-summary" aria-live="polite">Loading regional catalog…</p>
+          </div>
+          <div id="upload-fields" class="source-fields" hidden>
+            <label>OpenStreetMap PBF file<input id="map-upload" type="file" accept=".osm.pbf,application/octet-stream" /></label>
+          </div>
+          <div id="url-fields" class="source-fields" hidden>
+            <label>HTTPS source URL<input id="map-source-url" type="url" placeholder="https://download.geofabrik.de/…-latest.osm.pbf" /></label>
+          </div>
+          <div class="field-row">
+            <label>Map name<input id="map-name" name="name" maxlength="120" required /></label>
+            <label>Stable ID<input id="map-id" name="id" pattern="[a-z0-9]+(?:-[a-z0-9]+)*" placeholder="florida" required /></label>
+          </div>
+          <p class="manager-help">Building may take several minutes and substantial temporary disk space. The current map remains live until the replacement succeeds.</p>
+          <button class="action primary" type="submit">Build map</button>
+        </form>
+      </section>
+      <section class="manager-section" aria-labelledby="jobs-title">
+        <h3 id="jobs-title">Build activity</h3>
+        <div id="map-jobs" class="manager-list"><p class="empty-state">No map jobs yet.</p></div>
+      </section>
+      <section class="manager-section" aria-labelledby="installed-title">
+        <h3 id="installed-title">Installed maps</h3>
+        <div id="installed-maps" class="manager-list"><p class="empty-state">Loading installed maps…</p></div>
+      </section>
+      <p id="manager-status" class="manager-status" role="status" aria-live="polite"></p>
+    </dialog>
+
     <div id="toast" role="status" aria-live="polite"></div>
 
     <script type="module" src="/app.js"></script>
+    <script type="module" src="/dev-reload.js"></script>
   </body>
 </html>

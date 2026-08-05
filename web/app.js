@@ -3,6 +3,7 @@ import { buildAtakVectorDescriptor, buildAtakXml, RASTER_MAX_ZOOM, RASTER_PIXEL_
 import { buildAtakVectorStyle } from "/atak-vector.js";
 import { buildingLayerIds } from "/buildings.js";
 import { poiLayerIds, poiLayerVisibility } from "/poi-visibility.js";
+import { setupMapManager } from "/map-manager.js";
 
 const themes = {
   daylight: { name: "Daylight", color: "#f4f1ea" },
@@ -20,6 +21,8 @@ let activeView = "all";
 let buildings3dEnabled = false;
 const regionCatalog = new Map();
 let manifest = null;
+let map = null;
+let hasMaps = false;
 const allViewPadding = () => window.innerWidth <= 680
   ? { top: 80, right: 40, bottom: 190, left: 40 }
   : { top: 90, right: 340, bottom: 70, left: 70 };
@@ -86,9 +89,14 @@ function updateAtakVectorPresentation() {
   instructions.innerHTML = `Import the small vector-source JSON in ATAK, then open that layer's options, select <strong>Set Layer Style</strong>, choose <strong>Import File</strong>, and import the Cyberpunk style. Open this page through the Map Room computer's LAN address, not localhost. ATAK may cache a selected area for offline use without downloading the complete archive.`;
 }
 
-try {
+const emptyStyle = { version: 8, name: "Empty Map Room", sources: {}, layers: [{ id: "background", type: "background", paint: { "background-color": "#dfe5e7" } }] };
+
+async function loadRegionCatalog({ refreshMap = false } = {}) {
   const response = await fetch("/regions.json", { cache: "no-store" });
+  if (!response.ok) throw new Error(`Region catalog returned HTTP ${response.status}`);
   const catalog = await response.json();
+  hasMaps = catalog.regions.length > 0;
+  regionCatalog.clear();
   manifest = {
     id: "all",
     name: catalog.name,
@@ -100,6 +108,7 @@ try {
   };
   regionCatalog.set("all", manifest);
   const selector = document.querySelector("#region-select");
+  selector.replaceChildren();
   const allOption = document.createElement("option");
   allOption.value = "all";
   allOption.textContent = catalog.name;
@@ -111,19 +120,30 @@ try {
     option.textContent = region.name ?? region.region;
     selector.append(option);
   }
+  if (!regionCatalog.has(activeView)) activeView = "all";
+  manifest = regionCatalog.get(activeView);
   selector.value = activeView;
   selector.disabled = catalog.regions.length === 0;
   updateRegionPresentation();
   updateAtakVectorPresentation();
+  if (refreshMap && map) {
+    applyMapStyle();
+    if (manifest.bounds) map.fitBounds(manifest.bounds, { padding: allViewPadding(), duration: 0 });
+    else map.jumpTo({ center: [0, 0], zoom: 2 });
+  }
+}
+
+try {
+  await loadRegionCatalog();
 } catch {
   document.querySelector("#region-select").hidden = true;
   document.querySelector("#freshness").textContent = "Freshness unavailable";
   document.querySelector(".status-dot").style.background = "#c78d42";
 }
 
-const map = new maplibregl.Map({
+map = new maplibregl.Map({
   container: "map",
-  style: `/styles/${styleId("daylight")}/style.json`,
+  style: hasMaps ? `/styles/${styleId("daylight")}/style.json` : emptyStyle,
   center: manifest?.displayCenter ?? manifest?.center?.slice(0, 2) ?? [0, 0],
   zoom: manifest?.displayZoom ?? manifest?.center?.[2] ?? 2,
   bounds: manifest?.id === "all" ? manifest.bounds : undefined,
@@ -205,7 +225,7 @@ function updatePoiLayers() {
 }
 
 function applyMapStyle() {
-  const style = activeMode === "vector"
+  const style = !hasMaps ? emptyStyle : activeMode === "vector"
     ? `/styles/${styleId()}/style.json`
     : rasterStyle(activeTheme);
   map.setStyle(style);
@@ -352,3 +372,4 @@ document.querySelector("#buildings-toggle").addEventListener("click", () => {
 
 updateBuildingControl();
 document.querySelector("#detail-hint").hidden = activeMode !== "vector";
+setupMapManager({ onLibraryChanged: () => loadRegionCatalog({ refreshMap: true }) });

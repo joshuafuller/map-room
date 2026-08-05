@@ -29,6 +29,23 @@ await page.waitForFunction(() => document.querySelector("#region")?.textContent 
 await page.waitForTimeout(1000);
 const catalog = await page.evaluate(() => fetch("/regions.json").then((response) => response.json()));
 const vectorTestRegion = catalog.regions.find(({ id }) => id === "florida") ?? catalog.regions[0];
+const shieldAssets = await page.evaluate(async () => {
+  const style = await fetch("/styles/all-daylight/style.json").then((response) => response.json());
+  const [spriteJson, spritePng] = await Promise.all([
+    fetch(`${style.sprite}.json`),
+    fetch(`${style.sprite}.png`)
+  ]);
+  return {
+    hasShieldLayer: style.layers.some(({ id }) => id.startsWith("road-shields--")),
+    spriteJsonStatus: spriteJson.status,
+    spritePngStatus: spritePng.status,
+    hasInterstateShield: spriteJson.ok && Boolean((await spriteJson.json())["shield-interstate"])
+  };
+});
+if (!shieldAssets.hasShieldLayer || !shieldAssets.hasInterstateShield ||
+    shieldAssets.spriteJsonStatus !== 200 || shieldAssets.spritePngStatus !== 200) {
+  failures.push(`road shields were unavailable (${JSON.stringify(shieldAssets)})`);
+}
 
 const collapsedPanel = await page.locator(".panel").evaluate((panel) => ({
   width: panel.getBoundingClientRect().width,

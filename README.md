@@ -18,6 +18,8 @@
 
 ![Daylight theme with optional 3D buildings over downtown Miami](docs/screenshots/daylight-3d.jpg)
 
+![UI-driven map creation and installed-map management](docs/screenshots/map-management.jpg)
+
 It is intended to give a person one simple place to choose the maps their team
 needs, download or import them, keep them current, preview them in a browser,
 and make them available to web, GIS, offline-network, and ATAK users.
@@ -161,9 +163,28 @@ Start with:
 
 ## Make your own map
 
-The public map-making workflow accepts a named Planetiler/Geofabrik area, a
-local `.osm.pbf`, or a direct HTTPS `.osm.pbf` URL. Start with a compact Rhode
-Island practice build:
+The normal map-making workflow is in the website. Start Map Room, select
+**Manage maps**, and choose one source:
+
+- browse or search the worldwide regional catalog, grouped by geography;
+- upload a local `.osm.pbf` file; or
+- enter an HTTPS `.osm.pbf` URL from an explicitly allowed source host.
+
+Map Room distinguishes waiting, downloading, vector-tile generation,
+configuration, activation, completion, and failure. Running jobs keep an elapsed
+timer visible; measurable downloads show byte and percentage progress; and
+failures such as insufficient Planetiler memory include a next action. The
+current publication stays live until a replacement succeeds, and the map
+library refreshes automatically. Installed maps can be renamed, rebuilt when
+their source is reusable, or deleted after typing the exact stable ID.
+
+Catalog availability is not a promise that every area fits the default machine.
+Start with a small region to learn the workflow. Large countries or continents
+can require substantially more memory, SSD space, and build time; the UI reports
+an actionable `MAP_ROOM_BUILD_MEMORY` setting if Planetiler exhausts its heap.
+
+The command-line tool remains available for automation and recovery. For a
+compact Rhode Island practice build:
 
 ```sh
 ./scripts/create-map.sh --area "rhode island" --id rhode-island --name "Rhode Island"
@@ -187,14 +208,42 @@ device evidence.
 
 ## Run the current prototype
 
-Prerequisites: Docker, Node.js/npm, Python 3, `curl`, and `unzip`.
+The UI-first workflow requires Docker and internet access while acquiring a new
+catalog map. Node.js/npm, Python, `curl`, and `unzip` are only needed for local
+development or the command-line preparation tools.
 
 ```sh
-./scripts/prepare-fixture.sh "rhode island"
-docker compose up -d --wait --force-recreate
+docker compose up -d --build --wait
 ```
 
-Open <http://localhost:8088>.
+Open <http://localhost:8088>, choose **Manage maps**, and create the first map.
+Map administration currently has no user authentication, so expose it only on a
+trusted local network.
+
+For development, start the same local URL with live reload:
+
+```sh
+npm run dev
+```
+
+The development Compose overlay bind-mounts `web/` and `maintainer/`. Changes
+to either restart the manager when needed and automatically refresh an open
+browser tab. Stop that stack with `npm run dev:down`. The normal production-like
+`docker compose up` workflow does not enable file watching.
+
+On Linux systems whose workspace owner is not UID/GID 1000, pass the owner used
+for the bind-mounted `data/` and `styles/` directories:
+
+```sh
+MAP_ROOM_UID=$(id -u) MAP_ROOM_GID=$(id -g) docker compose up -d --build --wait
+```
+
+Direct HTTPS sources default to `download.geofabrik.de`. Additional trusted
+source hosts can be explicitly allow-listed with a comma-separated
+`MAP_ROOM_SOURCE_HOSTS` value. Private or organization-owned sources are better
+uploaded from a local file than exposed through an unrestricted server-side URL.
+
+The fixture scripts remain useful for development:
 
 Florida is also supported as a larger development fixture:
 
@@ -214,8 +263,8 @@ mkdir -p data/regions
 MAP_ROOM_DEFAULT_REGION=california docker compose up -d --wait --force-recreate
 ```
 
-The startup configuration service discovers every regional manifest and
-archive, then composes them into the same logical map layer automatically. Open
+The live map manager discovers every regional manifest and archive, then
+composes them into the same logical map layer automatically. Open
 <http://localhost:8088> and use **Map view** to frame all maps, Florida, or
 California. This control moves the camera; it does not replace the underlying
 layer.
@@ -278,6 +327,7 @@ storage, memory, and network transfer. Generated data is excluded from Git.
 ./scripts/test-offline.sh
 npx playwright install chromium # first browser-test run only
 npm run test:browser
+npm run test:manager
 npm run test:coverage:atak
 ```
 

@@ -1,0 +1,8 @@
+services:
+  tiles:
+    environment:
+      MAP_ROOM_DEV_WATCH: "1"
+    volumes:
+      - ./config.json:/opt/map-room/config.json:ro
+      - ./maintainer:/opt/map-room/maintainer:ro
+      - ./web:/opt/map-room/web:ro

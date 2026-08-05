@@ -14,7 +14,7 @@
     }
   },
   "glyphs": "{fontstack}/{range}.pbf",
-  "sprite": "/styles/dark-green/sprite",
+  "sprite": "{styleJsonFolder}/sprite",
   "light": {
     "anchor": "viewport",
     "color": "#e4eee6",

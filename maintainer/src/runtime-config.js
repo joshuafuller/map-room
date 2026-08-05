@@ -1,8 +1,8 @@
 const REGION_ID = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 function validateRegistry(registry) {
-  if (!registry || !Array.isArray(registry.regions) || registry.regions.length === 0) {
-    throw new Error("Region registry must contain at least one region");
+  if (!registry || !Array.isArray(registry.regions)) {
+    throw new Error("Region registry must contain a regions array");
   }
 
   const ids = new Set();
@@ -16,7 +16,9 @@ function validateRegistry(registry) {
     ids.add(region.id);
   }
 
-  if (!ids.has(registry.defaultRegion)) throw new Error(`Unknown default region: ${registry.defaultRegion}`);
+  if (registry.regions.length === 0) {
+    if (registry.defaultRegion !== null) throw new Error(`Unknown default region: ${registry.defaultRegion}`);
+  } else if (!ids.has(registry.defaultRegion)) throw new Error(`Unknown default region: ${registry.defaultRegion}`);
 }
 
 function sortedObject(entries) {
@@ -33,6 +35,17 @@ export function buildRuntimeArtifacts({ registry, themes }) {
   const styleConfigEntries = [];
   const generatedStyleEntries = [];
 
+  if (regions.length === 0) {
+    return {
+      config: { options: { paths: { fonts: "/data/fonts", sprites: "/data/styles", styles: "/data/styles" } }, styles: {}, data: {} },
+      styles: {},
+      catalog: {
+        defaultView: "all", defaultRegion: null, name: "No maps installed", bounds: null,
+        center: null, displayZoom: 2, previewTile: null, sourceTimestamp: null, regions: []
+      }
+    };
+  }
+
   for (const region of regions) {
     dataEntries.push([region.id, { mbtiles: `/data/archive/${region.archive}` }]);
   }
@@ -47,6 +60,10 @@ export function buildRuntimeArtifacts({ registry, themes }) {
     const staticSources = Object.fromEntries(Object.entries(style.sources).filter(([id]) => id !== "osm"));
     style.name = `${sourceStyle.name} — All installed maps`;
     style.metadata = { ...style.metadata, "map-room:regions": regions.map(({ id }) => id) };
+    // TileServer GL resolves local sprites from its configured sprite root.
+    // Point a composed style back to the authored theme's sprite sheet instead
+    // of accidentally resolving it beside collections/all/<theme>.json.
+    if (style.sprite && !Array.isArray(style.sprite)) style.sprite = `${themeId}/sprite`;
     style.sources = {
       ...staticSources,
       ...Object.fromEntries(regions.map(({ id }) => [id, {
@@ -73,7 +90,7 @@ export function buildRuntimeArtifacts({ registry, themes }) {
 
   return {
     config: {
-      options: { paths: { fonts: "/data/fonts", styles: "/data/styles" } },
+      options: { paths: { fonts: "/data/fonts", sprites: "/data/styles", styles: "/data/styles" } },
       styles: sortedObject(styleConfigEntries),
       data: sortedObject(dataEntries)
     },
