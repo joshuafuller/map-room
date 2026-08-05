@@ -16,7 +16,7 @@ with sqlite3.connect(archive) as connection:
 center = [float(value) for value in metadata["center"].split(",")]
 display_overrides = {
     "Florida": {"center": [-82.2, 27.8], "zoom": 6.2},
-    "Monaco": {"center": [7.4246, 43.7384], "zoom": 13.2},
+    "Rhode Island": {"center": [-71.5, 41.7], "zoom": 8.2},
 }
 display = display_overrides.get(region, {"center": center[:2], "zoom": center[2]})
 test_zoom = 14
@@ -39,6 +39,6 @@ manifest = {
     "sourceTimestamp": metadata.get("planetiler:osm:osmosisreplicationtime"),
     "planetilerVersion": metadata.get("planetiler:version"),
     "generatedAt": datetime.now(timezone.utc).isoformat(),
-    "themes": ["daylight", "midnight"],
+    "themes": ["daylight", "midnight", "dark-blue", "dark-red", "dark-green", "cyberpunk", "cyberpunk-tactical"],
 }
 output.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")

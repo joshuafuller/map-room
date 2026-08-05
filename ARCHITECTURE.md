@@ -61,8 +61,9 @@ of users:
 2. **Disconnected users** can run the service on an isolated network with no
    CDN or external runtime requests, or download an explicitly supported map
    package before disconnecting.
-3. **ATAK users** can install a generated map-source XML file, stream raster XYZ
-   tiles, and use ATAK's area-download workflow to retain tiles offline.
+3. **ATAK users** can install a generated stock-ATAK vector descriptor, stream
+   native PBF tiles with a compatible Map Room style, retain selected tiles in
+   ATAK's offline cache, or use generated raster XML as a fallback.
 
 The first release is a basemap service. It does not include routing, geocoding,
 satellite imagery, elevation, TAK messaging, or collaborative annotations.
@@ -219,6 +220,14 @@ GET /styles/midnight/{z}/{x}/{y}.png
 GET /atak/daylight.xml
 GET /atak/midnight.xml
 ```
+
+For each actual single-source vector publication, Map Room also generates a
+small ATAK `tak-cdn` JSON descriptor pointing to the raw PBF template and a
+client-compatible derivative of the selected self-hosted style. MBTiles is the
+server-side archive and optional offline export, not the connected transfer
+protocol. A style-composed view over multiple independent archives is not a
+single vector publication; selected upstream inputs must be built together
+before Map Room advertises them as one ATAK vector layer.
 
 Each generated ATAK XML file should be treated as a product artifact. Tests
 should verify its theme-specific URL template, min/max zoom, tile type,

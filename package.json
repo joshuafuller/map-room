@@ -4,15 +4,26 @@
   "type": "module",
   "version": "0.0.1",
   "description": "Self-hosted maps for web, offline, and ATAK",
+  "license": "MIT",
+  "engines": {
+    "node": ">=24"
+  },
   "dependencies": {
     "maplibre-gl": "6.1.0"
   },
   "scripts": {
     "build:styles": "node styles/build-styles.mjs",
-    "test:unit": "node --test maintainer/test/*.test.js",
-    "test:browser": "node scripts/test-browser.mjs"
+    "capture:readme": "node scripts/capture-readme.mjs",
+    "test:unit": "node --test maintainer/test/*.test.js styles/test/*.test.js web/*.test.js",
+    "test:create-map": "./scripts/test-create-map.sh",
+    "test:coverage:atak": "c8 --all --include=web/atak.js --include=web/atak-vector.js --check-coverage --lines 100 --statements 100 --functions 100 --branches 100 node --test web/atak.test.js web/atak-vector.test.js",
+    "test:browser": "node scripts/test-browser.mjs",
+    "test:mobile": "node scripts/test-mobile.mjs"
   },
   "devDependencies": {
-    "playwright": "1.62.1"
+    "c8": "^12.0.0",
+    "lucide-static": "1.28.0",
+    "playwright": "1.62.1",
+    "sharp": "0.35.3"
   }
 }

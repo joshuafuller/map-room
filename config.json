@@ -17,6 +17,36 @@
       "tilejson": {
         "type": "baselayer"
       }
+    },
+    "dark-blue": {
+      "style": "dark-blue/style.json",
+      "tilejson": {
+        "type": "baselayer"
+      }
+    },
+    "dark-red": {
+      "style": "dark-red/style.json",
+      "tilejson": {
+        "type": "baselayer"
+      }
+    },
+    "dark-green": {
+      "style": "dark-green/style.json",
+      "tilejson": {
+        "type": "baselayer"
+      }
+    },
+    "cyberpunk": {
+      "style": "cyberpunk/style.json",
+      "tilejson": {
+        "type": "baselayer"
+      }
+    },
+    "cyberpunk-tactical": {
+      "style": "cyberpunk-tactical/style.json",
+      "tilejson": {
+        "type": "baselayer"
+      }
     }
   },
   "data": {

@@ -1,0 +1,29 @@
+name: Feature request
+description: Propose an observable user capability
+title: "feature: "
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: User problem
+      description: Who needs this and what can they not do today?
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: List observable outcomes another person can verify.
+    validations:
+      required: true
+  - type: textarea
+    id: data
+    attributes:
+      label: Data, license, and attribution impact
+      description: Identify new sources, bundled assets, redistribution rules, or credentials.
+  - type: textarea
+    id: atak
+    attributes:
+      label: ATAK validation plan, if applicable
+      description: State which ATAK versions/devices and connected/offline behaviors need testing.

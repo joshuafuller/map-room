@@ -1,34 +1,139 @@
 import * as maplibregl from "/vendor/maplibre-gl.mjs";
-import { buildAtakXml } from "/atak.js";
+import { buildAtakVectorDescriptor, buildAtakXml, RASTER_MAX_ZOOM, RASTER_PIXEL_RATIO } from "/atak.js";
+import { buildAtakVectorStyle } from "/atak-vector.js";
+import { buildingLayerIds } from "/buildings.js";
+import { poiLayerIds, poiLayerVisibility } from "/poi-visibility.js";
 
 const themes = {
   daylight: { name: "Daylight", color: "#f4f1ea" },
-  midnight: { name: "Midnight", color: "#101820" }
+  midnight: { name: "Midnight", color: "#101820" },
+  "dark-blue": { name: "Dark Blue", color: "#07111f" },
+  "dark-red": { name: "Dark Red", color: "#160909" },
+  "dark-green": { name: "Dark Green", color: "#07120d" },
+  cyberpunk: { name: "Cyberpunk Classic", color: "#060711" },
+  "cyberpunk-tactical": { name: "Cyberpunk Tactical", color: "#03040b" }
 };
 
 let activeTheme = "daylight";
 let activeMode = "vector";
+let activeView = "all";
+let buildings3dEnabled = false;
+const regionCatalog = new Map();
 let manifest = null;
-try {
-  const response = await fetch("/manifest.json", { cache: "no-store" });
-  manifest = await response.json();
-  document.querySelector("#region").textContent = manifest.region;
+const allViewPadding = () => window.innerWidth <= 680
+  ? { top: 80, right: 40, bottom: 190, left: 40 }
+  : { top: 90, right: 340, bottom: 70, left: 70 };
+const panel = document.querySelector(".panel");
+const panelToggle = document.querySelector("#panel-toggle");
+
+function setPanelExpanded(expanded) {
+  panel.classList.toggle("collapsed", !expanded);
+  panelToggle.setAttribute("aria-expanded", String(expanded));
+  panelToggle.setAttribute("aria-label", expanded ? "Close map controls" : "Open map controls");
+  document.documentElement.dataset.controlsExpanded = String(expanded);
+}
+
+setPanelExpanded(false);
+panelToggle.addEventListener("click", () => setPanelExpanded(panelToggle.getAttribute("aria-expanded") !== "true"));
+
+function styleId(theme = activeTheme) {
+  return `all-${theme}`;
+}
+
+function updateRegionPresentation() {
+  if (!manifest) return;
+  document.querySelector("#region").textContent = manifest.name ?? manifest.region;
   const date = new Date(manifest.sourceTimestamp);
-  document.querySelector("#freshness").textContent = `OSM data ${date.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}`;
+  document.querySelector("#freshness").textContent = Number.isNaN(date.getTime())
+    ? "Freshness unavailable"
+    : `Map data ${date.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}`;
+  if (manifest.testTile) {
+    document.querySelectorAll(".swatch").forEach((swatch) => {
+      const id = swatch.closest("[data-theme]")?.dataset.theme;
+      if (!id) return;
+      swatch.style.backgroundImage = `linear-gradient(rgba(3, 4, 11, .08), rgba(3, 4, 11, .08)), url("/styles/${styleId(id)}/${manifest.testTile}.png")`;
+      swatch.classList.add("has-preview");
+    });
+  }
+}
+
+function vectorPublication() {
+  return activeView === "all" ? null : regionCatalog.get(activeView);
+}
+
+function updateAtakVectorPresentation() {
+  const publication = vectorPublication();
+  const sourceButton = document.querySelector("#atak-vector-source");
+  const styleButton = document.querySelector("#atak-vector-style");
+  const archiveLink = document.querySelector("#atak-vector-map");
+  const instructions = document.querySelector("#atak-vector-instructions");
+  const offlineMessage = document.querySelector("#offline-message");
+  sourceButton.disabled = !publication;
+  styleButton.disabled = !publication;
+  archiveLink.hidden = !publication;
+  if (!publication) {
+    sourceButton.textContent = "Select one region above";
+    instructions.textContent = "Choose an individual published map above. Map Room will generate a tiny ATAK source document that streams PBF tiles and can cache an area offline.";
+    offlineMessage.textContent = "Select one region above to download its complete vector archive.";
+    return;
+  }
+  const name = publication.name ?? publication.region;
+  sourceButton.textContent = `1. Download ${name} source (.json)`;
+  archiveLink.href = `/atak/vector/${publication.id}.mbtiles`;
+  archiveLink.download = `map-room-${publication.id}-vector.mbtiles`;
+  archiveLink.textContent = `Download ${name} archive (.mbtiles)`;
+  offlineMessage.textContent = `${name} will be copied as one ${formatBytes(publication.archiveBytes)} archive; Map Room is not needed after a successful ATAK import.`;
+  instructions.innerHTML = `Import the small vector-source JSON in ATAK, then open that layer's options, select <strong>Set Layer Style</strong>, choose <strong>Import File</strong>, and import the Cyberpunk style. Open this page through the Map Room computer's LAN address, not localhost. ATAK may cache a selected area for offline use without downloading the complete archive.`;
+}
+
+try {
+  const response = await fetch("/regions.json", { cache: "no-store" });
+  const catalog = await response.json();
+  manifest = {
+    id: "all",
+    name: catalog.name,
+    bounds: catalog.bounds,
+    displayCenter: catalog.center,
+    displayZoom: catalog.displayZoom,
+    testTile: catalog.previewTile,
+    sourceTimestamp: catalog.sourceTimestamp
+  };
+  regionCatalog.set("all", manifest);
+  const selector = document.querySelector("#region-select");
+  const allOption = document.createElement("option");
+  allOption.value = "all";
+  allOption.textContent = catalog.name;
+  selector.append(allOption);
+  for (const region of catalog.regions) {
+    regionCatalog.set(region.id, region);
+    const option = document.createElement("option");
+    option.value = region.id;
+    option.textContent = region.name ?? region.region;
+    selector.append(option);
+  }
+  selector.value = activeView;
+  selector.disabled = catalog.regions.length === 0;
+  updateRegionPresentation();
+  updateAtakVectorPresentation();
 } catch {
+  document.querySelector("#region-select").hidden = true;
   document.querySelector("#freshness").textContent = "Freshness unavailable";
   document.querySelector(".status-dot").style.background = "#c78d42";
 }
 
 const map = new maplibregl.Map({
   container: "map",
-  style: "/styles/daylight/style.json",
+  style: `/styles/${styleId("daylight")}/style.json`,
   center: manifest?.displayCenter ?? manifest?.center?.slice(0, 2) ?? [0, 0],
   zoom: manifest?.displayZoom ?? manifest?.center?.[2] ?? 2,
-  hash: true
+  bounds: manifest?.id === "all" ? manifest.bounds : undefined,
+  fitBoundsOptions: { padding: allViewPadding() },
+  hash: true,
+  dragRotate: true,
+  pitchWithRotate: true
 });
 
-map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "bottom-right");
+map.addControl(new maplibregl.NavigationControl({ showCompass: true }), "bottom-right");
 map.addControl(new maplibregl.ScaleControl({ unit: "metric" }), "bottom-right");
 
 const toast = (message) => {
@@ -38,6 +143,18 @@ const toast = (message) => {
   window.setTimeout(() => element.classList.remove("show"), 1800);
 };
 
+function formatBytes(bytes) {
+  if (!Number.isFinite(bytes) || bytes < 0) return "regional";
+  const units = ["B", "KB", "MB", "GB", "TB"];
+  let value = bytes;
+  let unit = 0;
+  while (value >= 1024 && unit < units.length - 1) {
+    value /= 1024;
+    unit += 1;
+  }
+  return `${value >= 10 || unit === 0 ? value.toFixed(0) : value.toFixed(1)} ${units[unit]}`;
+}
+
 function rasterStyle(id) {
   return {
     version: 8,
@@ -45,10 +162,10 @@ function rasterStyle(id) {
     sources: {
       atak: {
         type: "raster",
-        tiles: [`${window.location.origin}/styles/${id}/{z}/{x}/{y}.png`],
+        tiles: [`${window.location.origin}/styles/${styleId(id)}/{z}/{x}/{y}${RASTER_PIXEL_RATIO}.png`],
         tileSize: 256,
         minzoom: 0,
-        maxzoom: 14,
+        maxzoom: RASTER_MAX_ZOOM,
         attribution: "© OpenMapTiles © OpenStreetMap contributors"
       }
     },
@@ -56,13 +173,51 @@ function rasterStyle(id) {
   };
 }
 
+function updateBuildingControl() {
+  const button = document.querySelector("#buildings-toggle");
+  button.hidden = activeMode !== "vector";
+  button.setAttribute("aria-pressed", String(buildings3dEnabled));
+  document.querySelector("#rotate-hint").hidden = activeMode !== "vector";
+}
+
+function updateBuildingLayers() {
+  for (const layerId of buildingLayerIds(map.getStyle())) {
+    if (map.getLayer(layerId)) {
+      map.setLayoutProperty(layerId, "visibility", buildings3dEnabled ? "visible" : "none");
+    }
+  }
+}
+
+function updatePoiLayers() {
+  if (activeMode !== "vector") return;
+  for (const layer of ["poi-essential", "poi-explore", "poi-parking"]) {
+    const hudLayer = `${layer}-hud`;
+    for (const layerId of poiLayerIds(map.getStyle(), layer)) {
+      map.setLayoutProperty(layerId, "visibility", poiLayerVisibility({ enabled: true, buildings3dEnabled, hud: false }));
+    }
+    for (const layerId of poiLayerIds(map.getStyle(), hudLayer)) {
+      map.setLayoutProperty(layerId, "visibility", poiLayerVisibility({ enabled: true, buildings3dEnabled, hud: true }));
+    }
+  }
+  for (const layerId of poiLayerIds(map.getStyle(), "poi-airports-hud")) {
+    map.setLayoutProperty(layerId, "visibility", buildings3dEnabled ? "visible" : "none");
+  }
+}
+
 function applyMapStyle() {
   const style = activeMode === "vector"
-    ? `/styles/${activeTheme}/style.json`
+    ? `/styles/${styleId()}/style.json`
     : rasterStyle(activeTheme);
   map.setStyle(style);
-  document.documentElement.style.colorScheme = activeTheme === "midnight" ? "dark" : "light";
+  map.once("style.load", () => {
+    updateBuildingLayers();
+    updatePoiLayers();
+  });
+  document.documentElement.style.colorScheme = activeTheme === "daylight" ? "light" : "dark";
   document.querySelector('meta[name="theme-color"]').content = themes[activeTheme].color;
+  document.documentElement.dataset.mapTheme = activeTheme;
+  updateBuildingControl();
+  document.querySelector("#detail-hint").hidden = activeMode !== "vector";
 }
 
 function selectTheme(id) {
@@ -74,6 +229,7 @@ function selectTheme(id) {
     button.classList.toggle("selected", selected);
     button.setAttribute("aria-checked", String(selected));
   });
+  document.querySelector("#atak-vector-style").textContent = `2. Download ${themes[id].name} style (.json)`;
   toast(`${themes[id].name} map selected`);
 }
 
@@ -92,6 +248,24 @@ function selectMode(mode) {
   toast(mode === "raster" ? "ATAK raster preview enabled" : "Vector preview enabled");
 }
 
+function selectView(id) {
+  const catalogRegion = regionCatalog.get(id);
+  if (id === activeView || !catalogRegion) return;
+  activeView = id;
+  manifest = catalogRegion;
+  updateRegionPresentation();
+  updateAtakVectorPresentation();
+  if (id === "all" && manifest.bounds) {
+    map.fitBounds(manifest.bounds, { padding: allViewPadding(), duration: 0 });
+  } else {
+    map.jumpTo({
+      center: manifest.displayCenter ?? manifest.center?.slice(0, 2) ?? [0, 0],
+      zoom: manifest.displayZoom ?? manifest.center?.[2] ?? 2
+    });
+  }
+  toast(`${manifest.name ?? manifest.region} map selected`);
+}
+
 document.querySelectorAll(".theme").forEach((button) => {
   button.addEventListener("click", () => selectTheme(button.dataset.theme));
 });
@@ -100,8 +274,13 @@ document.querySelectorAll(".mode").forEach((button) => {
   button.addEventListener("click", () => selectMode(button.dataset.mode));
 });
 
+document.querySelector("#region-select").addEventListener("change", (event) => selectView(event.target.value));
+
 document.querySelector("#atak-download").addEventListener("click", () => {
-  const blob = new Blob([buildAtakXml(activeTheme, window.location.origin)], { type: "application/xml" });
+  const blob = new Blob([buildAtakXml({
+    theme: activeTheme,
+    baseUrl: window.location.origin
+  })], { type: "application/xml" });
   const link = document.createElement("a");
   link.href = URL.createObjectURL(blob);
   link.download = `map-room-${activeTheme}.xml`;
@@ -110,7 +289,66 @@ document.querySelector("#atak-download").addEventListener("click", () => {
   toast("ATAK map source downloaded");
 });
 
+function downloadJson(payload, filename) {
+  const blob = new Blob([`${JSON.stringify(payload, null, 2)}\n`], { type: "application/json" });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = filename;
+  link.click();
+  URL.revokeObjectURL(link.href);
+}
+
+document.querySelector("#atak-vector-source").addEventListener("click", async () => {
+  const publication = vectorPublication();
+  if (!publication) return;
+  const response = await fetch(`/data/${publication.id}.json`);
+  if (!response.ok) throw new Error(`Could not load ${publication.name} TileJSON`);
+  const tileJson = await response.json();
+  const descriptor = buildAtakVectorDescriptor({
+    publication,
+    baseUrl: window.location.origin,
+    tileJson
+  });
+  downloadJson(descriptor, `map-room-${publication.id}-atak-vector.json`);
+  toast(`${publication.name} ATAK vector source downloaded`);
+});
+
+document.querySelector("#atak-vector-style").addEventListener("click", async () => {
+  const publication = vectorPublication();
+  if (!publication) return;
+  const theme = activeTheme;
+  const response = await fetch(`/styles/${theme}/style.json`);
+  if (!response.ok) throw new Error(`Could not load ${theme} style`);
+  const sourceStyle = await response.json();
+  const style = buildAtakVectorStyle({
+    theme,
+    baseUrl: window.location.origin,
+    sourceId: publication.id,
+    sourceStyle
+  });
+  downloadJson(style, `map-room-${theme}-atak-vector.json`);
+  toast(`${themes[theme].name} ATAK vector style downloaded`);
+});
+
 document.querySelector("#copy-raster").addEventListener("click", async () => {
-  await navigator.clipboard.writeText(`${window.location.origin}/styles/${activeTheme}/{z}/{x}/{y}.png`);
+  await navigator.clipboard.writeText(`${window.location.origin}/styles/${styleId()}/{z}/{x}/{y}${RASTER_PIXEL_RATIO}.png`);
   toast("Raster tile URL copied");
 });
+
+document.querySelector("#buildings-toggle").addEventListener("click", () => {
+  buildings3dEnabled = !buildings3dEnabled;
+  updateBuildingControl();
+  updateBuildingLayers();
+  updatePoiLayers();
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  map.easeTo({
+    zoom: buildings3dEnabled ? Math.max(map.getZoom(), 15) : map.getZoom(),
+    pitch: buildings3dEnabled ? 58 : 0,
+    bearing: buildings3dEnabled ? -18 : 0,
+    duration: reduceMotion ? 0 : 650
+  });
+  toast(`3D buildings ${buildings3dEnabled ? "enabled" : "disabled"}`);
+});
+
+updateBuildingControl();
+document.querySelector("#detail-hint").hidden = activeMode !== "vector";

@@ -2,6 +2,22 @@
 
 **Map Room is a self-hosted map library and distribution server.**
 
+> **Project status: early preview.** Map Room is rough around the edges, but
+> its basic local build-and-serve workflow is usable today. Run it on a trusted
+> network, expect breaking changes, and validate generated files on the exact
+> ATAK version and device you plan to use. See [current test evidence](TEST_RESULTS.md)
+> and the [public release checklist](docs/PUBLIC_RELEASE_CHECKLIST.md).
+
+## See Map Room
+
+![Map Room showing installed regional maps in the Daylight theme](docs/screenshots/map-overview.jpg)
+
+| Practical dark themes | Guided ATAK delivery |
+| --- | --- |
+| ![Florida displayed with the Dark Blue map theme](docs/screenshots/dark-blue-theme.jpg) | ![Hosted streaming and completely offline ATAK choices](docs/screenshots/atak-workflows.jpg) |
+
+![Daylight theme with optional 3D buildings over downtown Miami](docs/screenshots/daylight-3d.jpg)
+
 It is intended to give a person one simple place to choose the maps their team
 needs, download or import them, keep them current, preview them in a browser,
 and make them available to web, GIS, offline-network, and ATAK users.
@@ -91,28 +107,35 @@ working published map.
 
 ## Current status
 
-**Map Room is a specification-stage project with an early compatibility
-prototype. It is not a production release.**
+**Map Room is an early preview with a working local compatibility prototype.
+It is not a production release.**
 
 The prototype has demonstrated:
 
 - Geofabrik PBF to OpenMapTiles-compatible MBTiles generation with Planetiler;
-- vector and server-rendered raster delivery through TileServer GL;
+- vector delivery from native OpenMapTiles data through z14 and crisp
+  server-rendered HiDPI raster delivery through z20 via TileServer GL;
 - a self-contained MapLibre browser viewer;
-- Daylight and Midnight visual themes;
+- Daylight, Midnight, Dark Blue, Dark Red, Dark Green, Cyberpunk Classic, and
+  Cyberpunk Tactical visual themes, all with optional 3D buildings;
 - browser preview of the same PNG/XYZ raster route currently generated for
   ATAK configuration;
+- one composed browser/ATAK map layer spanning independently managed Florida
+  and California archives;
 - operation on an isolated container network with no outbound route.
 
 The prototype has **not** yet validated:
 
 - importing and caching its configuration on a real supported ATAK release;
 - strict OSGeo TMS delivery—the current ATAK/browser raster prototype is XYZ;
-- the no-expertise maintainer interface;
-- multiple provider selections and concurrent published maps;
+- the no-expertise maintainer workflow for acquiring new maps from the website;
 - automatic acquisition, update, atomic promotion, rollback, and retention;
 - authentication, backup/restore, observability, or production packaging;
 - any non-Geofabrik source adapter.
+
+Raster zooms 15–20 render the z14 vector archive at progressively closer map
+scales. They keep geometry, labels, and symbols sharp, but cannot restore source
+features that the z14 tile-generation profile omitted.
 
 See [prototype evidence](TEST_RESULTS.md) for the exact tested boundary.
 
@@ -136,13 +159,39 @@ Start with:
 - [Initial architecture proposal](ARCHITECTURE.md)
 - [Prototype evidence](TEST_RESULTS.md)
 
+## Make your own map
+
+The public map-making workflow accepts a named Planetiler/Geofabrik area, a
+local `.osm.pbf`, or a direct HTTPS `.osm.pbf` URL. Start with a compact Rhode
+Island practice build:
+
+```sh
+./scripts/create-map.sh --area "rhode island" --id rhode-island --name "Rhode Island"
+```
+
+Then follow [Create your own ATAK map](docs/CREATE_YOUR_OWN_MAP.md) to serve it
+over a trusted LAN, import the raster or vector publication, and perform the
+required real-device caching and disconnected-use check.
+
+See [ATAK map delivery and file types](docs/ATAK_MAP_TYPES.md) for a plain-language
+comparison of raster XML, vector source/style JSON, PBF tiles, and MBTiles
+archives.
+
+Product language and onboarding follow the [primary ATAK user persona](docs/USER_PERSONA.md):
+assume no GIS background, ask “hosted or completely offline?” first, and reveal
+raster/vector details only after that choice.
+
+The tooling builds and validates the server artifact. It does not claim that a
+specific ATAK version/device combination works until someone records that
+device evidence.
+
 ## Run the current prototype
 
 Prerequisites: Docker, Node.js/npm, Python 3, `curl`, and `unzip`.
 
 ```sh
-./scripts/prepare-fixture.sh monaco
-docker compose up -d
+./scripts/prepare-fixture.sh "rhode island"
+docker compose up -d --wait --force-recreate
 ```
 
 Open <http://localhost:8088>.
@@ -152,6 +201,72 @@ Florida is also supported as a larger development fixture:
 ```sh
 ./scripts/prepare-fixture.sh florida
 ```
+
+### Serve multiple installed regions
+
+Map Room can keep multiple regional MBTiles archives online in one process.
+Each archive needs a matching manifest named with a stable lowercase ID:
+
+```sh
+mkdir -p data/regions
+./scripts/write-manifest.py data/florida.mbtiles data/regions/florida.json Florida
+./scripts/write-manifest.py data/california.mbtiles data/regions/california.json California
+MAP_ROOM_DEFAULT_REGION=california docker compose up -d --wait --force-recreate
+```
+
+The startup configuration service discovers every regional manifest and
+archive, then composes them into the same logical map layer automatically. Open
+<http://localhost:8088> and use **Map view** to frame all maps, Florida, or
+California. This control moves the camera; it does not replace the underlying
+layer.
+
+ATAK receives one XML per visual theme and one composed raster endpoint such as
+`/styles/all-cyberpunk-tactical/...`. Florida and California therefore remain
+part of the same ATAK map layer. Unqualified style URLs remain compatibility
+aliases to that same composed map.
+
+Map Room keeps generated vector URLs on the requesting browser origin. For a
+stable DNS name, explicitly allow it when starting the stack:
+
+```sh
+MAP_ROOM_ALLOWED_HOSTS=maps.example.internal docker compose up -d --wait --force-recreate
+```
+
+Unlisted LAN addresses receive safe path-only URLs and still work from mobile
+browsers. Do not put a private deployment address into the repository.
+
+### Validate streaming native vectors in ATAK 5.8
+
+This is a device-validation workflow, not yet a claim of validated ATAK
+support. Open Map Room from the ATAK device using the server computer's LAN
+address, such as `http://SERVER-LAN-IP:8088`; do not use `localhost`, because
+the downloaded vector source and selected style point back to Map Room for
+PBF tiles, sprites, and glyphs.
+
+Expand **Map controls**, select an individual published map under **Map view**,
+then under **Host and stream maps**:
+
+1. Download the small ATAK vector source and selected style JSON files.
+2. In ATAK's Import Manager, import `map-room-florida-atak-vector.json`.
+3. Find the streamed layer under **Mapbox Vector Tiles** and open its options.
+4. Select **Set Layer Style**, choose **Import File**, and select
+   the downloaded `map-room-<theme>-atak-vector.json` file.
+5. Verify roads, labels, POIs, shields, airports, height-aware buildings, sharp
+   zooming, and online PBF requests.
+6. Cache a small area in ATAK, disconnect it from Map Room, and separately
+   record whether the cached area remains usable.
+
+ATAK 5.8 only probes the first 8 KiB of a candidate streaming descriptor. Map
+Room keeps the source JSON below that limit and references ATAK's built-in OMT
+schema instead of embedding the full TileJSON field catalog. If ATAK reported
+an older source file as unsupported, delete it and download a fresh copy.
+
+The complete MBTiles download remains available as an optional offline path; it
+is no longer required for connected use. The current **All installed maps**
+browser view composes multiple archives, so it is deliberately not offered as
+one remote vector source. Combining selected regions into one ATAK vector layer
+requires rebuilding those upstream inputs into one publication rather than
+merging SQLite rows.
 
 Preparation downloads source/build inputs and can require substantial time,
 storage, memory, and network transfer. Generated data is excluded from Git.
@@ -163,6 +278,7 @@ storage, memory, and network transfer. Generated data is excluded from Git.
 ./scripts/test-offline.sh
 npx playwright install chromium # first browser-test run only
 npm run test:browser
+npm run test:coverage:atak
 ```
 
 Stop it with:
@@ -180,3 +296,20 @@ Map Room is an independent project. It is not affiliated with or endorsed by
 OpenStreetMap, Geofabrik, MapLibre, TileServer GL, Planetiler, or the TAK Product
 Center. Maps published through Map Room retain the licenses and attribution
 requirements of their sources.
+
+## Community and security
+
+Contributions are welcome; see [CONTRIBUTING.md](CONTRIBUTING.md). Please report
+security issues through GitHub's private vulnerability reporting as described
+in [SECURITY.md](SECURITY.md). Do not publish private map data, credentials, or
+deployment addresses in an issue.
+
+Maintainers preparing to change repository visibility should complete the
+[public release checklist](docs/PUBLIC_RELEASE_CHECKLIST.md), including reviewing
+the complete Git history and verifying repository settings.
+
+## License
+
+Map Room is available under the [MIT License](LICENSE). Map data and bundled or
+downloaded third-party components retain their own licenses and attribution
+requirements; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).

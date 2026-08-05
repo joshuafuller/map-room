@@ -1,20 +1,40 @@
 services:
+  configure:
+    image: node:24-alpine
+    command:
+      - node
+      - /app/scripts/configure-regions.mjs
+    environment:
+      MAP_ROOM_DATA_DIR: /data/archive
+      MAP_ROOM_STYLE_DIR: /data/styles
+      MAP_ROOM_BASE_CONFIG: /app/config.json
+      MAP_ROOM_DEFAULT_REGION: ${MAP_ROOM_DEFAULT_REGION:-}
+    volumes:
+      - ./config.json:/app/config.json:ro
+      - ./maintainer:/app/maintainer:ro
+      - ./scripts:/app/scripts:ro
+      - ./data:/data/archive
+      - ./styles:/data/styles
+
   tiles:
     image: maptiler/tileserver-gl:v5.6.0
+    depends_on:
+      configure:
+        condition: service_completed_successfully
     command:
       - --config
       - /data/config.json
-      - --public_url
-      - http://localhost:8088
+    environment:
+      TILESERVER_GL_ALLOWED_HOSTS: ${MAP_ROOM_ALLOWED_HOSTS:-localhost,127.0.0.1}
     volumes:
-      - ./config.json:/data/config.json:ro
+      - ./data/runtime/config.json:/data/config.json:ro
       - ./data:/data/archive:ro
       - ./data/fonts:/data/fonts:ro
       - ./styles:/data/styles:ro
     expose:
       - "8080"
     healthcheck:
-      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8080/data/osm.json').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8080/styles/daylight/style.json').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
       interval: 5s
       timeout: 3s
       retries: 20
