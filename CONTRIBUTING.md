@@ -41,7 +41,8 @@ data that cannot be redistributed.
 Pull requests must keep the repository template headings, link their tracking
 issue, map the delivered work to its Acceptance Criteria and Definition of Done,
 list exact verification evidence, and identify remaining validation boundaries.
-The traceability check applies to human and automated pull requests.
+Reviewers should confirm this traceability before merging human or automated
+pull requests.
 
 Pull requests should separate verified evidence from planned or inferred
 behavior. A green server test is not evidence that a map imported, displayed,
