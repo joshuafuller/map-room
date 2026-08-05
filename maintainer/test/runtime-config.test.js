@@ -36,6 +36,7 @@ test("builds deterministic TileServer data and style entries for every region an
   const { config, styles, catalog } = buildRuntimeArtifacts({ registry, themes });
 
   assert.deepEqual(Object.keys(config.data), ["california", "florida"]);
+  assert.equal(config.options.paths.sprites, "/data/styles");
   assert.equal(config.data.california.mbtiles, "/data/archive/california.mbtiles");
   assert.equal(config.data.florida.mbtiles, "/data/archive/florida.mbtiles");
   assert.deepEqual(Object.keys(config.styles), [
@@ -50,7 +51,7 @@ test("builds deterministic TileServer data and style entries for every region an
     california: { type: "vector", url: "mbtiles://{california}" },
     florida: { type: "vector", url: "mbtiles://{florida}" }
   });
-  assert.equal(styles["collections/all/daylight.json"].sprite, "/styles/daylight/sprite");
+  assert.equal(styles["collections/all/daylight.json"].sprite, "daylight/sprite");
   assert.deepEqual(styles["collections/all/daylight.json"].layers.map(({ id, source }) => ({ id, source })), [
     { id: "background", source: undefined },
     { id: "roads--california", source: "california" },
@@ -95,6 +96,26 @@ test("rejects unsafe and duplicate region IDs, unknown defaults, and incomplete 
   for (const value of invalidRegistries) {
     assert.throws(() => buildRuntimeArtifacts({ registry: value, themes }), /region|archive|default/i);
   }
+});
+
+test("builds an empty runtime catalog for a new map library", () => {
+  const result = buildRuntimeArtifacts({ registry: { defaultRegion: null, regions: [] }, themes });
+
+  assert.deepEqual(result.config.data, {});
+  assert.equal(result.config.options.paths.sprites, "/data/styles");
+  assert.deepEqual(result.config.styles, {});
+  assert.deepEqual(result.styles, {});
+  assert.deepEqual(result.catalog, {
+    defaultView: "all",
+    defaultRegion: null,
+    name: "No maps installed",
+    bounds: null,
+    center: null,
+    displayZoom: 2,
+    previewTile: null,
+    sourceTimestamp: null,
+    regions: []
+  });
 });
 
 test("rejects an empty theme set or a theme without the canonical source", () => {

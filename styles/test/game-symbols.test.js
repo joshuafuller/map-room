@@ -20,7 +20,7 @@ test("builds local game-inspired shields and truthful POI categories", async () 
   const packageJson = JSON.parse(await readFile("package.json", "utf8"));
   const notices = await readFile("THIRD_PARTY_NOTICES.md", "utf8");
 
-  assert.equal(style.sprite, "/styles/cyberpunk-tactical/sprite");
+  assert.equal(style.sprite, "{styleJsonFolder}/sprite");
   const layers = Object.fromEntries(style.layers.map((layer) => [layer.id, layer]));
   assert.equal(layers["road-shields"].type, "symbol");
   assert.ok(layers["road-shields"].layout["icon-size"] >= 0.8);
@@ -107,7 +107,7 @@ test("builds the same information contract with distinct sprites for every theme
     const png = await readFile(`styles/${id}/sprite.png`);
     const retinaPng = await readFile(`styles/${id}/sprite@2x.png`);
 
-    assert.equal(style.sprite, `/styles/${id}/sprite`);
+    assert.equal(style.sprite, "{styleJsonFolder}/sprite");
     for (const layerId of ["road-shields", "poi-essential", "poi-explore", "poi-parking", "poi-airports", "airports", "runways", "taxiways"]) {
       assert.ok(layers[layerId], `${id} is missing ${layerId}`);
     }

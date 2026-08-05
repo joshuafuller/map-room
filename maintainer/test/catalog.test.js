@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { normalizeCatalog } from "../src/catalog.js";
+import { availableCatalog, normalizeCatalog } from "../src/catalog.js";
 
 test("normalizes searchable Geofabrik PBF regions and excludes non-download entries", () => {
   const catalog = normalizeCatalog({
@@ -18,4 +18,16 @@ test("normalizes searchable Geofabrik PBF regions and excludes non-download entr
   assert.equal(catalog[1].pbfUrl.endsWith("florida-latest.osm.pbf"), true);
   assert.equal(catalog[1].updatesUrl.endsWith("florida-updates"), true);
   assert.match(catalog[1].searchText, /florida us-fl/i);
+});
+
+test("keeps every valid regional PBF in the public catalog", () => {
+  const entries = [
+    { id: "us/florida", isoCode: "US-FL" },
+    { id: "north-america/canada/ontario", isoCode: "CA-ON" },
+    { id: "europe/great-britain/england", isoCode: "GB-ENG" },
+    { id: "australia-oceania/australia", isoCode: "AU" },
+    { id: "australia-oceania/new-zealand", isoCode: "NZ" },
+    { id: "africa/morocco", isoCode: "MA" }
+  ];
+  assert.deepEqual(availableCatalog(entries).map(({ id }) => id), entries.map(({ id }) => id));
 });

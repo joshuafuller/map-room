@@ -1,0 +1,14 @@
+services:
+  tiles:
+    volumes: !override
+      - ${MAP_ROOM_EMPTY_DATA:?set MAP_ROOM_EMPTY_DATA}:/data/archive
+      - ./data/fonts:/data/fonts:ro
+      - ${MAP_ROOM_EMPTY_STYLES:?set MAP_ROOM_EMPTY_STYLES}:/data/styles
+
+  web:
+    ports: !override
+      - "${MAP_ROOM_EMPTY_PORT:-18088}:80"
+    volumes: !override
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./web:/usr/share/nginx/html:ro
+      - ${MAP_ROOM_EMPTY_DATA:?set MAP_ROOM_EMPTY_DATA}:/srv/data:ro

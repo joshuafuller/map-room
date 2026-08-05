@@ -2,6 +2,7 @@
   "options": {
     "paths": {
       "fonts": "/data/fonts",
+      "sprites": "/data/styles",
       "styles": "/data/styles"
     }
   },

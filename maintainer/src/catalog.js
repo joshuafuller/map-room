@@ -46,4 +46,8 @@ export async function fetchCatalog(fetchImpl = fetch) {
   return normalizeCatalog(await response.json());
 }
 
+export function availableCatalog(entries) {
+  return entries;
+}
+
 export { CATALOG_URL };

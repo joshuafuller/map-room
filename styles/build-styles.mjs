@@ -462,7 +462,7 @@ function makeStyle(id, theme) {
       }
     },
     glyphs: "{fontstack}/{range}.pbf",
-    sprite: `/styles/${id}/sprite`,
+    sprite: "{styleJsonFolder}/sprite",
     light: { anchor: "viewport", color: extrusion.light, intensity: 0.72, position: [1.15, 210, 35] },
     layers: [
       { id: "background", type: "background", paint: { "background-color": theme.background } },

@@ -47,15 +47,19 @@ export class JobQueue extends EventEmitter {
   async #pump() {
     if (this.running) return;
     this.running = true;
-    for (const job of this.jobs.filter((candidate) => candidate.status === "queued")) {
-      this.update(job, { status: "running", phase: "starting", startedAt: new Date().toISOString() });
-      try {
-        await this.worker(job, (patch) => this.update(job, patch));
-        this.update(job, { status: "complete", phase: "complete", completedAt: new Date().toISOString() });
-      } catch (error) {
-        this.update(job, { status: "failed", phase: "failed", error: error.message, completedAt: new Date().toISOString() });
-      } finally {
-        this.activeByRegion.delete(job.regionId);
+    while (true) {
+      const pending = this.jobs.filter((candidate) => candidate.status === "queued");
+      if (pending.length === 0) break;
+      for (const job of pending) {
+        this.update(job, { status: "running", phase: "starting", startedAt: new Date().toISOString() });
+        try {
+          await this.worker(job, (patch) => this.update(job, patch));
+          this.update(job, { status: "complete", phase: "complete", completedAt: new Date().toISOString() });
+        } catch (error) {
+          this.update(job, { status: "failed", phase: "failed", lastPhase: job.phase, error: error.message, completedAt: new Date().toISOString() });
+        } finally {
+          this.activeByRegion.delete(job.regionId);
+        }
       }
     }
     this.running = false;

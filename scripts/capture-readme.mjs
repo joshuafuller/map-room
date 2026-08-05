@@ -47,5 +47,29 @@ await page.waitForTimeout(1200);
 await page.locator("#panel-toggle").click();
 await capture("daylight-3d.jpg");
 
+const managerState = await fetch(`${baseUrl}/api/maps`).then((response) => response.json());
+const screenshotJob = {
+  id: "readme-progress",
+  regionId: "rhode-island",
+  name: "Rhode Island",
+  status: "running",
+  phase: "downloading",
+  createdAt: new Date(Date.now() - 73_000).toISOString(),
+  startedAt: new Date(Date.now() - 70_000).toISOString(),
+  progress: { completedBytes: 25 * 1024 ** 2, totalBytes: 100 * 1024 ** 2, percent: 25, bytesPerSecond: 5 * 1024 ** 2, etaSeconds: 15 },
+  error: null
+};
+await page.route("**/api/maps", (route) => route.fulfill({
+  status: 200,
+  contentType: "application/json",
+  body: JSON.stringify({ ...managerState, jobs: [screenshotJob] })
+}));
+await page.locator("#manage-maps").click();
+await page.locator("#map-manager").waitFor({ state: "visible" });
+await page.locator("#catalog-search").fill("florida");
+await page.waitForFunction(() => [...document.querySelectorAll("#catalog-region option")].some(({ value }) => value === "us/florida"));
+await page.locator("#catalog-region").selectOption("us/florida");
+await capture("map-management.jpg");
+
 await browser.close();
 console.log(`README screenshots written to ${outputDir.pathname}`);
