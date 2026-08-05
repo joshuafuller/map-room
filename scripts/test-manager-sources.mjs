@@ -6,11 +6,15 @@ const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
 
 async function waitForJob(name) {
   const row = page.locator(".job-row").filter({ hasText: name }).first();
-  await page.waitForFunction((jobName) => {
-    const job = [...document.querySelectorAll(".job-row")].find((item) => item.textContent.includes(jobName));
-    return ["complete", "failed"].includes(job?.querySelector(".job-state")?.textContent);
-  }, name, { timeout: 10 * 60 * 1000 });
-  if (await row.locator(".job-state").textContent() === "failed") throw new Error(`${name} failed: ${await row.textContent()}`);
+  const deadline = Date.now() + 10 * 60 * 1000;
+  while (Date.now() < deadline) {
+    const { jobs } = await fetch(`${baseUrl}/api/maps`).then((response) => response.json());
+    const status = jobs.findLast((job) => job.name === name)?.status;
+    if (status === "failed") throw new Error(`${name} failed: ${await row.textContent()}`);
+    if (status === "complete") return;
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+  }
+  throw new Error(`${name} did not finish within 10 minutes`);
 }
 
 async function deleteMap(id) {
