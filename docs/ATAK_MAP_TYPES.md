@@ -1,5 +1,8 @@
 # ATAK map delivery and file types
 
+For the source-pinned implementation trace behind this user guide, see
+[How ATAK ingests and uses maps](ATAK_MAP_ARCHITECTURE.md).
+
 Map Room offers connected map streaming, ATAK-managed area caching, and
 regional archive download. These solve different problems. A small XML or JSON
 download is usually a pointer to a hosted map; it is not the map data itself.

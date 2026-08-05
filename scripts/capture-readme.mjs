@@ -71,5 +71,57 @@ await page.waitForFunction(() => [...document.querySelectorAll("#catalog-region 
 await page.locator("#catalog-region").selectOption("us/florida");
 await capture("map-management.jpg");
 
+const jobTime = Date.now();
+const galleryJobs = [
+  {
+    id: "readme-queued", regionId: "colorado", name: "Colorado",
+    status: "queued", phase: "queued", createdAt: new Date(jobTime - 28_000).toISOString(),
+    progress: null, error: null
+  },
+  {
+    id: "readme-downloading", regionId: "rhode-island", name: "Rhode Island",
+    status: "running", phase: "downloading", createdAt: new Date(jobTime - 73_000).toISOString(),
+    startedAt: new Date(jobTime - 70_000).toISOString(),
+    progress: { completedBytes: 25 * 1024 ** 2, totalBytes: 100 * 1024 ** 2, percent: 25, bytesPerSecond: 5 * 1024 ** 2, etaSeconds: 15 }, error: null
+  },
+  {
+    id: "readme-building", regionId: "germany", name: "Germany",
+    status: "running", phase: "building", createdAt: new Date(jobTime - 128_000).toISOString(),
+    startedAt: new Date(jobTime - 125_000).toISOString(), progress: null, error: null
+  },
+  {
+    id: "readme-failed", regionId: "united-kingdom", name: "United Kingdom",
+    status: "failed", phase: "failed", lastPhase: "building",
+    createdAt: new Date(jobTime - 195_000).toISOString(), startedAt: new Date(jobTime - 190_000).toISOString(),
+    completedAt: new Date(jobTime - 10_000).toISOString(), progress: null,
+    error: "java.lang.OutOfMemoryError: Java heap space"
+  },
+  {
+    id: "readme-complete", regionId: "florida", name: "Florida",
+    status: "complete", phase: "complete", createdAt: new Date(jobTime - 96_000).toISOString(),
+    startedAt: new Date(jobTime - 90_000).toISOString(), completedAt: new Date(jobTime - 5_000).toISOString(),
+    progress: null, error: null
+  }
+];
+const galleryPage = await browser.newPage({ viewport: { width: 900, height: 900 }, deviceScaleFactor: 1 });
+await galleryPage.route("**/api/maps", (route) => route.fulfill({
+  status: 200,
+  contentType: "application/json",
+  body: JSON.stringify({ ...managerState, jobs: galleryJobs })
+}));
+await galleryPage.goto(baseUrl, { waitUntil: "domcontentloaded" });
+await galleryPage.locator("#manage-maps").click();
+await galleryPage.locator(".job-row").filter({ hasText: "Florida" }).waitFor();
+await galleryPage.addStyleTag({ content: ".manager-header { position: static !important; }" });
+for (const job of galleryJobs) {
+  const state = job.id.replace("readme-", "");
+  await galleryPage.locator(".job-row").filter({ hasText: job.name }).screenshot({
+    path: new URL(`map-manager-${state}.jpg`, outputDir).pathname,
+    type: "jpeg",
+    quality: 86
+  });
+}
+await galleryPage.close();
+
 await browser.close();
 console.log(`README screenshots written to ${outputDir.pathname}`);

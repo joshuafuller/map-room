@@ -20,6 +20,19 @@
 
 ![UI-driven map creation and installed-map management](docs/screenshots/map-management.jpg)
 
+### Map builds at a glance
+
+The manager keeps the same compact phase path from queue through publication,
+while the detail line explains what is happening and what the user should do.
+
+| Waiting for its turn | Downloading with measured ETA |
+| --- | --- |
+| ![A queued map waiting for the active build](docs/screenshots/map-manager-queued.jpg) | ![A map source downloading with bytes, rate, ETA, and phase](docs/screenshots/map-manager-downloading.jpg) |
+| **Generating vector tiles** | **Actionable failure** |
+| ![Planetiler generating vector tiles with elapsed time](docs/screenshots/map-manager-building.jpg) | ![A failed map build preserving its reached phase and showing memory guidance](docs/screenshots/map-manager-failed.jpg) |
+
+![A completed map build with every publication phase checked](docs/screenshots/map-manager-complete.jpg)
+
 It is intended to give a person one simple place to choose the maps their team
 needs, download or import them, keep them current, preview them in a browser,
 and make them available to web, GIS, offline-network, and ATAK users.
@@ -31,13 +44,36 @@ that want control of their own map availability.
 
 ## What it does
 
-```text
-Map sources                 Map Room                      Map users
+```mermaid
+flowchart LR
+  subgraph Sources[Map sources]
+    Catalogs[Provider catalogs]
+    Files[Local map files]
+    Imagery[Imagery and terrain]
+    Private[Organization catalogs]
+  end
 
-provider catalogs  --->  acquire and verify  --->  interactive website
-local map files     --->  build and style     --->  vector tile clients
-future imagery      --->  retain and update   --->  raster XYZ/TMS and WMTS
-private catalogs    --->  publish and monitor --->  ATAK and offline networks
+  subgraph Room[Map Room]
+    Acquire[Acquire and verify] --> Build[Build and style]
+    Build --> Retain[Retain and update]
+    Retain --> Publish[Publish and monitor]
+  end
+
+  subgraph Users[Map users]
+    Website[Interactive website]
+    Vector[Vector tile clients]
+    Raster[Raster XYZ, TMS, and WMTS]
+    Offline[ATAK and offline networks]
+  end
+
+  Catalogs --> Acquire
+  Files --> Acquire
+  Imagery -. planned .-> Acquire
+  Private -. planned .-> Acquire
+  Publish --> Website
+  Publish --> Vector
+  Publish --> Raster
+  Publish --> Offline
 ```
 
 A maintainer should be able to:
@@ -124,11 +160,14 @@ The prototype has demonstrated:
   ATAK configuration;
 - one composed browser/ATAK map layer spanning independently managed Florida
   and California archives;
+- import of a Map Room publication into a real ATAK client during development;
 - operation on an isolated container network with no outbound route.
 
 The prototype has **not** yet validated:
 
-- importing and caching its configuration on a real supported ATAK release;
+- a recorded ATAK compatibility matrix covering the exact client version,
+  device, raster/vector delivery mode, rendering, area caching, and fully
+  disconnected behavior;
 - strict OSGeo TMS delivery—the current ATAK/browser raster prototype is XYZ;
 - the no-expertise maintainer workflow for acquiring new maps from the website;
 - automatic acquisition, update, atomic promotion, rollback, and retention;
@@ -198,13 +237,18 @@ See [ATAK map delivery and file types](docs/ATAK_MAP_TYPES.md) for a plain-langu
 comparison of raster XML, vector source/style JSON, PBF tiles, and MBTiles
 archives.
 
+For the source-traced internals behind those choices, including QR deep links,
+tile requests, offline containers, and full Data Package extraction, read
+[How ATAK ingests and uses maps](docs/ATAK_MAP_ARCHITECTURE.md).
+
 Product language and onboarding follow the [primary ATAK user persona](docs/USER_PERSONA.md):
 assume no GIS background, ask “hosted or completely offline?” first, and reveal
 raster/vector details only after that choice.
 
-The tooling builds and validates the server artifact. It does not claim that a
-specific ATAK version/device combination works until someone records that
-device evidence.
+The tooling builds and validates the server artifact, and a Map Room map has
+been imported into ATAK during development. It does not claim that a specific
+ATAK version/device/mode combination is validated until that evidence is
+recorded reproducibly.
 
 ## Run the current prototype
 

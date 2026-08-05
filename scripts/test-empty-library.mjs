@@ -20,12 +20,27 @@ try {
   await page.locator("#map-id").fill("first-map");
   await page.locator("#map-create-form button[type=submit]").click();
   const job = page.locator(".job-row").filter({ hasText: "First Map" }).first();
-  await page.waitForFunction(() => {
-    const state = document.querySelector(".job-row .job-state")?.textContent;
-    return state === "complete" || state === "failed";
-  }, null, { timeout: 10 * 60 * 1000 });
-  if (await job.locator(".job-state").textContent() === "failed") throw new Error(`first-map build failed: ${await job.textContent()}`);
-  await page.waitForFunction(() => [...document.querySelectorAll("#region-select option")].some(({ value }) => value === "first-map"));
+  const deadline = Date.now() + 10 * 60 * 1000;
+  while (Date.now() < deadline) {
+    const { maps, jobs } = await fetch(`${baseUrl}/api/maps`).then((response) => response.json());
+    const status = jobs.findLast((entry) => entry.name === "First Map")?.status;
+    if (status === "failed") throw new Error(`first-map build failed: ${await job.textContent()}`);
+    if (maps.some((entry) => entry.id === "first-map")) break;
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+  }
+  const published = await fetch(`${baseUrl}/api/maps`).then((response) => response.json());
+  if (!published.maps.some((entry) => entry.id === "first-map")) throw new Error("first-map did not finish within 10 minutes");
+  try {
+    await page.waitForFunction(() => [...document.querySelectorAll("#region-select option")].some(({ value }) => value === "first-map"));
+  } catch (error) {
+    const [catalog, api, managerStatus, options] = await Promise.all([
+      page.evaluate(() => fetch("/regions.json", { cache: "no-store" }).then((response) => response.json())),
+      page.evaluate(() => fetch("/api/maps").then((response) => response.json())),
+      page.locator("#manager-status").textContent(),
+      page.locator("#region-select option").allTextContents()
+    ]);
+    throw new Error(`first map did not refresh into the viewer: ${JSON.stringify({ catalog, api, managerStatus, options })}`, { cause: error });
+  }
   if (await page.locator(".map-row").filter({ hasText: "Uploaded PBF" }).count() !== 1) throw new Error("first map did not identify its uploaded source");
 
   const row = page.locator(".map-row").filter({ hasText: "first-map" }).first();
