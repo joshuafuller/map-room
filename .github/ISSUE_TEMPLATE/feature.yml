@@ -18,6 +18,13 @@ body:
     validations:
       required: true
   - type: textarea
+    id: done
+    attributes:
+      label: Definition of Done
+      description: List the implementation, testing, documentation, and evidence required before this issue can close.
+    validations:
+      required: true
+  - type: textarea
     id: data
     attributes:
       label: Data, license, and attribution impact
