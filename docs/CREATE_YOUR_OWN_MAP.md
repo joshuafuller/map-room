@@ -121,23 +121,32 @@ regional MBTiles archive.
 
 ### Streaming vector map — preferred
 
-For one installed region, download its vector source JSON and the currently
-selected style JSON. Import the source, open the new layer's options, select
-**Set Layer Style**, choose **Import File**, and import the style. Vector is the
-preferred hosted path because it usually transfers and caches less data while
-keeping labels and geometry sharp. It has a narrower, version-sensitive ATAK
-compatibility surface, so validate the exact ATAK release.
+Select one installed region, then choose **Add to ATAK / show QR**. Scan the QR
+with the ATAK device or select **Open in ATAK** when reading the page on that
+device. ATAK asks for confirmation, downloads the small hosted vector-source
+JSON, and passes it to its normal importer. If the deep link is unavailable,
+copy the displayed setup link or download the setup file instead.
+
+Next, download the currently selected style JSON. Open the new vector layer's
+options, select **Set Layer Style**, choose **Import File**, and import the
+style. Vector is the preferred hosted path because it usually transfers and
+caches less data while keeping labels and geometry sharp. It has a narrower,
+version-sensitive ATAK compatibility surface, so validate the exact release.
 
 ### Raster/TMS-style map source — compatibility option
 
-Download one of the themed ATAK map-source XML files. Import it with ATAK's
-Import Manager, select the new map in the map layer controls, and verify tiles
-at several zoom levels. Map Room renders the PNG images, which is simpler for
-the client to display but usually transfers more data. The XML points to the
-tile service; it does not contain a portable map.
+Open the raster compatibility option and choose **Add to ATAK / show QR**. Scan
+the QR, use **Open in ATAK**, copy the setup link, or download the XML fallback.
+After ATAK confirms and imports it, select the new map in the map layer controls
+and verify tiles at several zoom levels. Map Room renders the PNG images, which
+is simpler for the client to display but usually transfers more data. The XML
+points to the tile service; it does not contain a portable map.
 
 The full regional MBTiles archive is also available as an optional download.
-Large archives may be inconvenient to transfer and store on Android.
+Large archives may be inconvenient to transfer and store on Android. The QR
+contains only the hosted setup link—not tiles or the MBTiles archive. Transfer
+large offline archives directly instead of wrapping them in a large ATAK Data
+Package unless that exact device and import path have been validated.
 
 ## 5. Perform the device/offline check
 

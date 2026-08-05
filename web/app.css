@@ -154,7 +154,15 @@ button { font: inherit; }
 #toast { position: fixed; z-index: 3; left: 50%; bottom: 24px; transform: translate(-50%, 20px); padding: 9px 13px; border-radius: 10px; color: white; background: #1f313b; opacity: 0; transition: .2s ease; pointer-events: none; font-size: 12px; }
 #toast.show { opacity: 1; transform: translate(-50%, 0); }
 .manager-dialog { width: min(760px, calc(100vw - 28px)); max-height: calc(100dvh - 28px); padding: 0; border: 1px solid rgba(255,255,255,.78); border-radius: 20px; color: var(--ink); background: #fbfaf7; box-shadow: 0 28px 90px rgba(10,18,24,.36); }
-.manager-dialog::backdrop { background: rgba(8,14,18,.56); backdrop-filter: blur(5px); }
+.manager-dialog::backdrop, .atak-share-dialog::backdrop { background: rgba(8,14,18,.56); backdrop-filter: blur(5px); }
+.atak-share-dialog { width: min(430px, calc(100vw - 28px)); max-height: calc(100dvh - 28px); padding: 0; border: 1px solid rgba(255,255,255,.78); border-radius: 20px; color: var(--ink); background: #fbfaf7; box-shadow: 0 28px 90px rgba(10,18,24,.36); }
+.atak-share-content { padding: 18px 22px 22px; }
+.atak-share-content[hidden], .manager-warning[hidden], .atak-share-qr[hidden] { display: none; }
+.atak-share-qr { width: min(100%, 310px); margin: 0 auto 12px; padding: 10px; border: 1px solid var(--line); border-radius: 14px; background: white; }
+.atak-share-qr svg { display: block; width: 100%; height: auto; }
+.atak-link-label { display: block; margin-top: 12px; color: var(--muted); font-size: 10px; font-weight: 700; }
+.atak-share-link { width: 100%; margin-top: 5px; padding: 9px; border: 1px solid var(--line); border-radius: 8px; color: var(--ink); background: white; font: 10px/1.35 monospace; }
+.atak-share-content .validation-note { color: var(--muted); font-size: 11px; line-height: 1.45; }
 .manager-header { position: sticky; z-index: 1; top: 0; display: flex; align-items: center; justify-content: space-between; padding: 20px 22px 15px; border-bottom: 1px solid var(--line); background: rgba(251,250,247,.96); }
 .manager-header .eyebrow { margin-bottom: 3px; }
 .manager-header h2 { margin: 0; font-size: 22px; }

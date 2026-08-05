@@ -6,6 +6,25 @@ Planetiler: 0.10.1
 TileServer GL: 5.6.0
 MapLibre GL JS: 6.1.0
 
+## Hosted ATAK onboarding — 2026-08-05
+
+Automated validation now establishes that:
+
+- Map Room serves stable raster XML and per-map vector JSON definition URLs
+  using the requesting browser origin and the expected MIME types;
+- nested download URLs containing queries, Unicode, and reserved characters
+  round-trip exactly through the fully percent-encoded TAK import URI;
+- Chromium renders the QR locally, jsQR decodes the resulting pixels back to
+  the exact TAK URI, and the runtime makes no third-party HTTP requests;
+- `localhost` and other loopback origins show a device-reachability warning
+  before any QR is displayed; and
+- the production-like container build and HTTP integration suite serve both
+  hosted definition types alongside the local QR generator asset.
+
+This validates Map Room's server, URI, QR, and browser behavior. It does not
+prove that a physical ATAK device opens the deep link, accepts the raster or
+vector definition, renders the map, caches an area, or works disconnected.
+
 ## Public map-creation workflow — 2026-08-05
 
 The public `scripts/create-map.sh` workflow was exercised end to end with the

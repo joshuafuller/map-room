@@ -39,11 +39,14 @@ check_status / text/html
 check_status /manifest.json application/json
 check_status /regions.json application/json
 check_status /vendor/maplibre-gl.mjs application/javascript
+check_status /vendor/qrcode-generator.mjs application/javascript
 for theme in $themes; do
 	check_status "/styles/$theme/style.json" application/json
 done
 
 first_region=$(python3 -c "import json; print(json.load(open('data/regions.json'))['regions'][0]['id'])")
+check_status /api/atak/raster/daylight.xml application/xml
+check_status "/api/atak/vector/$first_region.json" application/json
 atak_vector_headers="$tmp_dir/atak-vector-headers"
 atak_vector_byte="$tmp_dir/atak-vector-byte"
 atak_vector_status=$(curl -sS -r 0-0 -D "$atak_vector_headers" -o "$atak_vector_byte" -w '%{http_code}' "$base_url/atak/vector/$first_region.mbtiles")
@@ -63,6 +66,9 @@ if rg -q 'localhost' "$mobile_style"; then
 fi
 python3 -c 'import json,sys; style=json.load(open(sys.argv[1])); assert all(source.get("url", "").startswith(("/data/", "http://mobile.example.test:8088/data/")) for source in style["sources"].values() if source.get("type") == "vector")' "$mobile_style"
 printf 'PASS remote-browser vector sources preserve the requesting origin\n'
+curl -fsS -H "Host: $mobile_host" "$base_url/api/atak/raster/daylight.xml" | grep -q "http://$mobile_host/styles/all-daylight/"
+curl -fsS -H "Host: $mobile_host" "$base_url/api/atak/vector/$first_region.json" | grep -q "http://$mobile_host/data/$first_region/"
+printf 'PASS hosted ATAK definitions preserve the requesting origin\n'
 for theme in $themes; do
 	check_status "/styles/$theme/sprite.json" application/json
 	check_status "/styles/$theme/sprite.png" image/png

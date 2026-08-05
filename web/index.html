@@ -98,14 +98,16 @@
           <span class="path-badge recommended">Preferred</span>
           <strong>Vector tiles</strong>
           <p>Usually smaller to stream and cache, with sharp labels. Import the source first, then its style.</p>
-          <button id="atak-vector-source" class="action primary" type="button" disabled>Select one region above</button>
+          <button id="atak-vector-share" class="action primary" type="button" disabled>Select one region above</button>
+          <button id="atak-vector-source" class="action" type="button" disabled>Download vector source (.json)</button>
           <button id="atak-vector-style" class="action">2. Download vector style (.json)</button>
           <p id="atak-vector-instructions" class="hint">Choose an individual published map above. Import its vector source first, then apply the style in ATAK.</p>
         </div>
         <details class="raster-option">
           <summary>Compatibility option: raster/TMS tiles</summary>
           <p class="hint">Map Room renders PNG images for ATAK. This is simpler to display but usually transfers more data.</p>
-          <button id="atak-download" class="action primary">Download raster/TMS source (.xml)</button>
+          <button id="atak-raster-share" class="action primary">Add to ATAK / show QR</button>
+          <button id="atak-download" class="action">Download raster/TMS source (.xml)</button>
           <button id="copy-raster" class="action">Copy raster tile URL</button>
           <p class="hint">The XML is a pointer to a tile service, not the map itself. TMS is a tile-request pattern, not a single map file.</p>
         </details>
@@ -116,7 +118,7 @@
         <h3 id="offline-path-title">Make a completely offline map</h3>
         <p id="offline-message">Select one region above to download its complete vector archive.</p>
         <a id="atak-vector-map" class="action primary" href="#" download hidden>Download regional archive (.mbtiles)</a>
-        <p class="validation-note">Transfer the full file before departure. Verify import and styling on your ATAK version before relying on it.</p>
+        <p class="validation-note">Transfer the full file before departure. QR codes only carry small hosted-map links, not tiles. Avoid wrapping huge offline archives in ATAK Data Packages; transfer them directly and verify the import on your ATAK version.</p>
       </section>
 
       <details class="delivery-guide">
@@ -130,6 +132,24 @@
       </details>
       </div>
     </aside>
+
+    <dialog id="atak-share-dialog" class="atak-share-dialog" aria-labelledby="atak-share-title">
+      <div class="manager-header">
+        <div><p class="eyebrow">Hosted map setup</p><h2 id="atak-share-title">Add to ATAK</h2></div>
+        <button id="atak-share-close" class="icon-button" type="button" aria-label="Close ATAK setup">×</button>
+      </div>
+      <p id="atak-share-warning" class="manager-warning" hidden></p>
+      <div id="atak-share-content" class="atak-share-content">
+        <div id="atak-share-qr" class="atak-share-qr" aria-live="polite"></div>
+        <a id="atak-add-link" class="action primary" href="#">Open in ATAK</a>
+        <label class="atak-link-label" for="atak-share-link">ATAK setup link</label>
+        <input id="atak-share-link" class="atak-share-link" type="text" readonly />
+        <button id="atak-copy-link" class="action" type="button">Copy setup link</button>
+        <a id="atak-definition-link" class="action" href="#" download>Download setup file instead</a>
+        <p id="atak-share-details" class="hint"></p>
+        <p class="validation-note">ATAK will ask for confirmation, download the small setup file, and pass it to its normal importer. The QR contains only this link—never map tiles, credentials, or an offline archive.</p>
+      </div>
+    </dialog>
 
     <dialog id="map-manager" class="manager-dialog" aria-labelledby="manager-title">
       <div class="manager-header">
@@ -156,7 +176,7 @@
             <label>OpenStreetMap PBF file<input id="map-upload" type="file" accept=".osm.pbf,application/octet-stream" /></label>
           </div>
           <div id="url-fields" class="source-fields" hidden>
-            <label>HTTPS source URL<input id="map-source-url" type="url" placeholder="https://download.geofabrik.de/…-latest.osm.pbf" /></label>
+            <label>HTTPS source URL<input id="map-source-url" type="url" placeholder="Paste an approved .osm.pbf HTTPS URL" /></label>
           </div>
           <div class="field-row">
             <label>Map name<input id="map-name" name="name" maxlength="120" required /></label>
@@ -179,6 +199,7 @@
 
     <div id="toast" role="status" aria-live="polite"></div>
 
+    <script type="importmap">{"imports":{"qrcode-generator":"/vendor/qrcode-generator.mjs"}}</script>
     <script type="module" src="/app.js"></script>
     <script type="module" src="/dev-reload.js"></script>
   </body>

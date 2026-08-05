@@ -2,6 +2,11 @@
 
 Status: Proposed
 
+Implementation note (2026-08-05): issue #51 extends this first browser-download
+decision with request-origin hosted XML/JSON endpoints, exact TAK deep links,
+and locally rendered QR codes. Loopback origins are withheld from QR display.
+The real-device evidence boundary described below remains unchanged.
+
 ## Context
 
 ATAK needs an XML `customMapSource` containing an absolute tile URL that the

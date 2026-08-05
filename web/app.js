@@ -1,9 +1,11 @@
 import * as maplibregl from "/vendor/maplibre-gl.mjs";
 import { buildAtakVectorDescriptor, buildAtakXml, RASTER_MAX_ZOOM, RASTER_PIXEL_RATIO } from "/atak.js";
+import { buildAtakImportUri, isLoopbackMapRoomUrl } from "/atak-import.js";
 import { buildAtakVectorStyle } from "/atak-vector.js";
 import { buildingLayerIds } from "/buildings.js";
 import { poiLayerIds, poiLayerVisibility } from "/poi-visibility.js";
 import { setupMapManager } from "/map-manager.js";
+import { renderQrSvg } from "/qr-code.js";
 
 const themes = {
   daylight: { name: "Daylight", color: "#f4f1ea" },
@@ -67,21 +69,25 @@ function vectorPublication() {
 function updateAtakVectorPresentation() {
   const publication = vectorPublication();
   const sourceButton = document.querySelector("#atak-vector-source");
+  const shareButton = document.querySelector("#atak-vector-share");
   const styleButton = document.querySelector("#atak-vector-style");
   const archiveLink = document.querySelector("#atak-vector-map");
   const instructions = document.querySelector("#atak-vector-instructions");
   const offlineMessage = document.querySelector("#offline-message");
   sourceButton.disabled = !publication;
+  shareButton.disabled = !publication;
   styleButton.disabled = !publication;
   archiveLink.hidden = !publication;
   if (!publication) {
     sourceButton.textContent = "Select one region above";
+    shareButton.textContent = "Select one region above";
     instructions.textContent = "Choose an individual published map above. Map Room will generate a tiny ATAK source document that streams PBF tiles and can cache an area offline.";
     offlineMessage.textContent = "Select one region above to download its complete vector archive.";
     return;
   }
   const name = publication.name ?? publication.region;
-  sourceButton.textContent = `1. Download ${name} source (.json)`;
+  shareButton.textContent = `Add ${name} to ATAK / show QR`;
+  sourceButton.textContent = `Download ${name} source (.json)`;
   archiveLink.href = `/atak/vector/${publication.id}.mbtiles`;
   archiveLink.download = `map-room-${publication.id}-vector.mbtiles`;
   archiveLink.textContent = `Download ${name} archive (.mbtiles)`;
@@ -96,6 +102,7 @@ async function loadRegionCatalog({ refreshMap = false } = {}) {
   if (!response.ok) throw new Error(`Region catalog returned HTTP ${response.status}`);
   const catalog = await response.json();
   hasMaps = catalog.regions.length > 0;
+  document.querySelector("#atak-raster-share").disabled = !hasMaps;
   regionCatalog.clear();
   manifest = {
     id: "all",
@@ -295,6 +302,59 @@ document.querySelectorAll(".mode").forEach((button) => {
 });
 
 document.querySelector("#region-select").addEventListener("change", (event) => selectView(event.target.value));
+
+const atakShareDialog = document.querySelector("#atak-share-dialog");
+
+function openAtakShare(kind) {
+  const publication = vectorPublication();
+  if (kind === "vector" && !publication) return;
+
+  const warning = document.querySelector("#atak-share-warning");
+  const content = document.querySelector("#atak-share-content");
+  const name = kind === "vector" ? (publication.name ?? publication.region) : themes[activeTheme].name;
+  document.querySelector("#atak-share-title").textContent = `Add ${name} to ATAK`;
+  atakShareDialog.showModal();
+
+  if (isLoopbackMapRoomUrl(window.location.origin)) {
+    content.hidden = true;
+    warning.hidden = false;
+    warning.innerHTML = `<strong>This address only works on this computer.</strong> Open Map Room using a device-reachable LAN address or DNS name instead of localhost, then return here to display the QR code.`;
+    return;
+  }
+
+  const path = kind === "vector"
+    ? `/api/atak/vector/${publication.id}.json`
+    : `/api/atak/raster/${activeTheme}.xml`;
+  const definitionUrl = new URL(path, window.location.href).href;
+  const importUri = buildAtakImportUri(definitionUrl);
+  warning.hidden = true;
+  content.hidden = false;
+  document.querySelector("#atak-share-qr").innerHTML = renderQrSvg(importUri);
+  document.querySelector("#atak-add-link").href = importUri;
+  document.querySelector("#atak-share-link").value = importUri;
+  const definitionLink = document.querySelector("#atak-definition-link");
+  definitionLink.href = definitionUrl;
+  definitionLink.download = kind === "vector"
+    ? `map-room-${publication.id}-atak-vector.json`
+    : `map-room-${activeTheme}.xml`;
+  document.querySelector("#atak-share-details").textContent = kind === "vector"
+    ? `This adds the small ${name} vector source. Keep Map Room reachable while streaming; then download and apply the selected style from the map controls.`
+    : `This adds the ${name} raster source. Keep Map Room reachable because ATAK requests PNG tiles while you pan and zoom.`;
+}
+
+document.querySelector("#atak-vector-share").addEventListener("click", () => openAtakShare("vector"));
+document.querySelector("#atak-raster-share").addEventListener("click", () => openAtakShare("raster"));
+document.querySelector("#atak-share-close").addEventListener("click", () => atakShareDialog.close());
+document.querySelector("#atak-copy-link").addEventListener("click", async () => {
+  const input = document.querySelector("#atak-share-link");
+  try {
+    await navigator.clipboard.writeText(input.value);
+    toast("ATAK setup link copied");
+  } catch {
+    input.select();
+    toast("Select and copy the ATAK setup link");
+  }
+});
 
 document.querySelector("#atak-download").addEventListener("click", () => {
   const blob = new Blob([buildAtakXml({

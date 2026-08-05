@@ -29,7 +29,16 @@ function fixture(overrides = {}) {
     calls.push(["upload", identity]);
     return `sources/${identity.id}.osm.pbf`;
   };
-  return { api: createApi({ library, queue, catalog, saveUpload }), calls };
+  const loadTileJson = overrides.loadTileJson ?? (async (id) => ({
+    id,
+    format: "pbf",
+    minzoom: 0,
+    maxzoom: 14,
+    bounds: [-87.64, 24.4, -80.03, 31.0],
+    attribution: "OpenStreetMap contributors",
+    vector_layers: [{ id: "transportation" }]
+  }));
+  return { api: createApi({ library, queue, catalog, saveUpload, loadTileJson }), calls };
 }
 
 test("reads installed maps, jobs, and a filtered catalog", async () => {
@@ -94,5 +103,35 @@ test("returns structured client errors for unsafe or unknown input", async () =>
     const responses = await Promise.all(cases);
     assert.deepEqual(responses.map(({ status }) => status), [400, 400, 400, 400, 404]);
     for (const response of responses) assert.equal(typeof (await response.json()).error, "string");
+  });
+});
+
+test("serves stable ATAK raster and vector definitions on the requesting origin", async () => {
+  const { api } = fixture();
+  await serve(api, async (base) => {
+    const options = { headers: { "x-forwarded-host": "maps.example.test:8088", "x-forwarded-proto": "https" } };
+    const raster = await fetch(`${base}/api/atak/raster/dark-blue.xml`, options);
+    assert.equal(raster.status, 200);
+    assert.match(raster.headers.get("content-type"), /^application\/xml/);
+    assert.match(await raster.text(), /https:\/\/maps\.example\.test:8088\/styles\/all-dark-blue\/\{\$z\}\/\{\$x\}\/\{\$y\}@2x\.png/);
+
+    const vector = await fetch(`${base}/api/atak/vector/florida.json`, options);
+    assert.equal(vector.status, 200);
+    assert.match(vector.headers.get("content-type"), /^application\/json/);
+    const descriptor = await vector.json();
+    assert.equal(descriptor.title, "Map Room - Florida");
+    assert.equal(descriptor.url, "https://maps.example.test:8088/data/florida/{$z}/{$x}/{$y}.pbf");
+  });
+});
+
+test("ATAK definition endpoints reject unknown maps, themes, and untrusted forwarding headers", async () => {
+  const { api } = fixture();
+  await serve(api, async (base) => {
+    const statuses = await Promise.all([
+      fetch(`${base}/api/atak/raster/missing.xml`),
+      fetch(`${base}/api/atak/vector/missing.json`),
+      fetch(`${base}/api/atak/raster/daylight.xml`, { headers: { "x-forwarded-proto": "javascript" } })
+    ]);
+    assert.deepEqual(statuses.map(({ status }) => status), [400, 400, 400]);
   });
 });

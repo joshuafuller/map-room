@@ -128,12 +128,25 @@ does not mean live location tracking, TAK Cursor-on-Target traffic, or automatic
 real-time OpenStreetMap updates. Map freshness is determined by when the source
 extract was acquired and when the MBTiles publication was built.
 
-## Future QR onboarding
+## QR and Add to ATAK onboarding
 
-A future QR code should simplify importing a **hosted** map set by linking to
-Map Room's reachable setup page, TAK import URI, or small XML/JSON descriptors.
-The QR code is an onboarding shortcut; the device will still need network
-access to Map Room for uncached tiles.
+Map Room can display a QR code and an **Open in ATAK** action for a compatible
+hosted raster or vector source. Both carry this deep-link shape:
+
+```text
+tak://com.atakmap.app/import?url=<fully-percent-encoded-definition-URL>
+```
+
+ATAK asks the user to confirm, downloads the small XML or JSON definition from
+Map Room, and passes it to the normal importer. The page also exposes the exact
+deep link and the definition file as fallbacks. QR codes are generated locally;
+the setup link is not sent to a third-party QR service.
+
+Open Map Room through a device-reachable LAN address or DNS name. The page
+withholds the QR on `localhost` and other loopback addresses because ATAK would
+try to fetch the definition from the Android device itself. The QR is only an
+onboarding shortcut; the device still needs access to Map Room for uncached
+tiles. It contains no map tiles, credentials, MBTiles archive, or Data Package.
 
 Do not use QR onboarding or a TAK Data Package as the default way to push a
 large regional MBTiles archive. As a conservative field guideline, keep a
