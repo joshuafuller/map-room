@@ -35,5 +35,6 @@ npm run build:styles
 cp node_modules/maplibre-gl/dist/*.mjs "$vendor_dir/"
 cp node_modules/maplibre-gl/dist/maplibre-gl.css "$vendor_dir/"
 cp node_modules/maplibre-gl/LICENSE.txt "$vendor_dir/MapLibre-LICENSE.txt"
+cp node_modules/qrcode-generator/dist/qrcode.mjs "$vendor_dir/qrcode-generator.mjs"
 
 printf 'Map Room browser assets and local fonts are ready.\n'

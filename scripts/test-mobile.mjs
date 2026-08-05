@@ -17,7 +17,7 @@ page.on("request", (request) => {
   if (/\/data\/[a-z0-9-]+(?:\.json|\/)/.test(request.url())) vectorRequests.push(request.url());
 });
 
-await page.goto(baseUrl, { waitUntil: "networkidle" });
+await page.goto(baseUrl, { waitUntil: "domcontentloaded" });
 await page.locator(".maplibregl-canvas").waitFor({ state: "visible" });
 await page.waitForFunction(() => document.querySelector("#region")?.textContent === "All installed maps");
 await page.waitForTimeout(1000);

@@ -60,6 +60,11 @@ const api = createApi({
   queue,
   catalog,
   saveUpload: createUploadSaver({ dataDirectory, maxBytes: Number(process.env.MAP_ROOM_MAX_UPLOAD_BYTES) || 20 * 1024 ** 3 }),
+  loadTileJson: async (id) => {
+    const response = await fetch(`http://127.0.0.1:8081/data/${encodeURIComponent(id)}.json`);
+    if (!response.ok) throw new Error(`TileJSON for map '${id}' is unavailable`);
+    return response.json();
+  },
   allowedSourceHosts: (process.env.MAP_ROOM_SOURCE_HOSTS ?? "download.geofabrik.de").split(",").map((value) => value.trim()).filter(Boolean)
 });
 

@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { mkdir, readFile } from "node:fs/promises";
 import { chromium } from "playwright";
+import jsQR from "jsqr";
 import sharp from "sharp";
 
 const baseUrl = process.env.BASE_URL ?? "http://localhost:8088";
@@ -104,6 +105,17 @@ if (await page.locator("#atak-vector-map").textContent() !== `Download ${vectorT
 }
 if (!(await page.locator("#atak-vector-map").isVisible())) {
   failures.push("Selected regional view did not expose its MBTiles download");
+}
+if (!(await page.locator("#atak-vector-share").isVisible())) {
+  failures.push("Selected regional view did not expose Add to ATAK onboarding");
+} else {
+  await page.locator("#atak-vector-share").click();
+  if (!(await page.locator("#atak-share-dialog").isVisible()) ||
+      !(await page.locator("#atak-share-warning").textContent()).includes("localhost") ||
+      await page.locator("#atak-share-qr").isVisible()) {
+    failures.push("Loopback onboarding did not explain reachability before displaying a QR code");
+  }
+  await page.locator("#atak-share-close").click();
 }
 if (requestedUrls.some((url) => url.includes(`/styles/${vectorTestRegion.id}-daylight/`))) {
   failures.push(`Framing ${vectorTestRegion.name} switched away from the composed map layer`);
@@ -228,6 +240,21 @@ if (!downloadedXml.includes('<?xml version="1.0" encoding="UTF-8" standalone="ye
     !downloadedXml.includes(`${baseUrl}/styles/all-cyberpunk-tactical/{$z}/{$x}/{$y}@2x.png`)) {
   failures.push("ATAK download did not contain the hardened customMapSource contract");
 }
+
+const exactQrValue = "tak://com.atakmap.app/import?url=https%3A%2F%2Fmaps.example.test%2Froot%2Fapi%2Fatak%2Fvector%2Fcaf%25C3%25A9.json%3Fstyle%3Ddark%2520blue%26next%3Dhttps%253A%252F%252Ftiles.example%252Fa%253Fx%253D1%2526y%253D%2523frag";
+await page.evaluate(async (value) => {
+  const { renderQrSvg } = await import("/qr-code.js");
+  const fixture = document.createElement("div");
+  fixture.id = "qr-browser-fixture";
+  fixture.style.cssText = "position:fixed;inset:0 auto auto 0;width:420px;height:420px;padding:20px;background:white;z-index:10000";
+  fixture.innerHTML = renderQrSvg(value);
+  document.body.append(fixture);
+}, exactQrValue);
+const qrPng = await page.locator("#qr-browser-fixture").screenshot();
+const { data: qrPixels, info: qrInfo } = await sharp(qrPng).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+const decodedQr = jsQR(new Uint8ClampedArray(qrPixels), qrInfo.width, qrInfo.height, { inversionAttempts: "dontInvert" });
+if (decodedQr?.data !== exactQrValue) failures.push("Browser-rendered QR did not decode to the exact TAK URI");
+await page.locator("#qr-browser-fixture").evaluate((element) => element.remove());
 const progressiveDetail = await page.evaluate(async () => {
   const style = await fetch("/styles/all-cyberpunk-tactical/style.json").then((response) => response.json());
   const first = (prefix) => style.layers.find(({ id }) => id.startsWith(prefix));
@@ -372,6 +399,9 @@ if ([daylightDigest, midnightDigest, cyberpunkDigest].includes(tacticalDigest)) 
 if (tacticalMiamiDigest === tacticalDigest) failures.push("Cyberpunk Tactical dense-urban screenshot did not change from the regional view");
 if (tacticalRasterMiamiDigest === tacticalMiamiDigest) failures.push("Tactical raster evidence did not exercise the PNG route");
 if ((await page.locator(".maplibregl-ctrl").count()) < 2) failures.push("MapLibre controls did not render");
+const baseOrigin = new URL(baseUrl).origin;
+const externalRequests = requestedUrls.filter((url) => /^https?:/.test(url) && new URL(url).origin !== baseOrigin);
+if (externalRequests.length) failures.push(`runtime requested third-party URLs: ${externalRequests.join(", ")}`);
 
 await browser.close();
 
@@ -387,4 +417,5 @@ console.log("PASS Dark Blue, Dark Red, and Dark Green produced distinct browser 
 console.log("PASS Cyberpunk produced a distinct vector screenshot");
 console.log("PASS every vector theme exposes 3D buildings and right-drag rotates the camera");
 console.log("PASS Cyberpunk Tactical rendered distinctly with a real preview tile and ATAK raster request");
+console.log("PASS local QR rendering decoded to the exact TAK URI without third-party requests");
 console.log(`Screenshots: ${outputDir.pathname}`);

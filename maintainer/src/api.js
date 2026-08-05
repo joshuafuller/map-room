@@ -1,11 +1,32 @@
 import { URL } from "node:url";
 import { validateMapIdentity } from "./map-library.js";
 import { validateRemoteSourceUrl } from "./source-policy.js";
+import { buildAtakVectorDescriptor, buildAtakXml } from "../../web/atak.js";
 
 const json = (response, status, value) => {
   response.writeHead(status, { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" });
   response.end(`${JSON.stringify(value)}\n`);
 };
+
+const document = (response, contentType, value) => {
+  response.writeHead(200, { "content-type": contentType, "cache-control": "no-store" });
+  response.end(value);
+};
+
+function requestBaseUrl(request) {
+  const forwardedProtocol = request.headers["x-forwarded-proto"];
+  const forwardedHost = request.headers["x-forwarded-host"];
+  const protocol = forwardedProtocol ?? "http";
+  const host = forwardedHost ?? request.headers.host;
+  if (!/^(?:http|https)$/.test(protocol) || typeof host !== "string" || /[,/\\\s]/.test(host)) {
+    throw new Error("ATAK definition requires valid HTTP forwarding headers");
+  }
+  const parsed = new URL(`${protocol}://${host}`);
+  if (parsed.username || parsed.password || parsed.pathname !== "/") {
+    throw new Error("ATAK definition requires valid HTTP forwarding headers");
+  }
+  return parsed.origin;
+}
 
 async function readJson(request) {
   const chunks = [];
@@ -18,7 +39,7 @@ async function readJson(request) {
   return JSON.parse(Buffer.concat(chunks).toString("utf8"));
 }
 
-export function createApi({ library, queue, catalog, saveUpload, allowedSourceHosts = ["download.geofabrik.de"] }) {
+export function createApi({ library, queue, catalog, saveUpload, loadTileJson, allowedSourceHosts = ["download.geofabrik.de"] }) {
   return async (request, response) => {
     const url = new URL(request.url, "http://map-room.local");
     try {
@@ -29,6 +50,25 @@ export function createApi({ library, queue, catalog, saveUpload, allowedSourceHo
         const query = (url.searchParams.get("q") ?? "").trim().toLowerCase();
         const entries = await catalog();
         return json(response, 200, { regions: entries.filter(({ searchText }) => !query || searchText.includes(query)) });
+      }
+      const rasterDefinition = url.pathname.match(/^\/api\/atak\/raster\/([a-z0-9-]+)\.xml$/);
+      if (request.method === "GET" && rasterDefinition) {
+        return document(response, "application/xml; charset=utf-8", buildAtakXml({
+          theme: rasterDefinition[1],
+          baseUrl: requestBaseUrl(request)
+        }));
+      }
+      const vectorDefinition = url.pathname.match(/^\/api\/atak\/vector\/([a-z0-9-]+)\.json$/);
+      if (request.method === "GET" && vectorDefinition) {
+        const publication = (await library.list()).find(({ id }) => id === vectorDefinition[1]);
+        if (!publication) throw new Error(`Map '${vectorDefinition[1]}' not found`);
+        if (typeof loadTileJson !== "function") throw new Error("ATAK vector definition service is unavailable");
+        const descriptor = buildAtakVectorDescriptor({
+          publication,
+          baseUrl: requestBaseUrl(request),
+          tileJson: await loadTileJson(publication.id)
+        });
+        return document(response, "application/json; charset=utf-8", `${JSON.stringify(descriptor, null, 2)}\n`);
       }
       if (request.method === "POST" && url.pathname === "/api/maps") {
         const input = await readJson(request);

@@ -363,7 +363,7 @@ a recognized extension when possible, and then sends transient downloads to
 inner URL therefore has to be reachable from the Android device and valid for
 a normal ATAK importer.
 
-Map Room QR onboarding should therefore:
+Map Room's hosted-map onboarding implements these constraints:
 
 - generate the QR locally and provide the same URI as a tappable Add to ATAK
   action;
