@@ -25,7 +25,7 @@ for (const filename of manifestFiles) {
   regions.push({ id, name: manifest.region, ...manifest });
 }
 
-const defaultRegion = process.env.MAP_ROOM_DEFAULT_REGION ?? regions[0].id;
+const defaultRegion = process.env.MAP_ROOM_DEFAULT_REGION?.trim() || regions[0].id;
 const baseConfig = await parseJson(baseConfigPath);
 const themes = {};
 for (const [themeId, value] of Object.entries(baseConfig.styles)) {

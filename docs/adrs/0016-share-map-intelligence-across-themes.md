@@ -31,9 +31,10 @@ HiDPI atlases with suitable foreground, frame, fill, and semantic accent
 colors.
 
 Essential remains visible and Explore remains hidden by default everywhere.
-The web controls work for every vector theme. Tactical-only concepts such as
-the coordinate grid, urban glow, coastline glow, and restricted road-glow
-hierarchy remain Tactical-only.
+The web controls and optional 3D building extrusions work for every vector
+theme. Urban glow, coastline glow, and the restricted road-glow hierarchy
+remain Tactical-only. The experimental coordinate grid was removed because its
+layer ordering did not provide a dependable usable overlay.
 
 The exact Cyberpunk Classic style-file digest is superseded by semantic
 regression checks for its core background, road palette, glow strategy, and

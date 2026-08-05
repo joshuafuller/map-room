@@ -1,0 +1,105 @@
+{
+  "poi-medical": {
+    "label": "Medical",
+    "silhouette": [
+      "building",
+      "medical-cross"
+    ],
+    "accent": "#ef8b72",
+    "rendering": "lucide-svg"
+  },
+  "poi-fire": {
+    "label": "Fire",
+    "silhouette": [
+      "outer-flame",
+      "inner-flame"
+    ],
+    "accent": "#ef8b72",
+    "rendering": "lucide-svg"
+  },
+  "poi-police": {
+    "label": "Police",
+    "silhouette": [
+      "service-shield",
+      "inner-field"
+    ],
+    "accent": "#64b9dc",
+    "rendering": "lucide-svg"
+  },
+  "poi-fuel": {
+    "label": "Fuel",
+    "silhouette": [
+      "pump-body",
+      "display-window",
+      "hose",
+      "nozzle"
+    ],
+    "accent": "#ddc56d",
+    "rendering": "lucide-svg"
+  },
+  "poi-airport": {
+    "label": "Airport",
+    "silhouette": [
+      "fuselage",
+      "wings",
+      "tail"
+    ],
+    "accent": "#64b9dc",
+    "rendering": "lucide-svg"
+  },
+  "poi-port": {
+    "label": "Port",
+    "silhouette": [
+      "anchor-ring",
+      "anchor-stock",
+      "anchor-flukes"
+    ],
+    "accent": "#64b9dc",
+    "rendering": "lucide-svg"
+  },
+  "poi-food": {
+    "label": "Food",
+    "silhouette": [
+      "fork",
+      "knife"
+    ],
+    "accent": "#ddc56d",
+    "rendering": "lucide-svg"
+  },
+  "poi-lodging": {
+    "label": "Lodging",
+    "silhouette": [
+      "bed-frame",
+      "pillow"
+    ],
+    "accent": "#a791d1",
+    "rendering": "lucide-svg"
+  },
+  "poi-attraction": {
+    "label": "Attraction",
+    "silhouette": [
+      "five-point-star",
+      "center-field"
+    ],
+    "accent": "#ddc56d",
+    "rendering": "lucide-svg"
+  },
+  "poi-shopping": {
+    "label": "Shopping",
+    "silhouette": [
+      "bag",
+      "handles"
+    ],
+    "accent": "#ef8b72",
+    "rendering": "lucide-svg"
+  },
+  "poi-parking": {
+    "label": "Parking",
+    "silhouette": [
+      "parking-ring",
+      "letter-p"
+    ],
+    "accent": "#a791d1",
+    "rendering": "lucide-svg"
+  }
+}

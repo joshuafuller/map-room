@@ -32,6 +32,13 @@ No LAN address or generated deployment XML is committed. A future modular
 onboarding component may add an operator-configured public base URL, served XML
 catalog, TAK import URI, and QR code without changing the XML builder.
 
+QR onboarding is scoped to hosted map sets and small configuration artifacts.
+It must not imply that scanning a code transfers a large offline map. Map Room
+will treat roughly 10–20 MB as a conservative Data Package caution threshold,
+not a universal ATAK limit, until larger-package behavior is validated on the
+specific ATAK and Android versions being supported. Regional MBTiles archives
+need an explicit, size-visible, resumable transfer path instead.
+
 ## Consequences
 
 The first test needs no deployment-specific build step and cannot accidentally

@@ -68,11 +68,12 @@ four distinct artifacts rather than presenting them as interchangeable:
 3. raster `customMapSource` fallback;
 4. optional offline MBTiles archive.
 
-Cyberpunk is the reference style, not a fixed product identity. Its browser
-source includes a default-off, guided 3D-building layer driven by the OMT
-`render_height` and `render_min_height` attributes. The ATAK compiler expresses
-those attributes as legacy identity functions and enables the layer in the
-client derivative. Sprites and glyphs remain self-hosted.
+Cyberpunk remains the reference compatibility style, not a fixed product
+identity. Every browser theme now includes a default-off, guided 3D-building
+layer driven by the OMT `render_height` and `render_min_height` attributes.
+The ATAK compiler expresses those attributes as legacy identity functions and
+enables the layer in the client derivative. Sprites and glyphs remain
+self-hosted.
 
 Until selected upstream inputs are rebuilt together into one overlap-safe
 archive, remote vector export is enabled only for an actual individual

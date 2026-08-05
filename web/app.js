@@ -1,13 +1,15 @@
 import * as maplibregl from "/vendor/maplibre-gl.mjs";
 import { buildAtakVectorDescriptor, buildAtakXml, RASTER_MAX_ZOOM, RASTER_PIXEL_RATIO } from "/atak.js";
 import { buildAtakVectorStyle } from "/atak-vector.js";
-import { buildCoordinateGrid } from "/grid.js";
 import { buildingLayerIds } from "/buildings.js";
 import { poiLayerIds, poiLayerVisibility } from "/poi-visibility.js";
 
 const themes = {
   daylight: { name: "Daylight", color: "#f4f1ea" },
   midnight: { name: "Midnight", color: "#101820" },
+  "dark-blue": { name: "Dark Blue", color: "#07111f" },
+  "dark-red": { name: "Dark Red", color: "#160909" },
+  "dark-green": { name: "Dark Green", color: "#07120d" },
   cyberpunk: { name: "Cyberpunk Classic", color: "#060711" },
   "cyberpunk-tactical": { name: "Cyberpunk Tactical", color: "#03040b" }
 };
@@ -15,9 +17,7 @@ const themes = {
 let activeTheme = "daylight";
 let activeMode = "vector";
 let activeView = "all";
-let gridEnabled = false;
 let buildings3dEnabled = false;
-const poiPresets = { essential: true, explore: false };
 const regionCatalog = new Map();
 let manifest = null;
 const allViewPadding = () => window.innerWidth <= 680
@@ -67,19 +67,22 @@ function updateAtakVectorPresentation() {
   const styleButton = document.querySelector("#atak-vector-style");
   const archiveLink = document.querySelector("#atak-vector-map");
   const instructions = document.querySelector("#atak-vector-instructions");
+  const offlineMessage = document.querySelector("#offline-message");
   sourceButton.disabled = !publication;
   styleButton.disabled = !publication;
   archiveLink.hidden = !publication;
   if (!publication) {
-    sourceButton.textContent = "Select one vector map to stream";
+    sourceButton.textContent = "Select one region above";
     instructions.textContent = "Choose an individual published map above. Map Room will generate a tiny ATAK source document that streams PBF tiles and can cache an area offline.";
+    offlineMessage.textContent = "Select one region above to download its complete vector archive.";
     return;
   }
   const name = publication.name ?? publication.region;
-  sourceButton.textContent = `1. Stream ${name} in ATAK`;
+  sourceButton.textContent = `1. Download ${name} source (.json)`;
   archiveLink.href = `/atak/vector/${publication.id}.mbtiles`;
   archiveLink.download = `map-room-${publication.id}-vector.mbtiles`;
-  archiveLink.textContent = `3. Optional offline ${name} MBTiles`;
+  archiveLink.textContent = `Download ${name} archive (.mbtiles)`;
+  offlineMessage.textContent = `${name} will be copied as one ${formatBytes(publication.archiveBytes)} archive; Map Room is not needed after a successful ATAK import.`;
   instructions.innerHTML = `Import the small vector-source JSON in ATAK, then open that layer's options, select <strong>Set Layer Style</strong>, choose <strong>Import File</strong>, and import the Cyberpunk style. Open this page through the Map Room computer's LAN address, not localhost. ATAK may cache a selected area for offline use without downloading the complete archive.`;
 }
 
@@ -125,10 +128,12 @@ const map = new maplibregl.Map({
   zoom: manifest?.displayZoom ?? manifest?.center?.[2] ?? 2,
   bounds: manifest?.id === "all" ? manifest.bounds : undefined,
   fitBoundsOptions: { padding: allViewPadding() },
-  hash: true
+  hash: true,
+  dragRotate: true,
+  pitchWithRotate: true
 });
 
-map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "bottom-right");
+map.addControl(new maplibregl.NavigationControl({ showCompass: true }), "bottom-right");
 map.addControl(new maplibregl.ScaleControl({ unit: "metric" }), "bottom-right");
 
 const toast = (message) => {
@@ -137,6 +142,18 @@ const toast = (message) => {
   element.classList.add("show");
   window.setTimeout(() => element.classList.remove("show"), 1800);
 };
+
+function formatBytes(bytes) {
+  if (!Number.isFinite(bytes) || bytes < 0) return "regional";
+  const units = ["B", "KB", "MB", "GB", "TB"];
+  let value = bytes;
+  let unit = 0;
+  while (value >= 1024 && unit < units.length - 1) {
+    value /= 1024;
+    unit += 1;
+  }
+  return `${value >= 10 || unit === 0 ? value.toFixed(0) : value.toFixed(1)} ${units[unit]}`;
+}
 
 function rasterStyle(id) {
   return {
@@ -156,16 +173,11 @@ function rasterStyle(id) {
   };
 }
 
-function updateGridControl() {
-  const button = document.querySelector("#grid-toggle");
-  button.hidden = activeTheme !== "cyberpunk-tactical" || activeMode !== "vector";
-  button.setAttribute("aria-pressed", String(gridEnabled));
-}
-
 function updateBuildingControl() {
   const button = document.querySelector("#buildings-toggle");
-  button.hidden = activeMode !== "vector" || !["cyberpunk", "cyberpunk-tactical"].includes(activeTheme);
+  button.hidden = activeMode !== "vector";
   button.setAttribute("aria-pressed", String(buildings3dEnabled));
+  document.querySelector("#rotate-hint").hidden = activeMode !== "vector";
 }
 
 function updateBuildingLayers() {
@@ -176,42 +188,20 @@ function updateBuildingLayers() {
   }
 }
 
-function updatePoiControls() {
-  document.querySelector("#poi-controls").hidden = activeMode !== "vector";
-  document.querySelectorAll("[data-poi-preset]").forEach((button) => {
-    button.setAttribute("aria-pressed", String(poiPresets[button.dataset.poiPreset]));
-  });
-}
-
 function updatePoiLayers() {
   if (activeMode !== "vector") return;
-  for (const [preset, enabled] of Object.entries(poiPresets)) {
-    const layer = `poi-${preset}`;
+  for (const layer of ["poi-essential", "poi-explore", "poi-parking"]) {
     const hudLayer = `${layer}-hud`;
     for (const layerId of poiLayerIds(map.getStyle(), layer)) {
-      map.setLayoutProperty(layerId, "visibility", poiLayerVisibility({ enabled, buildings3dEnabled, hud: false }));
+      map.setLayoutProperty(layerId, "visibility", poiLayerVisibility({ enabled: true, buildings3dEnabled, hud: false }));
     }
     for (const layerId of poiLayerIds(map.getStyle(), hudLayer)) {
-      map.setLayoutProperty(layerId, "visibility", poiLayerVisibility({ enabled, buildings3dEnabled, hud: true }));
+      map.setLayoutProperty(layerId, "visibility", poiLayerVisibility({ enabled: true, buildings3dEnabled, hud: true }));
     }
   }
   for (const layerId of poiLayerIds(map.getStyle(), "poi-airports-hud")) {
     map.setLayoutProperty(layerId, "visibility", buildings3dEnabled ? "visible" : "none");
   }
-}
-
-function updateCoordinateGrid() {
-  if (activeTheme !== "cyberpunk-tactical" || activeMode !== "vector") return;
-  const source = map.getSource("coordinate-grid");
-  if (!source) return;
-  const bounds = map.getBounds();
-  source.setData(buildCoordinateGrid({
-    west: bounds.getWest(),
-    south: bounds.getSouth(),
-    east: bounds.getEast(),
-    north: bounds.getNorth()
-  }));
-  map.setLayoutProperty("coordinate-grid", "visibility", gridEnabled ? "visible" : "none");
 }
 
 function applyMapStyle() {
@@ -220,16 +210,14 @@ function applyMapStyle() {
     : rasterStyle(activeTheme);
   map.setStyle(style);
   map.once("style.load", () => {
-    updateCoordinateGrid();
     updateBuildingLayers();
     updatePoiLayers();
   });
   document.documentElement.style.colorScheme = activeTheme === "daylight" ? "light" : "dark";
   document.querySelector('meta[name="theme-color"]').content = themes[activeTheme].color;
   document.documentElement.dataset.mapTheme = activeTheme;
-  updateGridControl();
   updateBuildingControl();
-  updatePoiControls();
+  document.querySelector("#detail-hint").hidden = activeMode !== "vector";
 }
 
 function selectTheme(id) {
@@ -241,6 +229,7 @@ function selectTheme(id) {
     button.classList.toggle("selected", selected);
     button.setAttribute("aria-checked", String(selected));
   });
+  document.querySelector("#atak-vector-style").textContent = `2. Download ${themes[id].name} style (.json)`;
   toast(`${themes[id].name} map selected`);
 }
 
@@ -327,7 +316,7 @@ document.querySelector("#atak-vector-source").addEventListener("click", async ()
 document.querySelector("#atak-vector-style").addEventListener("click", async () => {
   const publication = vectorPublication();
   if (!publication) return;
-  const theme = "cyberpunk";
+  const theme = activeTheme;
   const response = await fetch(`/styles/${theme}/style.json`);
   if (!response.ok) throw new Error(`Could not load ${theme} style`);
   const sourceStyle = await response.json();
@@ -338,19 +327,12 @@ document.querySelector("#atak-vector-style").addEventListener("click", async () 
     sourceStyle
   });
   downloadJson(style, `map-room-${theme}-atak-vector.json`);
-  toast("Cyberpunk ATAK vector style downloaded");
+  toast(`${themes[theme].name} ATAK vector style downloaded`);
 });
 
 document.querySelector("#copy-raster").addEventListener("click", async () => {
   await navigator.clipboard.writeText(`${window.location.origin}/styles/${styleId()}/{z}/{x}/{y}${RASTER_PIXEL_RATIO}.png`);
   toast("Raster tile URL copied");
-});
-
-document.querySelector("#grid-toggle").addEventListener("click", () => {
-  gridEnabled = !gridEnabled;
-  updateGridControl();
-  updateCoordinateGrid();
-  toast(gridEnabled ? "Coordinate grid enabled" : "Coordinate grid disabled");
 });
 
 document.querySelector("#buildings-toggle").addEventListener("click", () => {
@@ -368,16 +350,5 @@ document.querySelector("#buildings-toggle").addEventListener("click", () => {
   toast(`3D buildings ${buildings3dEnabled ? "enabled" : "disabled"}`);
 });
 
-document.querySelectorAll("[data-poi-preset]").forEach((button) => {
-  button.addEventListener("click", () => {
-    const preset = button.dataset.poiPreset;
-    poiPresets[preset] = !poiPresets[preset];
-    updatePoiControls();
-    updatePoiLayers();
-    toast(`${preset === "essential" ? "Essential" : "Explore"} intel ${poiPresets[preset] ? "enabled" : "disabled"}`);
-  });
-});
-
-map.on("moveend", updateCoordinateGrid);
-updatePoiControls();
 updateBuildingControl();
+document.querySelector("#detail-hint").hidden = activeMode !== "vector";

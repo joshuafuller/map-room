@@ -27,6 +27,10 @@ const themes = {
     text: "#293038",
     textHalo: "#fbfaf7",
     waterText: "#356c89",
+    extrusion: {
+      colors: [0, "#d8d0c6", 30, "#ddd5ca", 100, "#e5d8c5", 220, "#edd3aa"],
+      light: "#fff8ea"
+    },
     symbols: {
       markerFill: "#ffffff", shieldFill: "#ffffff", frame: "#293038", shadow: "#fbfaf7",
       emergency: "#c52f58", service: "#00748a", utility: "#9a6800", leisure: "#6946a5",
@@ -58,6 +62,87 @@ const themes = {
       markerFill: "#101820", shieldFill: "#101820", frame: "#e2e8ec", shadow: "#0c1117",
       emergency: "#f08a74", service: "#55c8dc", utility: "#e1c45a", leisure: "#a98be0",
       onMarker: "#f4f7f9", onLight: "#182028", lightFill: "#f4f7f9"
+    }
+  },
+  "dark-blue": {
+    name: "Dark Blue",
+    background: "#07111f",
+    residential: "#0c1a2a",
+    industrial: "#142238",
+    park: "#0f2a2a",
+    wood: "#0a2522",
+    water: "#071e34",
+    waterLine: "#245a7a",
+    building: "#17283c",
+    buildingOutline: "#29445d",
+    boundary: "#806ba6",
+    roadCasing: "#030912",
+    motorway: "#e09262",
+    primary: "#d2b56f",
+    secondary: "#7992a8",
+    minor: "#405b72",
+    rail: "#8e9bad",
+    text: "#e8f0f7",
+    textHalo: "#07111f",
+    waterText: "#75add0",
+    symbols: {
+      markerFill: "#07111f", shieldFill: "#07111f", frame: "#e8f0f7", shadow: "#030912",
+      emergency: "#ef8b72", service: "#64b9dc", utility: "#ddc56d", leisure: "#a791d1",
+      onMarker: "#f4f8fb", onLight: "#101a24", lightFill: "#f4f8fb"
+    }
+  },
+  "dark-red": {
+    name: "Dark Red",
+    background: "#160909",
+    residential: "#211010",
+    industrial: "#2b1414",
+    park: "#1b1910",
+    wood: "#17170c",
+    water: "#151018",
+    waterLine: "#653a45",
+    building: "#2c1818",
+    buildingOutline: "#4b2929",
+    boundary: "#815866",
+    roadCasing: "#0b0404",
+    motorway: "#ff8b6b",
+    primary: "#d9a66d",
+    secondary: "#8f6c63",
+    minor: "#604a48",
+    rail: "#9f7772",
+    text: "#f4ded6",
+    textHalo: "#160909",
+    waterText: "#c58c95",
+    symbols: {
+      markerFill: "#160909", shieldFill: "#160909", frame: "#f4ded6", shadow: "#0b0404",
+      emergency: "#ff8066", service: "#d48d82", utility: "#d8b56c", leisure: "#b58a9a",
+      onMarker: "#fff0e9", onLight: "#231111", lightFill: "#fff0e9"
+    }
+  },
+  "dark-green": {
+    name: "Dark Green",
+    background: "#07120d",
+    residential: "#0d1e15",
+    industrial: "#14251b",
+    park: "#12321f",
+    wood: "#0c2919",
+    water: "#0a1a1c",
+    waterLine: "#285b55",
+    building: "#18291f",
+    buildingOutline: "#2d4838",
+    boundary: "#6b7d67",
+    roadCasing: "#030a06",
+    motorway: "#d99361",
+    primary: "#c5b66c",
+    secondary: "#71866d",
+    minor: "#405c4b",
+    rail: "#829388",
+    text: "#e4eee6",
+    textHalo: "#07120d",
+    waterText: "#6fb1a5",
+    symbols: {
+      markerFill: "#07120d", shieldFill: "#07120d", frame: "#e4eee6", shadow: "#030a06",
+      emergency: "#e88a6e", service: "#68bba6", utility: "#d5c16c", leisure: "#91a77a",
+      onMarker: "#f1f7f2", onLight: "#102018", lightFill: "#f1f7f2"
     }
   },
   cyberpunk: {
@@ -142,9 +227,9 @@ const roadColor = (theme) => [
   theme.minor
 ];
 
-const extrusionColor = (theme) => [
+const extrusionColor = (extrusion) => [
   "interpolate", ["linear"], ["coalesce", ["get", "render_height"], 3],
-  ...theme.extrusion.colors
+  ...extrusion.colors
 ];
 
 const roadWidth = [
@@ -176,6 +261,10 @@ const tacticalRoadCasingWidth = [
 ];
 
 function makeStyle(id, theme) {
+  const extrusion = theme.extrusion ?? {
+    colors: [0, theme.building, 60, theme.buildingOutline, 220, theme.primary],
+    light: theme.text
+  };
   const labelLayout = {
     "text-field": ["coalesce", ["get", "name:latin"], ["get", "name"]],
     "text-font": ["Open Sans Regular"],
@@ -266,11 +355,6 @@ function makeStyle(id, theme) {
         paint: { "circle-color": ["match", ["get", "class"], ["hospital", "clinic"], theme.motorway, ["police", "fire_station"], theme.primary, theme.rail], "circle-radius": ["interpolate", ["linear"], ["zoom"], 12, 2, 16, 5], "circle-stroke-color": theme.textHalo, "circle-stroke-width": 1.5 }
       }
     ],
-    grid: theme.tactical ? [{
-      id: "coordinate-grid", type: "line", source: "coordinate-grid", minzoom: 14,
-      layout: { visibility: "none" },
-      paint: { "line-color": theme.primary, "line-width": 0.8, "line-dasharray": [2, 3], "line-opacity": 0.24 }
-    }] : [],
     symbols: [
       {
         id: "road-shields", type: "symbol", source: "osm", "source-layer": "transportation_name", minzoom: 8,
@@ -296,12 +380,12 @@ function makeStyle(id, theme) {
         }
       },
       {
-        id: "poi-essential", type: "symbol", source: "osm", "source-layer": "poi", minzoom: 12,
+        id: "poi-essential", type: "symbol", source: "osm", "source-layer": "poi", minzoom: 14,
         filter: ["in", ["get", "class"], ["literal", ["hospital", "clinic", "fire_station", "police", "fuel", "harbor"]]],
         layout: {
           visibility: "visible", "icon-image": ["match", ["get", "class"], ["hospital", "clinic"], "poi-medical", "fire_station", "poi-fire", "police", "poi-police", "fuel", "poi-fuel", "poi-port"],
           "icon-size": 1.15, "icon-allow-overlap": false,
-          "text-field": ["coalesce", ["get", "name:latin"], ["get", "name"]], "text-font": ["Open Sans Semibold"], "text-size": 11,
+          "text-field": ["step", ["zoom"], "", 15, ["coalesce", ["get", "name:latin"], ["get", "name"]]], "text-font": ["Open Sans Semibold"], "text-size": 11,
           "text-offset": [0, 2], "text-anchor": "top", "text-optional": true
         },
         paint: { "text-color": theme.text, "text-halo-color": theme.textHalo, "text-halo-width": 1.6 }
@@ -313,23 +397,33 @@ function makeStyle(id, theme) {
         paint: { "text-color": theme.primary, "text-halo-color": theme.textHalo, "text-halo-width": 1.5 }
       },
       {
-        id: "poi-explore", type: "symbol", source: "osm", "source-layer": "poi", minzoom: 13,
-        filter: ["in", ["get", "class"], ["literal", ["restaurant", "fast_food", "lodging", "museum", "attraction", "grocery", "shop", "parking"]]],
+        id: "poi-explore", type: "symbol", source: "osm", "source-layer": "poi", minzoom: 17,
+        filter: ["in", ["get", "class"], ["literal", ["restaurant", "fast_food", "lodging", "museum", "attraction", "grocery", "shop"]]],
         layout: {
-          visibility: "none", "icon-image": ["match", ["get", "class"], ["restaurant", "fast_food"], "poi-food", "lodging", "poi-lodging", ["museum", "attraction"], "poi-attraction", ["grocery", "shop"], "poi-shopping", "poi-parking"],
+          visibility: "visible", "icon-image": ["match", ["get", "class"], ["restaurant", "fast_food"], "poi-food", "lodging", "poi-lodging", ["museum", "attraction"], "poi-attraction", "poi-shopping"],
           "icon-size": 1.08, "icon-allow-overlap": false,
-          "text-field": ["coalesce", ["get", "name:latin"], ["get", "name"]], "text-font": ["Open Sans Semibold"], "text-size": 10.5,
+          "text-field": ["step", ["zoom"], "", 18, ["coalesce", ["get", "name:latin"], ["get", "name"]]], "text-font": ["Open Sans Semibold"], "text-size": 10.5,
           "text-offset": [0, 1.9], "text-anchor": "top", "text-optional": true
         },
         paint: { "text-color": theme.text, "text-halo-color": theme.textHalo, "text-halo-width": 1.5 }
+      },
+      {
+        id: "poi-parking", type: "symbol", source: "osm", "source-layer": "poi", minzoom: 18,
+        filter: ["==", ["get", "class"], "parking"],
+        layout: {
+          visibility: "visible", "icon-image": "poi-parking", "icon-size": 1.02, "icon-allow-overlap": false,
+          "text-field": ["step", ["zoom"], "", 19, ["coalesce", ["get", "name:latin"], ["get", "name"]]], "text-font": ["Open Sans Regular"], "text-size": 9.5,
+          "text-offset": [0, 1.8], "text-anchor": "top", "text-optional": true
+        },
+        paint: { "text-color": theme.text, "text-halo-color": theme.textHalo, "text-halo-width": 1.4 }
       }
     ]
   };
 
   const poiHudLayers = featureLayers.symbols
     .filter(({ id: layerId }) => layerId !== "road-shields")
-    .sort((left, right) => ["poi-essential", "poi-explore", "poi-airports"].indexOf(left.id)
-      - ["poi-essential", "poi-explore", "poi-airports"].indexOf(right.id))
+    .sort((left, right) => ["poi-essential", "poi-explore", "poi-parking", "poi-airports"].indexOf(left.id)
+      - ["poi-essential", "poi-explore", "poi-parking", "poi-airports"].indexOf(right.id))
     .map((layer) => ({
       ...structuredClone(layer),
       id: `${layer.id}-hud`,
@@ -343,8 +437,8 @@ function makeStyle(id, theme) {
     }));
 
   const houseNumberLayer = {
-    id: "house-numbers", type: "symbol", source: "osm", "source-layer": "housenumber", minzoom: 14,
-    layout: { "text-field": ["get", "housenumber"], "text-font": ["Open Sans Regular"], "text-size": 9 },
+    id: "house-numbers", type: "symbol", source: "osm", "source-layer": "housenumber", minzoom: 18,
+    layout: { visibility: "visible", "text-field": ["get", "housenumber"], "text-font": ["Open Sans Regular"], "text-size": 9 },
     paint: { "text-color": theme.text, "text-halo-color": theme.textHalo, "text-halo-width": 1 }
   };
 
@@ -361,14 +455,15 @@ function makeStyle(id, theme) {
       } : {})
     },
     sources: {
-      osm: { type: "vector", url: "mbtiles://{osm}" },
-      ...(theme.tactical ? { "coordinate-grid": { type: "geojson", data: { type: "FeatureCollection", features: [] } } } : {})
+      osm: {
+        type: "vector",
+        url: "mbtiles://{osm}",
+        attribution: "© OpenMapTiles © OpenStreetMap contributors"
+      }
     },
     glyphs: "{fontstack}/{range}.pbf",
     sprite: `/styles/${id}/sprite`,
-    ...(theme.extrusion ? {
-      light: { anchor: "viewport", color: theme.extrusion.light, intensity: 0.72, position: [1.15, 210, 35] }
-    } : {}),
+    light: { anchor: "viewport", color: extrusion.light, intensity: 0.72, position: [1.15, 210, 35] },
     layers: [
       { id: "background", type: "background", paint: { "background-color": theme.background } },
       ...featureLayers.urban,
@@ -423,32 +518,30 @@ function makeStyle(id, theme) {
         layout: { ...labelLayout, "symbol-placement": "line", "text-size": 11 },
         paint: { "text-color": theme.text, "text-halo-color": theme.textHalo, "text-halo-width": 1.5 }
       },
-      ...(!theme.glow ? [houseNumberLayer] : []),
-      ...featureLayers.grid,
       ...featureLayers.symbols.filter(({ id: layerId }) => layerId !== "road-shields"),
       {
         id: "water-labels", type: "symbol", source: "osm", "source-layer": "water_name",
         layout: { ...labelLayout, "text-font": ["Open Sans Italic"] },
         paint: { "text-color": theme.waterText, "text-halo-color": theme.textHalo, "text-halo-width": 1.4 }
       },
-      ...(theme.glow ? [{
+      {
         id: "buildings-3d", type: "fill-extrusion", source: "osm", "source-layer": "building", minzoom: 13,
         layout: { visibility: "none" },
         paint: {
-          "fill-extrusion-color": extrusionColor(theme),
+          "fill-extrusion-color": extrusionColor(extrusion),
           "fill-extrusion-height": ["coalesce", ["get", "render_height"], 3],
           "fill-extrusion-base": ["coalesce", ["get", "render_min_height"], 0],
           "fill-extrusion-opacity": 0.82,
           "fill-extrusion-vertical-gradient": true
         }
-      }] : []),
-      ...(theme.glow ? [houseNumberLayer] : []),
+      },
+      houseNumberLayer,
       {
         id: "place-labels", type: "symbol", source: "osm", "source-layer": "place",
         layout: { ...labelLayout, "text-font": ["Open Sans Semibold"], "text-size": ["interpolate", ["linear"], ["zoom"], 4, 11, 12, 17] },
         paint: { "text-color": theme.text, "text-halo-color": theme.textHalo, "text-halo-width": 1.8 }
       },
-      ...(theme.glow ? poiHudLayers : [])
+      ...poiHudLayers
     ]
   };
 }

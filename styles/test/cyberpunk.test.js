@@ -56,9 +56,9 @@ test("generates a schema-compatible Cyberpunk style with restrained neon glow", 
   assert.ok(layerIds.indexOf("water-labels") < layerIds.indexOf("buildings-3d"));
   assert.ok(layerIds.indexOf("buildings-3d") < layerIds.indexOf("place-labels"));
   assert.deepEqual(layerIds.slice(layerIds.indexOf("buildings-3d") + 1), [
-    "house-numbers", "place-labels", "poi-essential-hud", "poi-explore-hud", "poi-airports-hud"
+    "house-numbers", "place-labels", "poi-essential-hud", "poi-explore-hud", "poi-parking-hud", "poi-airports-hud"
   ]);
-  for (const id of ["poi-essential-hud", "poi-explore-hud", "poi-airports-hud"]) {
+  for (const id of ["poi-essential-hud", "poi-explore-hud", "poi-parking-hud", "poi-airports-hud"]) {
     const hud = style.layers.find((layer) => layer.id === id);
     const base = style.layers.find((layer) => layer.id === id.replace("-hud", ""));
     assert.equal(hud.type, "symbol");

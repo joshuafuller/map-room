@@ -1,0 +1,107 @@
+{
+  "shield-interstate": {
+    "width": 128,
+    "height": 128,
+    "x": 0,
+    "y": 0,
+    "pixelRatio": 4
+  },
+  "shield-us": {
+    "width": 128,
+    "height": 128,
+    "x": 128,
+    "y": 0,
+    "pixelRatio": 4
+  },
+  "shield-state": {
+    "width": 128,
+    "height": 128,
+    "x": 256,
+    "y": 0,
+    "pixelRatio": 4
+  },
+  "shield-county": {
+    "width": 128,
+    "height": 128,
+    "x": 384,
+    "y": 0,
+    "pixelRatio": 4
+  },
+  "poi-medical": {
+    "width": 128,
+    "height": 128,
+    "x": 0,
+    "y": 128,
+    "pixelRatio": 4
+  },
+  "poi-fire": {
+    "width": 128,
+    "height": 128,
+    "x": 128,
+    "y": 128,
+    "pixelRatio": 4
+  },
+  "poi-police": {
+    "width": 128,
+    "height": 128,
+    "x": 256,
+    "y": 128,
+    "pixelRatio": 4
+  },
+  "poi-fuel": {
+    "width": 128,
+    "height": 128,
+    "x": 384,
+    "y": 128,
+    "pixelRatio": 4
+  },
+  "poi-airport": {
+    "width": 128,
+    "height": 128,
+    "x": 0,
+    "y": 256,
+    "pixelRatio": 4
+  },
+  "poi-port": {
+    "width": 128,
+    "height": 128,
+    "x": 128,
+    "y": 256,
+    "pixelRatio": 4
+  },
+  "poi-food": {
+    "width": 128,
+    "height": 128,
+    "x": 256,
+    "y": 256,
+    "pixelRatio": 4
+  },
+  "poi-lodging": {
+    "width": 128,
+    "height": 128,
+    "x": 384,
+    "y": 256,
+    "pixelRatio": 4
+  },
+  "poi-attraction": {
+    "width": 128,
+    "height": 128,
+    "x": 0,
+    "y": 384,
+    "pixelRatio": 4
+  },
+  "poi-shopping": {
+    "width": 128,
+    "height": 128,
+    "x": 128,
+    "y": 384,
+    "pixelRatio": 4
+  },
+  "poi-parking": {
+    "width": 128,
+    "height": 128,
+    "x": 256,
+    "y": 384,
+    "pixelRatio": 4
+  }
+}

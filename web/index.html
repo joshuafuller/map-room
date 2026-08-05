@@ -10,13 +10,13 @@
     <link rel="stylesheet" href="/app.css" />
   </head>
   <body>
-    <div id="map" aria-label="Interactive map of Monaco"></div>
+    <div id="map" aria-label="Interactive regional map"></div>
 
     <header class="topbar">
       <div class="brand">
         <span class="brand-mark" aria-hidden="true"></span>
         <div>
-          <strong>Map Room</strong>
+          <strong>Map Room <span class="preview-badge">Early preview</span></strong>
           <span id="region">Loading local map…</span>
         </div>
       </div>
@@ -37,10 +37,10 @@
       </label>
 
       <div class="rule"></div>
-      <p class="eyebrow">Tile delivery</p>
-      <div class="mode-switch" role="radiogroup" aria-label="Tile delivery mode">
-        <button class="mode selected" data-mode="vector" role="radio" aria-checked="true">Vector</button>
-        <button class="mode" data-mode="raster" role="radio" aria-checked="false">ATAK Raster</button>
+      <p class="eyebrow">Browser preview</p>
+      <div class="mode-switch" role="radiogroup" aria-label="Browser preview mode">
+        <button class="mode selected" data-mode="vector" role="radio" aria-checked="true">Vector map</button>
+        <button class="mode" data-mode="raster" role="radio" aria-checked="false">Raster tiles</button>
       </div>
       <p id="mode-detail" class="mode-detail">Interactive vector tiles rendered by your browser.</p>
 
@@ -55,6 +55,18 @@
           <span class="swatch midnight"></span>
           <span><strong>Midnight</strong><small>Low-glare operations</small></span>
         </button>
+        <button class="theme" data-theme="dark-blue" role="radio" aria-checked="false">
+          <span class="swatch dark-blue"></span>
+          <span><strong>Dark Blue</strong><small>Cool low-light contrast</small></span>
+        </button>
+        <button class="theme" data-theme="dark-red" role="radio" aria-checked="false">
+          <span class="swatch dark-red"></span>
+          <span><strong>Dark Red</strong><small>Red-dominant low light</small></span>
+        </button>
+        <button class="theme" data-theme="dark-green" role="radio" aria-checked="false">
+          <span class="swatch dark-green"></span>
+          <span><strong>Dark Green</strong><small>Green-dominant field view</small></span>
+        </button>
         <button class="theme" data-theme="cyberpunk" role="radio" aria-checked="false">
           <span class="swatch cyberpunk"></span>
           <span><strong>Cyberpunk Classic</strong><small>Expressive neon city grid</small></span>
@@ -64,37 +76,58 @@
           <span><strong>Cyberpunk Tactical</strong><small>Operational neon hierarchy</small></span>
         </button>
       </div>
-      <button id="grid-toggle" class="grid-toggle" type="button" aria-pressed="false" hidden>
-        <span class="grid-icon" aria-hidden="true"></span>
-        Coordinate grid
-      </button>
-      <button id="buildings-toggle" class="grid-toggle" type="button" aria-pressed="false" hidden>
+      <button id="buildings-toggle" class="feature-toggle" type="button" aria-pressed="false" hidden>
         <span class="building-icon" aria-hidden="true"></span>
         3D buildings
       </button>
-      <div id="poi-controls" class="poi-controls" hidden>
-        <p class="eyebrow">Map intel</p>
-        <div class="intel-switch" aria-label="Points of interest">
-          <button class="intel" data-poi-preset="essential" type="button" aria-pressed="true"><span class="intel-dot essential"></span>Essential</button>
-          <button class="intel" data-poi-preset="explore" type="button" aria-pressed="false"><span class="intel-dot explore"></span>Explore</button>
-        </div>
-      </div>
+      <p id="rotate-hint" class="control-hint" hidden>Rotate and tilt: right-drag, or Ctrl+drag, on the map.</p>
+      <p id="detail-hint" class="control-hint" hidden>Map detail appears automatically as you zoom: essential POIs, then Explore, then addresses and parking.</p>
 
       <div class="rule"></div>
-      <p class="eyebrow">Take it with you</p>
-      <button id="atak-download" class="action primary">Download all for ATAK</button>
-      <button id="copy-raster" class="action">Copy raster tile URL</button>
-      <p class="hint">ATAK can cache a selected area and zoom range for offline use.</p>
-      <div class="rule"></div>
-      <p class="eyebrow">ATAK vector streaming</p>
-      <button id="atak-vector-source" class="action primary" type="button" disabled>Select one vector map to stream</button>
-      <button id="atak-vector-style" class="action">2. Download Cyberpunk style</button>
-      <a id="atak-vector-map" class="action" href="/atak/vector/florida.mbtiles" download hidden>3. Optional offline MBTiles</a>
-      <p id="atak-vector-instructions" class="hint">Choose an individual published map above. Map Room will generate a tiny ATAK source document that streams PBF tiles and can cache an area offline.</p>
+      <p class="eyebrow">Use in ATAK</p>
+      <p class="choice-intro">First choose whether ATAK can reach this server during use.</p>
+
+      <section class="path-card" aria-labelledby="hosted-path-title">
+        <span class="path-badge">Server available</span>
+        <h3 id="hosted-path-title">Host and stream maps</h3>
+        <p>Best when devices share a trusted network with Map Room. Uncached areas need the server.</p>
+        <div class="recommended-path">
+          <span class="path-badge recommended">Preferred</span>
+          <strong>Vector tiles</strong>
+          <p>Usually smaller to stream and cache, with sharp labels. Import the source first, then its style.</p>
+          <button id="atak-vector-source" class="action primary" type="button" disabled>Select one region above</button>
+          <button id="atak-vector-style" class="action">2. Download vector style (.json)</button>
+          <p id="atak-vector-instructions" class="hint">Choose an individual published map above. Import its vector source first, then apply the style in ATAK.</p>
+        </div>
+        <details class="raster-option">
+          <summary>Compatibility option: raster/TMS tiles</summary>
+          <p class="hint">Map Room renders PNG images for ATAK. This is simpler to display but usually transfers more data.</p>
+          <button id="atak-download" class="action primary">Download raster/TMS source (.xml)</button>
+          <button id="copy-raster" class="action">Copy raster tile URL</button>
+          <p class="hint">The XML is a pointer to a tile service, not the map itself. TMS is a tile-request pattern, not a single map file.</p>
+        </details>
+      </section>
+
+      <section class="path-card offline-path" aria-labelledby="offline-path-title">
+        <span class="path-badge offline">No server or network</span>
+        <h3 id="offline-path-title">Make a completely offline map</h3>
+        <p id="offline-message">Select one region above to download its complete vector archive.</p>
+        <a id="atak-vector-map" class="action primary" href="#" download hidden>Download regional archive (.mbtiles)</a>
+        <p class="validation-note">Transfer the full file before departure. Verify import and styling on your ATAK version before relying on it.</p>
+      </section>
+
+      <details class="delivery-guide">
+        <summary>Learn about map files and caching</summary>
+        <div class="delivery-option"><strong>Vector PBF — preferred</strong><span>Compact geometry styled by ATAK; usually smaller and sharp at every zoom.</span></div>
+        <div class="delivery-option"><strong>Raster / TMS</strong><span>Server-rendered PNG tiles; simpler display, but usually more data.</span></div>
+        <div class="delivery-option"><strong>XML / JSON</strong><span>Small hosted-map configuration files; they do not contain the map.</span></div>
+        <div class="delivery-option"><strong>PBF / PNG tiles</strong><span>Individual vector or raster tiles requested while panning and zooming.</span></div>
+        <div class="delivery-option"><strong>MBTiles</strong><span>One large SQLite archive containing the region's vector tiles.</span></div>
+        <p>Streaming means tiles load on demand. It does not mean live tracking or automatically live map data.</p>
+      </details>
       </div>
     </aside>
 
-    <div class="attribution">© OpenMapTiles · © OpenStreetMap contributors</div>
     <div id="toast" role="status" aria-live="polite"></div>
 
     <script type="module" src="/app.js"></script>

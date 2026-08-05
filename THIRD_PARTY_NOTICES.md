@@ -1,5 +1,22 @@
 # Third-party notices
 
+## MapLibre GL JS
+
+Map Room's browser setup copies MapLibre GL JS, version 6.1.0, into the local
+runtime bundle. MapLibre GL JS is distributed under the BSD 3-Clause License
+and includes code under additional compatible notices. The setup command copies
+the dependency's complete `LICENSE.txt` alongside the browser bundle as
+`web/vendor/MapLibre-LICENSE.txt`.
+
+Copyright (c) 2023, MapLibre contributors
+
+## Open Sans
+
+Map Room's setup command installs pre-generated Open Sans glyph PBFs used by
+its map styles. Open Sans is distributed under the SIL Open Font License 1.1.
+The canonical font sources and license are published by the
+[Open Sans project](https://github.com/googlefonts/opensans).
+
 ## Lucide Icons
 
 Map Room's generated POI sprite atlas incorporates selected SVG icons from

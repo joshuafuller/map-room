@@ -1,0 +1,1475 @@
+{
+  "version": 8,
+  "name": "Dark Blue",
+  "metadata": {
+    "map-room:theme": "dark-blue",
+    "map-room:tileset-schema": "openmaptiles-3.16",
+    "map-room:style-version": "1.0.0"
+  },
+  "sources": {
+    "osm": {
+      "type": "vector",
+      "url": "mbtiles://{osm}",
+      "attribution": "© OpenMapTiles © OpenStreetMap contributors"
+    }
+  },
+  "glyphs": "{fontstack}/{range}.pbf",
+  "sprite": "/styles/dark-blue/sprite",
+  "light": {
+    "anchor": "viewport",
+    "color": "#e8f0f7",
+    "intensity": 0.72,
+    "position": [
+      1.15,
+      210,
+      35
+    ]
+  },
+  "layers": [
+    {
+      "id": "background",
+      "type": "background",
+      "paint": {
+        "background-color": "#07111f"
+      }
+    },
+    {
+      "id": "landuse",
+      "type": "fill",
+      "source": "osm",
+      "source-layer": "landuse",
+      "paint": {
+        "fill-color": [
+          "match",
+          [
+            "get",
+            "class"
+          ],
+          "residential",
+          "#0c1a2a",
+          "industrial",
+          "#142238",
+          [
+            "park",
+            "grass",
+            "cemetery"
+          ],
+          "#0f2a2a",
+          "#07111f"
+        ],
+        "fill-opacity": 0.78
+      }
+    },
+    {
+      "id": "landcover",
+      "type": "fill",
+      "source": "osm",
+      "source-layer": "landcover",
+      "filter": [
+        "in",
+        [
+          "get",
+          "class"
+        ],
+        [
+          "literal",
+          [
+            "wood",
+            "grass"
+          ]
+        ]
+      ],
+      "paint": {
+        "fill-color": [
+          "match",
+          [
+            "get",
+            "class"
+          ],
+          "wood",
+          "#0a2522",
+          "#0f2a2a"
+        ],
+        "fill-opacity": 0.72
+      }
+    },
+    {
+      "id": "parks",
+      "type": "fill",
+      "source": "osm",
+      "source-layer": "park",
+      "paint": {
+        "fill-color": "#0f2a2a",
+        "fill-opacity": 0.82
+      }
+    },
+    {
+      "id": "water",
+      "type": "fill",
+      "source": "osm",
+      "source-layer": "water",
+      "paint": {
+        "fill-color": "#071e34"
+      }
+    },
+    {
+      "id": "waterways",
+      "type": "line",
+      "source": "osm",
+      "source-layer": "waterway",
+      "paint": {
+        "line-color": "#245a7a",
+        "line-width": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          8,
+          0.5,
+          15,
+          2.2
+        ]
+      }
+    },
+    {
+      "id": "buildings",
+      "type": "fill",
+      "source": "osm",
+      "source-layer": "building",
+      "minzoom": 13,
+      "paint": {
+        "fill-color": "#17283c",
+        "fill-outline-color": "#29445d",
+        "fill-opacity": 0.9
+      }
+    },
+    {
+      "id": "boundaries",
+      "type": "line",
+      "source": "osm",
+      "source-layer": "boundary",
+      "paint": {
+        "line-color": "#806ba6",
+        "line-width": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          3,
+          0.5,
+          12,
+          1.6
+        ],
+        "line-dasharray": [
+          4,
+          2
+        ],
+        "line-opacity": 0.8
+      }
+    },
+    {
+      "id": "roads-casing",
+      "type": "line",
+      "source": "osm",
+      "source-layer": "transportation",
+      "filter": [
+        "in",
+        [
+          "get",
+          "class"
+        ],
+        [
+          "literal",
+          [
+            "motorway",
+            "trunk",
+            "primary",
+            "secondary",
+            "tertiary",
+            "minor",
+            "service",
+            "path",
+            "track"
+          ]
+        ]
+      ],
+      "layout": {
+        "line-cap": "round",
+        "line-join": "round"
+      },
+      "paint": {
+        "line-color": "#030912",
+        "line-width": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          7,
+          [
+            "match",
+            [
+              "get",
+              "class"
+            ],
+            [
+              "motorway",
+              "trunk"
+            ],
+            2.8,
+            1.95
+          ],
+          12,
+          [
+            "match",
+            [
+              "get",
+              "class"
+            ],
+            [
+              "motorway",
+              "trunk"
+            ],
+            6.1,
+            "primary",
+            5.1,
+            "secondary",
+            4.2,
+            3
+          ],
+          16,
+          [
+            "match",
+            [
+              "get",
+              "class"
+            ],
+            [
+              "motorway",
+              "trunk"
+            ],
+            15.6,
+            "primary",
+            12.6,
+            "secondary",
+            10.6,
+            7.6
+          ]
+        ],
+        "line-opacity": 0.95
+      }
+    },
+    {
+      "id": "roads",
+      "type": "line",
+      "source": "osm",
+      "source-layer": "transportation",
+      "filter": [
+        "in",
+        [
+          "get",
+          "class"
+        ],
+        [
+          "literal",
+          [
+            "motorway",
+            "trunk",
+            "primary",
+            "secondary",
+            "tertiary",
+            "minor",
+            "service",
+            "path",
+            "track"
+          ]
+        ]
+      ],
+      "layout": {
+        "line-cap": "round",
+        "line-join": "round"
+      },
+      "paint": {
+        "line-color": [
+          "match",
+          [
+            "get",
+            "class"
+          ],
+          [
+            "motorway",
+            "trunk"
+          ],
+          "#e09262",
+          "primary",
+          "#d2b56f",
+          "secondary",
+          "#7992a8",
+          "tertiary",
+          "#405b72",
+          [
+            "path",
+            "track"
+          ],
+          "#405b72",
+          "#405b72"
+        ],
+        "line-width": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          7,
+          [
+            "match",
+            [
+              "get",
+              "class"
+            ],
+            [
+              "motorway",
+              "trunk"
+            ],
+            1.2,
+            0.35
+          ],
+          12,
+          [
+            "match",
+            [
+              "get",
+              "class"
+            ],
+            [
+              "motorway",
+              "trunk"
+            ],
+            4.5,
+            "primary",
+            3.5,
+            "secondary",
+            2.6,
+            1.4
+          ],
+          16,
+          [
+            "match",
+            [
+              "get",
+              "class"
+            ],
+            [
+              "motorway",
+              "trunk"
+            ],
+            14,
+            "primary",
+            11,
+            "secondary",
+            9,
+            6
+          ]
+        ]
+      }
+    },
+    {
+      "id": "rail",
+      "type": "line",
+      "source": "osm",
+      "source-layer": "transportation",
+      "filter": [
+        "==",
+        [
+          "get",
+          "class"
+        ],
+        "rail"
+      ],
+      "paint": {
+        "line-color": "#8e9bad",
+        "line-width": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          8,
+          0.5,
+          15,
+          2
+        ],
+        "line-dasharray": [
+          3,
+          2
+        ]
+      }
+    },
+    {
+      "id": "airports",
+      "type": "fill",
+      "source": "osm",
+      "source-layer": "aeroway",
+      "minzoom": 8,
+      "filter": [
+        "in",
+        [
+          "get",
+          "class"
+        ],
+        [
+          "literal",
+          [
+            "aerodrome",
+            "heliport"
+          ]
+        ]
+      ],
+      "paint": {
+        "fill-color": "#d2b56f",
+        "fill-opacity": 0.11,
+        "fill-outline-color": "#d2b56f"
+      }
+    },
+    {
+      "id": "runways",
+      "type": "line",
+      "source": "osm",
+      "source-layer": "aeroway",
+      "minzoom": 9,
+      "filter": [
+        "==",
+        [
+          "get",
+          "class"
+        ],
+        "runway"
+      ],
+      "layout": {
+        "line-cap": "square",
+        "line-join": "round"
+      },
+      "paint": {
+        "line-color": "#e8f0f7",
+        "line-width": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          9,
+          1.2,
+          14,
+          4,
+          18,
+          9
+        ],
+        "line-opacity": 0.92
+      }
+    },
+    {
+      "id": "taxiways",
+      "type": "line",
+      "source": "osm",
+      "source-layer": "aeroway",
+      "minzoom": 12,
+      "filter": [
+        "==",
+        [
+          "get",
+          "class"
+        ],
+        "taxiway"
+      ],
+      "layout": {
+        "line-cap": "round",
+        "line-join": "round"
+      },
+      "paint": {
+        "line-color": "#d2b56f",
+        "line-width": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          12,
+          0.65,
+          18,
+          3.2
+        ],
+        "line-opacity": 0.48
+      }
+    },
+    {
+      "id": "operational-landmarks",
+      "type": "circle",
+      "source": "osm",
+      "source-layer": "poi",
+      "minzoom": 12,
+      "filter": [
+        "in",
+        [
+          "get",
+          "class"
+        ],
+        [
+          "literal",
+          [
+            "hospital",
+            "clinic",
+            "police",
+            "fire_station",
+            "harbor"
+          ]
+        ]
+      ],
+      "paint": {
+        "circle-color": [
+          "match",
+          [
+            "get",
+            "class"
+          ],
+          [
+            "hospital",
+            "clinic"
+          ],
+          "#e09262",
+          [
+            "police",
+            "fire_station"
+          ],
+          "#d2b56f",
+          "#8e9bad"
+        ],
+        "circle-radius": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          12,
+          2,
+          16,
+          5
+        ],
+        "circle-stroke-color": "#07111f",
+        "circle-stroke-width": 1.5
+      }
+    },
+    {
+      "id": "road-shields",
+      "type": "symbol",
+      "source": "osm",
+      "source-layer": "transportation_name",
+      "minzoom": 8,
+      "filter": [
+        "any",
+        [
+          "has",
+          "ref"
+        ],
+        [
+          "has",
+          "route_1_ref"
+        ]
+      ],
+      "layout": {
+        "symbol-placement": "line",
+        "symbol-spacing": 320,
+        "icon-image": [
+          "match",
+          [
+            "coalesce",
+            [
+              "get",
+              "route_1_network"
+            ],
+            [
+              "get",
+              "network"
+            ],
+            ""
+          ],
+          [
+            "US:I",
+            "us-interstate"
+          ],
+          "shield-interstate",
+          [
+            "US:US",
+            "us-highway"
+          ],
+          "shield-us",
+          [
+            "US:FL",
+            "us-state"
+          ],
+          "shield-state",
+          "US:FL:CR",
+          "shield-county",
+          "shield-state"
+        ],
+        "icon-size": 0.86,
+        "icon-rotation-alignment": "viewport",
+        "text-field": [
+          "coalesce",
+          [
+            "get",
+            "route_1_ref"
+          ],
+          [
+            "get",
+            "ref"
+          ]
+        ],
+        "text-font": [
+          "Open Sans Semibold"
+        ],
+        "text-size": [
+          "step",
+          [
+            "length",
+            [
+              "to-string",
+              [
+                "coalesce",
+                [
+                  "get",
+                  "route_1_ref"
+                ],
+                [
+                  "get",
+                  "ref"
+                ],
+                ""
+              ]
+            ]
+          ],
+          17,
+          3,
+          15,
+          5,
+          13.5
+        ],
+        "text-rotation-alignment": "viewport",
+        "text-allow-overlap": false
+      },
+      "paint": {
+        "text-color": [
+          "match",
+          [
+            "coalesce",
+            [
+              "get",
+              "route_1_network"
+            ],
+            [
+              "get",
+              "network"
+            ],
+            ""
+          ],
+          [
+            "US:US",
+            "us-highway"
+          ],
+          "#101a24",
+          "#f4f8fb"
+        ],
+        "text-halo-color": [
+          "match",
+          [
+            "coalesce",
+            [
+              "get",
+              "route_1_network"
+            ],
+            [
+              "get",
+              "network"
+            ],
+            ""
+          ],
+          [
+            "US:US",
+            "us-highway"
+          ],
+          "#f4f8fb",
+          "#07111f"
+        ],
+        "text-halo-width": [
+          "match",
+          [
+            "coalesce",
+            [
+              "get",
+              "route_1_network"
+            ],
+            [
+              "get",
+              "network"
+            ],
+            ""
+          ],
+          [
+            "US:US",
+            "us-highway"
+          ],
+          0.4,
+          1.25
+        ]
+      }
+    },
+    {
+      "id": "road-labels",
+      "type": "symbol",
+      "source": "osm",
+      "source-layer": "transportation_name",
+      "minzoom": 12,
+      "layout": {
+        "text-field": [
+          "coalesce",
+          [
+            "get",
+            "name:latin"
+          ],
+          [
+            "get",
+            "name"
+          ]
+        ],
+        "text-font": [
+          "Open Sans Regular"
+        ],
+        "text-size": 11,
+        "text-max-width": 9,
+        "symbol-placement": "line"
+      },
+      "paint": {
+        "text-color": "#e8f0f7",
+        "text-halo-color": "#07111f",
+        "text-halo-width": 1.5
+      }
+    },
+    {
+      "id": "poi-essential",
+      "type": "symbol",
+      "source": "osm",
+      "source-layer": "poi",
+      "minzoom": 14,
+      "filter": [
+        "in",
+        [
+          "get",
+          "class"
+        ],
+        [
+          "literal",
+          [
+            "hospital",
+            "clinic",
+            "fire_station",
+            "police",
+            "fuel",
+            "harbor"
+          ]
+        ]
+      ],
+      "layout": {
+        "visibility": "visible",
+        "icon-image": [
+          "match",
+          [
+            "get",
+            "class"
+          ],
+          [
+            "hospital",
+            "clinic"
+          ],
+          "poi-medical",
+          "fire_station",
+          "poi-fire",
+          "police",
+          "poi-police",
+          "fuel",
+          "poi-fuel",
+          "poi-port"
+        ],
+        "icon-size": 1.15,
+        "icon-allow-overlap": false,
+        "text-field": [
+          "step",
+          [
+            "zoom"
+          ],
+          "",
+          15,
+          [
+            "coalesce",
+            [
+              "get",
+              "name:latin"
+            ],
+            [
+              "get",
+              "name"
+            ]
+          ]
+        ],
+        "text-font": [
+          "Open Sans Semibold"
+        ],
+        "text-size": 11,
+        "text-offset": [
+          0,
+          2
+        ],
+        "text-anchor": "top",
+        "text-optional": true
+      },
+      "paint": {
+        "text-color": "#e8f0f7",
+        "text-halo-color": "#07111f",
+        "text-halo-width": 1.6
+      }
+    },
+    {
+      "id": "poi-airports",
+      "type": "symbol",
+      "source": "osm",
+      "source-layer": "aeroway",
+      "minzoom": 10,
+      "maxzoom": 12,
+      "filter": [
+        "in",
+        [
+          "get",
+          "class"
+        ],
+        [
+          "literal",
+          [
+            "aerodrome",
+            "heliport"
+          ]
+        ]
+      ],
+      "layout": {
+        "visibility": "visible",
+        "icon-image": "poi-airport",
+        "icon-size": 1.1,
+        "text-field": [
+          "get",
+          "ref"
+        ],
+        "text-font": [
+          "Open Sans Semibold"
+        ],
+        "text-size": 11,
+        "text-offset": [
+          0,
+          2
+        ],
+        "text-anchor": "top"
+      },
+      "paint": {
+        "text-color": "#d2b56f",
+        "text-halo-color": "#07111f",
+        "text-halo-width": 1.5
+      }
+    },
+    {
+      "id": "poi-explore",
+      "type": "symbol",
+      "source": "osm",
+      "source-layer": "poi",
+      "minzoom": 17,
+      "filter": [
+        "in",
+        [
+          "get",
+          "class"
+        ],
+        [
+          "literal",
+          [
+            "restaurant",
+            "fast_food",
+            "lodging",
+            "museum",
+            "attraction",
+            "grocery",
+            "shop"
+          ]
+        ]
+      ],
+      "layout": {
+        "visibility": "visible",
+        "icon-image": [
+          "match",
+          [
+            "get",
+            "class"
+          ],
+          [
+            "restaurant",
+            "fast_food"
+          ],
+          "poi-food",
+          "lodging",
+          "poi-lodging",
+          [
+            "museum",
+            "attraction"
+          ],
+          "poi-attraction",
+          "poi-shopping"
+        ],
+        "icon-size": 1.08,
+        "icon-allow-overlap": false,
+        "text-field": [
+          "step",
+          [
+            "zoom"
+          ],
+          "",
+          18,
+          [
+            "coalesce",
+            [
+              "get",
+              "name:latin"
+            ],
+            [
+              "get",
+              "name"
+            ]
+          ]
+        ],
+        "text-font": [
+          "Open Sans Semibold"
+        ],
+        "text-size": 10.5,
+        "text-offset": [
+          0,
+          1.9
+        ],
+        "text-anchor": "top",
+        "text-optional": true
+      },
+      "paint": {
+        "text-color": "#e8f0f7",
+        "text-halo-color": "#07111f",
+        "text-halo-width": 1.5
+      }
+    },
+    {
+      "id": "poi-parking",
+      "type": "symbol",
+      "source": "osm",
+      "source-layer": "poi",
+      "minzoom": 18,
+      "filter": [
+        "==",
+        [
+          "get",
+          "class"
+        ],
+        "parking"
+      ],
+      "layout": {
+        "visibility": "visible",
+        "icon-image": "poi-parking",
+        "icon-size": 1.02,
+        "icon-allow-overlap": false,
+        "text-field": [
+          "step",
+          [
+            "zoom"
+          ],
+          "",
+          19,
+          [
+            "coalesce",
+            [
+              "get",
+              "name:latin"
+            ],
+            [
+              "get",
+              "name"
+            ]
+          ]
+        ],
+        "text-font": [
+          "Open Sans Regular"
+        ],
+        "text-size": 9.5,
+        "text-offset": [
+          0,
+          1.8
+        ],
+        "text-anchor": "top",
+        "text-optional": true
+      },
+      "paint": {
+        "text-color": "#e8f0f7",
+        "text-halo-color": "#07111f",
+        "text-halo-width": 1.4
+      }
+    },
+    {
+      "id": "water-labels",
+      "type": "symbol",
+      "source": "osm",
+      "source-layer": "water_name",
+      "layout": {
+        "text-field": [
+          "coalesce",
+          [
+            "get",
+            "name:latin"
+          ],
+          [
+            "get",
+            "name"
+          ]
+        ],
+        "text-font": [
+          "Open Sans Italic"
+        ],
+        "text-size": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          7,
+          11,
+          14,
+          15
+        ],
+        "text-max-width": 9
+      },
+      "paint": {
+        "text-color": "#75add0",
+        "text-halo-color": "#07111f",
+        "text-halo-width": 1.4
+      }
+    },
+    {
+      "id": "buildings-3d",
+      "type": "fill-extrusion",
+      "source": "osm",
+      "source-layer": "building",
+      "minzoom": 13,
+      "layout": {
+        "visibility": "none"
+      },
+      "paint": {
+        "fill-extrusion-color": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "coalesce",
+            [
+              "get",
+              "render_height"
+            ],
+            3
+          ],
+          0,
+          "#17283c",
+          60,
+          "#29445d",
+          220,
+          "#d2b56f"
+        ],
+        "fill-extrusion-height": [
+          "coalesce",
+          [
+            "get",
+            "render_height"
+          ],
+          3
+        ],
+        "fill-extrusion-base": [
+          "coalesce",
+          [
+            "get",
+            "render_min_height"
+          ],
+          0
+        ],
+        "fill-extrusion-opacity": 0.82,
+        "fill-extrusion-vertical-gradient": true
+      }
+    },
+    {
+      "id": "house-numbers",
+      "type": "symbol",
+      "source": "osm",
+      "source-layer": "housenumber",
+      "minzoom": 18,
+      "layout": {
+        "visibility": "visible",
+        "text-field": [
+          "get",
+          "housenumber"
+        ],
+        "text-font": [
+          "Open Sans Regular"
+        ],
+        "text-size": 9
+      },
+      "paint": {
+        "text-color": "#e8f0f7",
+        "text-halo-color": "#07111f",
+        "text-halo-width": 1
+      }
+    },
+    {
+      "id": "place-labels",
+      "type": "symbol",
+      "source": "osm",
+      "source-layer": "place",
+      "layout": {
+        "text-field": [
+          "coalesce",
+          [
+            "get",
+            "name:latin"
+          ],
+          [
+            "get",
+            "name"
+          ]
+        ],
+        "text-font": [
+          "Open Sans Semibold"
+        ],
+        "text-size": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          4,
+          11,
+          12,
+          17
+        ],
+        "text-max-width": 9
+      },
+      "paint": {
+        "text-color": "#e8f0f7",
+        "text-halo-color": "#07111f",
+        "text-halo-width": 1.8
+      }
+    },
+    {
+      "id": "poi-essential-hud",
+      "type": "symbol",
+      "source": "osm",
+      "source-layer": "poi",
+      "minzoom": 14,
+      "filter": [
+        "in",
+        [
+          "get",
+          "class"
+        ],
+        [
+          "literal",
+          [
+            "hospital",
+            "clinic",
+            "fire_station",
+            "police",
+            "fuel",
+            "harbor"
+          ]
+        ]
+      ],
+      "layout": {
+        "visibility": "none",
+        "icon-image": [
+          "match",
+          [
+            "get",
+            "class"
+          ],
+          [
+            "hospital",
+            "clinic"
+          ],
+          "poi-medical",
+          "fire_station",
+          "poi-fire",
+          "police",
+          "poi-police",
+          "fuel",
+          "poi-fuel",
+          "poi-port"
+        ],
+        "icon-size": 1.15,
+        "icon-allow-overlap": true,
+        "text-field": [
+          "step",
+          [
+            "zoom"
+          ],
+          "",
+          15,
+          [
+            "coalesce",
+            [
+              "get",
+              "name:latin"
+            ],
+            [
+              "get",
+              "name"
+            ]
+          ]
+        ],
+        "text-font": [
+          "Open Sans Semibold"
+        ],
+        "text-size": 11,
+        "text-offset": [
+          0,
+          2
+        ],
+        "text-anchor": "top",
+        "text-optional": true,
+        "icon-ignore-placement": true,
+        "icon-rotation-alignment": "viewport"
+      },
+      "paint": {
+        "text-color": "#e8f0f7",
+        "text-halo-color": "#07111f",
+        "text-halo-width": 1.6
+      }
+    },
+    {
+      "id": "poi-explore-hud",
+      "type": "symbol",
+      "source": "osm",
+      "source-layer": "poi",
+      "minzoom": 17,
+      "filter": [
+        "in",
+        [
+          "get",
+          "class"
+        ],
+        [
+          "literal",
+          [
+            "restaurant",
+            "fast_food",
+            "lodging",
+            "museum",
+            "attraction",
+            "grocery",
+            "shop"
+          ]
+        ]
+      ],
+      "layout": {
+        "visibility": "none",
+        "icon-image": [
+          "match",
+          [
+            "get",
+            "class"
+          ],
+          [
+            "restaurant",
+            "fast_food"
+          ],
+          "poi-food",
+          "lodging",
+          "poi-lodging",
+          [
+            "museum",
+            "attraction"
+          ],
+          "poi-attraction",
+          "poi-shopping"
+        ],
+        "icon-size": 1.08,
+        "icon-allow-overlap": true,
+        "text-field": [
+          "step",
+          [
+            "zoom"
+          ],
+          "",
+          18,
+          [
+            "coalesce",
+            [
+              "get",
+              "name:latin"
+            ],
+            [
+              "get",
+              "name"
+            ]
+          ]
+        ],
+        "text-font": [
+          "Open Sans Semibold"
+        ],
+        "text-size": 10.5,
+        "text-offset": [
+          0,
+          1.9
+        ],
+        "text-anchor": "top",
+        "text-optional": true,
+        "icon-ignore-placement": true,
+        "icon-rotation-alignment": "viewport"
+      },
+      "paint": {
+        "text-color": "#e8f0f7",
+        "text-halo-color": "#07111f",
+        "text-halo-width": 1.5
+      }
+    },
+    {
+      "id": "poi-parking-hud",
+      "type": "symbol",
+      "source": "osm",
+      "source-layer": "poi",
+      "minzoom": 18,
+      "filter": [
+        "==",
+        [
+          "get",
+          "class"
+        ],
+        "parking"
+      ],
+      "layout": {
+        "visibility": "none",
+        "icon-image": "poi-parking",
+        "icon-size": 1.02,
+        "icon-allow-overlap": true,
+        "text-field": [
+          "step",
+          [
+            "zoom"
+          ],
+          "",
+          19,
+          [
+            "coalesce",
+            [
+              "get",
+              "name:latin"
+            ],
+            [
+              "get",
+              "name"
+            ]
+          ]
+        ],
+        "text-font": [
+          "Open Sans Regular"
+        ],
+        "text-size": 9.5,
+        "text-offset": [
+          0,
+          1.8
+        ],
+        "text-anchor": "top",
+        "text-optional": true,
+        "icon-ignore-placement": true,
+        "icon-rotation-alignment": "viewport"
+      },
+      "paint": {
+        "text-color": "#e8f0f7",
+        "text-halo-color": "#07111f",
+        "text-halo-width": 1.4
+      }
+    },
+    {
+      "id": "poi-airports-hud",
+      "type": "symbol",
+      "source": "osm",
+      "source-layer": "aeroway",
+      "minzoom": 10,
+      "maxzoom": 12,
+      "filter": [
+        "in",
+        [
+          "get",
+          "class"
+        ],
+        [
+          "literal",
+          [
+            "aerodrome",
+            "heliport"
+          ]
+        ]
+      ],
+      "layout": {
+        "visibility": "none",
+        "icon-image": "poi-airport",
+        "icon-size": 1.1,
+        "text-field": [
+          "get",
+          "ref"
+        ],
+        "text-font": [
+          "Open Sans Semibold"
+        ],
+        "text-size": 11,
+        "text-offset": [
+          0,
+          2
+        ],
+        "text-anchor": "top",
+        "icon-allow-overlap": true,
+        "icon-ignore-placement": true,
+        "icon-rotation-alignment": "viewport"
+      },
+      "paint": {
+        "text-color": "#d2b56f",
+        "text-halo-color": "#07111f",
+        "text-halo-width": 1.5
+      }
+    }
+  ]
+}

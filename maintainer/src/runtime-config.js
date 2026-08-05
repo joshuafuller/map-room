@@ -43,12 +43,16 @@ export function buildRuntimeArtifacts({ registry, themes }) {
     }
     const stylePath = `collections/all/${themeId}.json`;
     const style = structuredClone(sourceStyle);
+    const canonicalSource = sourceStyle.sources.osm;
     const staticSources = Object.fromEntries(Object.entries(style.sources).filter(([id]) => id !== "osm"));
     style.name = `${sourceStyle.name} — All installed maps`;
     style.metadata = { ...style.metadata, "map-room:regions": regions.map(({ id }) => id) };
     style.sources = {
       ...staticSources,
-      ...Object.fromEntries(regions.map(({ id }) => [id, { type: "vector", url: `mbtiles://{${id}}` }]))
+      ...Object.fromEntries(regions.map(({ id }) => [id, {
+        ...structuredClone(canonicalSource),
+        url: `mbtiles://{${id}}`
+      }]))
     };
     style.layers = style.layers.flatMap((layer) => layer.source === "osm"
       ? regions.map(({ id }) => ({ ...structuredClone(layer), id: `${layer.id}--${id}`, source: id }))

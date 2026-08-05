@@ -9,7 +9,8 @@
   "sources": {
     "osm": {
       "type": "vector",
-      "url": "mbtiles://{osm}"
+      "url": "mbtiles://{osm}",
+      "attribution": "© OpenMapTiles © OpenStreetMap contributors"
     }
   },
   "glyphs": "{fontstack}/{range}.pbf",
@@ -986,7 +987,7 @@
       "type": "symbol",
       "source": "osm",
       "source-layer": "poi",
-      "minzoom": 12,
+      "minzoom": 14,
       "filter": [
         "in",
         [
@@ -1029,14 +1030,22 @@
         "icon-size": 1.15,
         "icon-allow-overlap": false,
         "text-field": [
-          "coalesce",
+          "step",
           [
-            "get",
-            "name:latin"
+            "zoom"
           ],
+          "",
+          15,
           [
-            "get",
-            "name"
+            "coalesce",
+            [
+              "get",
+              "name:latin"
+            ],
+            [
+              "get",
+              "name"
+            ]
           ]
         ],
         "text-font": [
@@ -1106,7 +1115,7 @@
       "type": "symbol",
       "source": "osm",
       "source-layer": "poi",
-      "minzoom": 13,
+      "minzoom": 17,
       "filter": [
         "in",
         [
@@ -1122,13 +1131,12 @@
             "museum",
             "attraction",
             "grocery",
-            "shop",
-            "parking"
+            "shop"
           ]
         ]
       ],
       "layout": {
-        "visibility": "none",
+        "visibility": "visible",
         "icon-image": [
           "match",
           [
@@ -1147,24 +1155,27 @@
             "attraction"
           ],
           "poi-attraction",
-          [
-            "grocery",
-            "shop"
-          ],
-          "poi-shopping",
-          "poi-parking"
+          "poi-shopping"
         ],
         "icon-size": 1.08,
         "icon-allow-overlap": false,
         "text-field": [
-          "coalesce",
+          "step",
           [
-            "get",
-            "name:latin"
+            "zoom"
           ],
+          "",
+          18,
           [
-            "get",
-            "name"
+            "coalesce",
+            [
+              "get",
+              "name:latin"
+            ],
+            [
+              "get",
+              "name"
+            ]
           ]
         ],
         "text-font": [
@@ -1182,6 +1193,61 @@
         "text-color": "#f4f7ff",
         "text-halo-color": "#080912",
         "text-halo-width": 1.5
+      }
+    },
+    {
+      "id": "poi-parking",
+      "type": "symbol",
+      "source": "osm",
+      "source-layer": "poi",
+      "minzoom": 18,
+      "filter": [
+        "==",
+        [
+          "get",
+          "class"
+        ],
+        "parking"
+      ],
+      "layout": {
+        "visibility": "visible",
+        "icon-image": "poi-parking",
+        "icon-size": 1.02,
+        "icon-allow-overlap": false,
+        "text-field": [
+          "step",
+          [
+            "zoom"
+          ],
+          "",
+          19,
+          [
+            "coalesce",
+            [
+              "get",
+              "name:latin"
+            ],
+            [
+              "get",
+              "name"
+            ]
+          ]
+        ],
+        "text-font": [
+          "Open Sans Regular"
+        ],
+        "text-size": 9.5,
+        "text-offset": [
+          0,
+          1.8
+        ],
+        "text-anchor": "top",
+        "text-optional": true
+      },
+      "paint": {
+        "text-color": "#f4f7ff",
+        "text-halo-color": "#080912",
+        "text-halo-width": 1.4
       }
     },
     {
@@ -1282,8 +1348,9 @@
       "type": "symbol",
       "source": "osm",
       "source-layer": "housenumber",
-      "minzoom": 14,
+      "minzoom": 18,
       "layout": {
+        "visibility": "visible",
         "text-field": [
           "get",
           "housenumber"
@@ -1345,7 +1412,7 @@
       "type": "symbol",
       "source": "osm",
       "source-layer": "poi",
-      "minzoom": 12,
+      "minzoom": 14,
       "filter": [
         "in",
         [
@@ -1388,14 +1455,22 @@
         "icon-size": 1.15,
         "icon-allow-overlap": true,
         "text-field": [
-          "coalesce",
+          "step",
           [
-            "get",
-            "name:latin"
+            "zoom"
           ],
+          "",
+          15,
           [
-            "get",
-            "name"
+            "coalesce",
+            [
+              "get",
+              "name:latin"
+            ],
+            [
+              "get",
+              "name"
+            ]
           ]
         ],
         "text-font": [
@@ -1422,7 +1497,7 @@
       "type": "symbol",
       "source": "osm",
       "source-layer": "poi",
-      "minzoom": 13,
+      "minzoom": 17,
       "filter": [
         "in",
         [
@@ -1438,8 +1513,7 @@
             "museum",
             "attraction",
             "grocery",
-            "shop",
-            "parking"
+            "shop"
           ]
         ]
       ],
@@ -1463,24 +1537,27 @@
             "attraction"
           ],
           "poi-attraction",
-          [
-            "grocery",
-            "shop"
-          ],
-          "poi-shopping",
-          "poi-parking"
+          "poi-shopping"
         ],
         "icon-size": 1.08,
         "icon-allow-overlap": true,
         "text-field": [
-          "coalesce",
+          "step",
           [
-            "get",
-            "name:latin"
+            "zoom"
           ],
+          "",
+          18,
           [
-            "get",
-            "name"
+            "coalesce",
+            [
+              "get",
+              "name:latin"
+            ],
+            [
+              "get",
+              "name"
+            ]
           ]
         ],
         "text-font": [
@@ -1500,6 +1577,63 @@
         "text-color": "#f4f7ff",
         "text-halo-color": "#080912",
         "text-halo-width": 1.5
+      }
+    },
+    {
+      "id": "poi-parking-hud",
+      "type": "symbol",
+      "source": "osm",
+      "source-layer": "poi",
+      "minzoom": 18,
+      "filter": [
+        "==",
+        [
+          "get",
+          "class"
+        ],
+        "parking"
+      ],
+      "layout": {
+        "visibility": "none",
+        "icon-image": "poi-parking",
+        "icon-size": 1.02,
+        "icon-allow-overlap": true,
+        "text-field": [
+          "step",
+          [
+            "zoom"
+          ],
+          "",
+          19,
+          [
+            "coalesce",
+            [
+              "get",
+              "name:latin"
+            ],
+            [
+              "get",
+              "name"
+            ]
+          ]
+        ],
+        "text-font": [
+          "Open Sans Regular"
+        ],
+        "text-size": 9.5,
+        "text-offset": [
+          0,
+          1.8
+        ],
+        "text-anchor": "top",
+        "text-optional": true,
+        "icon-ignore-placement": true,
+        "icon-rotation-alignment": "viewport"
+      },
+      "paint": {
+        "text-color": "#f4f7ff",
+        "text-halo-color": "#080912",
+        "text-halo-width": 1.4
       }
     },
     {

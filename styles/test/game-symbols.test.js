@@ -6,7 +6,7 @@ import { readFile } from "node:fs/promises";
 import { promisify } from "node:util";
 
 const execute = promisify(execFile);
-const themeIds = ["daylight", "midnight", "cyberpunk", "cyberpunk-tactical"];
+const themeIds = ["daylight", "midnight", "dark-blue", "dark-red", "dark-green", "cyberpunk", "cyberpunk-tactical"];
 
 test("builds local game-inspired shields and truthful POI categories", async () => {
   await execute(process.execPath, ["styles/build-styles.mjs"]);
@@ -39,6 +39,7 @@ test("builds local game-inspired shields and truthful POI categories", async () 
   assert.match(JSON.stringify(layers["road-shields"]), /route_1_ref/);
   assert.match(JSON.stringify(layers["road-shields"]), /US:FL:CR/);
   assert.equal(layers["poi-essential"].layout.visibility, "visible");
+  assert.equal(layers["poi-essential"].minzoom, 14);
   assert.ok(layers["poi-essential"].layout["icon-size"] >= 1.05);
   assert.ok(layers["poi-explore"].layout["icon-size"] >= 1);
   assert.ok(layers["poi-airports"].layout["icon-size"] >= 1.05);
@@ -49,10 +50,17 @@ test("builds local game-inspired shields and truthful POI categories", async () 
   assert.ok(layers.taxiways.minzoom > layers.runways.minzoom);
   assert.match(JSON.stringify(layers.runways.filter), /runway/);
   assert.match(JSON.stringify(layers.taxiways.filter), /taxiway/);
-  assert.equal(layers["poi-explore"].layout.visibility, "none");
+  assert.equal(layers["poi-explore"].layout.visibility, "visible");
+  assert.equal(layers["poi-explore"].minzoom, 17);
+  assert.equal(layers["poi-parking"].layout.visibility, "visible");
+  assert.equal(layers["poi-parking"].minzoom, 18);
+  assert.doesNotMatch(JSON.stringify(layers["poi-explore"].filter), /parking/);
+  assert.equal(layers["house-numbers"].layout.visibility, "visible");
+  assert.equal(layers["house-numbers"].minzoom, 18);
   assert.match(JSON.stringify(layers["poi-essential"]), /hospital/);
   assert.match(JSON.stringify(layers["poi-essential"]), /fire_station/);
   assert.match(JSON.stringify(layers["poi-essential"]), /fuel/);
+  assert.deepEqual(layers["poi-essential"].layout["text-field"].slice(0, 4), ["step", ["zoom"], "", 15]);
   assert.match(JSON.stringify(layers["poi-explore"]), /restaurant/);
   assert.match(JSON.stringify(layers["poi-explore"]), /lodging/);
 
@@ -82,8 +90,8 @@ test("builds local game-inspired shields and truthful POI categories", async () 
   assert.match(notices, /Lucide.*ISC/is);
   assert.match(notices, /Sharp.*Apache-2\.0/is);
   assert.equal(layers.taxiways.paint["line-color"], "#00eaff");
-  assert.match(html, /data-poi-preset="essential"/);
-  assert.match(html, /data-poi-preset="explore"/);
+  assert.doesNotMatch(html, /data-poi-preset=/);
+  assert.match(html, /detail appears automatically/i);
 });
 
 test("builds the same information contract with distinct sprites for every theme", async () => {
@@ -100,11 +108,21 @@ test("builds the same information contract with distinct sprites for every theme
     const retinaPng = await readFile(`styles/${id}/sprite@2x.png`);
 
     assert.equal(style.sprite, `/styles/${id}/sprite`);
-    for (const layerId of ["road-shields", "poi-essential", "poi-explore", "poi-airports", "airports", "runways", "taxiways"]) {
+    for (const layerId of ["road-shields", "poi-essential", "poi-explore", "poi-parking", "poi-airports", "airports", "runways", "taxiways"]) {
+      assert.ok(layers[layerId], `${id} is missing ${layerId}`);
+    }
+    assert.equal(layers["buildings-3d"].type, "fill-extrusion", `${id} must support 3D buildings`);
+    assert.equal(layers["buildings-3d"].layout.visibility, "none");
+    for (const layerId of ["poi-essential-hud", "poi-explore-hud", "poi-parking-hud", "poi-airports-hud"]) {
       assert.ok(layers[layerId], `${id} is missing ${layerId}`);
     }
     assert.equal(layers["poi-essential"].layout.visibility, "visible");
-    assert.equal(layers["poi-explore"].layout.visibility, "none");
+    assert.equal(layers["poi-explore"].layout.visibility, "visible");
+    assert.equal(layers["poi-explore"].minzoom, 17);
+    assert.equal(layers["poi-parking"].layout.visibility, "visible");
+    assert.equal(layers["poi-parking"].minzoom, 18);
+    assert.equal(layers["house-numbers"].layout.visibility, "visible");
+    assert.equal(layers["house-numbers"].minzoom, 18);
     assert.deepEqual(retinaSprite, sprite);
     assert.deepEqual(retinaPng, png);
     spriteDigests.add(createHash("sha256").update(png).digest("hex"));
@@ -113,6 +131,7 @@ test("builds the same information contract with distinct sprites for every theme
       shields: layers["road-shields"].filter,
       essential: layers["poi-essential"].filter,
       explore: layers["poi-explore"].filter,
+      parking: layers["poi-parking"].filter,
       airports: layers["poi-airports"].filter,
       runways: layers.runways.filter,
       taxiways: layers.taxiways.filter
@@ -122,4 +141,15 @@ test("builds the same information contract with distinct sprites for every theme
   }
 
   assert.equal(spriteDigests.size, themeIds.length);
+});
+
+test("uses a light-specific neutral extrusion palette for Daylight", async () => {
+  await execute(process.execPath, ["styles/build-styles.mjs"]);
+  const style = JSON.parse(await readFile("styles/daylight/style.json", "utf8"));
+  const buildings = style.layers.find(({ id }) => id === "buildings-3d");
+  assert.deepEqual(buildings.paint["fill-extrusion-color"], [
+    "interpolate", ["linear"], ["coalesce", ["get", "render_height"], 3],
+    0, "#d8d0c6", 30, "#ddd5ca", 100, "#e5d8c5", 220, "#edd3aa"
+  ]);
+  assert.equal(style.light.color, "#fff8ea");
 });

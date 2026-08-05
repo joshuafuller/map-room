@@ -9,11 +9,22 @@
   "sources": {
     "osm": {
       "type": "vector",
-      "url": "mbtiles://{osm}"
+      "url": "mbtiles://{osm}",
+      "attribution": "© OpenMapTiles © OpenStreetMap contributors"
     }
   },
   "glyphs": "{fontstack}/{range}.pbf",
   "sprite": "/styles/daylight/sprite",
+  "light": {
+    "anchor": "viewport",
+    "color": "#fff8ea",
+    "intensity": 0.72,
+    "position": [
+      1.15,
+      210,
+      35
+    ]
+  },
   "layers": [
     {
       "id": "background",
@@ -761,33 +772,11 @@
       }
     },
     {
-      "id": "house-numbers",
-      "type": "symbol",
-      "source": "osm",
-      "source-layer": "housenumber",
-      "minzoom": 14,
-      "layout": {
-        "text-field": [
-          "get",
-          "housenumber"
-        ],
-        "text-font": [
-          "Open Sans Regular"
-        ],
-        "text-size": 9
-      },
-      "paint": {
-        "text-color": "#293038",
-        "text-halo-color": "#fbfaf7",
-        "text-halo-width": 1
-      }
-    },
-    {
       "id": "poi-essential",
       "type": "symbol",
       "source": "osm",
       "source-layer": "poi",
-      "minzoom": 12,
+      "minzoom": 14,
       "filter": [
         "in",
         [
@@ -830,14 +819,22 @@
         "icon-size": 1.15,
         "icon-allow-overlap": false,
         "text-field": [
-          "coalesce",
+          "step",
           [
-            "get",
-            "name:latin"
+            "zoom"
           ],
+          "",
+          15,
           [
-            "get",
-            "name"
+            "coalesce",
+            [
+              "get",
+              "name:latin"
+            ],
+            [
+              "get",
+              "name"
+            ]
           ]
         ],
         "text-font": [
@@ -907,7 +904,7 @@
       "type": "symbol",
       "source": "osm",
       "source-layer": "poi",
-      "minzoom": 13,
+      "minzoom": 17,
       "filter": [
         "in",
         [
@@ -923,13 +920,12 @@
             "museum",
             "attraction",
             "grocery",
-            "shop",
-            "parking"
+            "shop"
           ]
         ]
       ],
       "layout": {
-        "visibility": "none",
+        "visibility": "visible",
         "icon-image": [
           "match",
           [
@@ -948,24 +944,27 @@
             "attraction"
           ],
           "poi-attraction",
-          [
-            "grocery",
-            "shop"
-          ],
-          "poi-shopping",
-          "poi-parking"
+          "poi-shopping"
         ],
         "icon-size": 1.08,
         "icon-allow-overlap": false,
         "text-field": [
-          "coalesce",
+          "step",
           [
-            "get",
-            "name:latin"
+            "zoom"
           ],
+          "",
+          18,
           [
-            "get",
-            "name"
+            "coalesce",
+            [
+              "get",
+              "name:latin"
+            ],
+            [
+              "get",
+              "name"
+            ]
           ]
         ],
         "text-font": [
@@ -983,6 +982,61 @@
         "text-color": "#293038",
         "text-halo-color": "#fbfaf7",
         "text-halo-width": 1.5
+      }
+    },
+    {
+      "id": "poi-parking",
+      "type": "symbol",
+      "source": "osm",
+      "source-layer": "poi",
+      "minzoom": 18,
+      "filter": [
+        "==",
+        [
+          "get",
+          "class"
+        ],
+        "parking"
+      ],
+      "layout": {
+        "visibility": "visible",
+        "icon-image": "poi-parking",
+        "icon-size": 1.02,
+        "icon-allow-overlap": false,
+        "text-field": [
+          "step",
+          [
+            "zoom"
+          ],
+          "",
+          19,
+          [
+            "coalesce",
+            [
+              "get",
+              "name:latin"
+            ],
+            [
+              "get",
+              "name"
+            ]
+          ]
+        ],
+        "text-font": [
+          "Open Sans Regular"
+        ],
+        "text-size": 9.5,
+        "text-offset": [
+          0,
+          1.8
+        ],
+        "text-anchor": "top",
+        "text-optional": true
+      },
+      "paint": {
+        "text-color": "#293038",
+        "text-halo-color": "#fbfaf7",
+        "text-halo-width": 1.4
       }
     },
     {
@@ -1027,6 +1081,81 @@
       }
     },
     {
+      "id": "buildings-3d",
+      "type": "fill-extrusion",
+      "source": "osm",
+      "source-layer": "building",
+      "minzoom": 13,
+      "layout": {
+        "visibility": "none"
+      },
+      "paint": {
+        "fill-extrusion-color": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "coalesce",
+            [
+              "get",
+              "render_height"
+            ],
+            3
+          ],
+          0,
+          "#d8d0c6",
+          30,
+          "#ddd5ca",
+          100,
+          "#e5d8c5",
+          220,
+          "#edd3aa"
+        ],
+        "fill-extrusion-height": [
+          "coalesce",
+          [
+            "get",
+            "render_height"
+          ],
+          3
+        ],
+        "fill-extrusion-base": [
+          "coalesce",
+          [
+            "get",
+            "render_min_height"
+          ],
+          0
+        ],
+        "fill-extrusion-opacity": 0.82,
+        "fill-extrusion-vertical-gradient": true
+      }
+    },
+    {
+      "id": "house-numbers",
+      "type": "symbol",
+      "source": "osm",
+      "source-layer": "housenumber",
+      "minzoom": 18,
+      "layout": {
+        "visibility": "visible",
+        "text-field": [
+          "get",
+          "housenumber"
+        ],
+        "text-font": [
+          "Open Sans Regular"
+        ],
+        "text-size": 9
+      },
+      "paint": {
+        "text-color": "#293038",
+        "text-halo-color": "#fbfaf7",
+        "text-halo-width": 1
+      }
+    },
+    {
       "id": "place-labels",
       "type": "symbol",
       "source": "osm",
@@ -1065,6 +1194,283 @@
         "text-color": "#293038",
         "text-halo-color": "#fbfaf7",
         "text-halo-width": 1.8
+      }
+    },
+    {
+      "id": "poi-essential-hud",
+      "type": "symbol",
+      "source": "osm",
+      "source-layer": "poi",
+      "minzoom": 14,
+      "filter": [
+        "in",
+        [
+          "get",
+          "class"
+        ],
+        [
+          "literal",
+          [
+            "hospital",
+            "clinic",
+            "fire_station",
+            "police",
+            "fuel",
+            "harbor"
+          ]
+        ]
+      ],
+      "layout": {
+        "visibility": "none",
+        "icon-image": [
+          "match",
+          [
+            "get",
+            "class"
+          ],
+          [
+            "hospital",
+            "clinic"
+          ],
+          "poi-medical",
+          "fire_station",
+          "poi-fire",
+          "police",
+          "poi-police",
+          "fuel",
+          "poi-fuel",
+          "poi-port"
+        ],
+        "icon-size": 1.15,
+        "icon-allow-overlap": true,
+        "text-field": [
+          "step",
+          [
+            "zoom"
+          ],
+          "",
+          15,
+          [
+            "coalesce",
+            [
+              "get",
+              "name:latin"
+            ],
+            [
+              "get",
+              "name"
+            ]
+          ]
+        ],
+        "text-font": [
+          "Open Sans Semibold"
+        ],
+        "text-size": 11,
+        "text-offset": [
+          0,
+          2
+        ],
+        "text-anchor": "top",
+        "text-optional": true,
+        "icon-ignore-placement": true,
+        "icon-rotation-alignment": "viewport"
+      },
+      "paint": {
+        "text-color": "#293038",
+        "text-halo-color": "#fbfaf7",
+        "text-halo-width": 1.6
+      }
+    },
+    {
+      "id": "poi-explore-hud",
+      "type": "symbol",
+      "source": "osm",
+      "source-layer": "poi",
+      "minzoom": 17,
+      "filter": [
+        "in",
+        [
+          "get",
+          "class"
+        ],
+        [
+          "literal",
+          [
+            "restaurant",
+            "fast_food",
+            "lodging",
+            "museum",
+            "attraction",
+            "grocery",
+            "shop"
+          ]
+        ]
+      ],
+      "layout": {
+        "visibility": "none",
+        "icon-image": [
+          "match",
+          [
+            "get",
+            "class"
+          ],
+          [
+            "restaurant",
+            "fast_food"
+          ],
+          "poi-food",
+          "lodging",
+          "poi-lodging",
+          [
+            "museum",
+            "attraction"
+          ],
+          "poi-attraction",
+          "poi-shopping"
+        ],
+        "icon-size": 1.08,
+        "icon-allow-overlap": true,
+        "text-field": [
+          "step",
+          [
+            "zoom"
+          ],
+          "",
+          18,
+          [
+            "coalesce",
+            [
+              "get",
+              "name:latin"
+            ],
+            [
+              "get",
+              "name"
+            ]
+          ]
+        ],
+        "text-font": [
+          "Open Sans Semibold"
+        ],
+        "text-size": 10.5,
+        "text-offset": [
+          0,
+          1.9
+        ],
+        "text-anchor": "top",
+        "text-optional": true,
+        "icon-ignore-placement": true,
+        "icon-rotation-alignment": "viewport"
+      },
+      "paint": {
+        "text-color": "#293038",
+        "text-halo-color": "#fbfaf7",
+        "text-halo-width": 1.5
+      }
+    },
+    {
+      "id": "poi-parking-hud",
+      "type": "symbol",
+      "source": "osm",
+      "source-layer": "poi",
+      "minzoom": 18,
+      "filter": [
+        "==",
+        [
+          "get",
+          "class"
+        ],
+        "parking"
+      ],
+      "layout": {
+        "visibility": "none",
+        "icon-image": "poi-parking",
+        "icon-size": 1.02,
+        "icon-allow-overlap": true,
+        "text-field": [
+          "step",
+          [
+            "zoom"
+          ],
+          "",
+          19,
+          [
+            "coalesce",
+            [
+              "get",
+              "name:latin"
+            ],
+            [
+              "get",
+              "name"
+            ]
+          ]
+        ],
+        "text-font": [
+          "Open Sans Regular"
+        ],
+        "text-size": 9.5,
+        "text-offset": [
+          0,
+          1.8
+        ],
+        "text-anchor": "top",
+        "text-optional": true,
+        "icon-ignore-placement": true,
+        "icon-rotation-alignment": "viewport"
+      },
+      "paint": {
+        "text-color": "#293038",
+        "text-halo-color": "#fbfaf7",
+        "text-halo-width": 1.4
+      }
+    },
+    {
+      "id": "poi-airports-hud",
+      "type": "symbol",
+      "source": "osm",
+      "source-layer": "aeroway",
+      "minzoom": 10,
+      "maxzoom": 12,
+      "filter": [
+        "in",
+        [
+          "get",
+          "class"
+        ],
+        [
+          "literal",
+          [
+            "aerodrome",
+            "heliport"
+          ]
+        ]
+      ],
+      "layout": {
+        "visibility": "none",
+        "icon-image": "poi-airport",
+        "icon-size": 1.1,
+        "text-field": [
+          "get",
+          "ref"
+        ],
+        "text-font": [
+          "Open Sans Semibold"
+        ],
+        "text-size": 11,
+        "text-offset": [
+          0,
+          2
+        ],
+        "text-anchor": "top",
+        "icon-allow-overlap": true,
+        "icon-ignore-placement": true,
+        "icon-rotation-alignment": "viewport"
+      },
+      "paint": {
+        "text-color": "#e8b06d",
+        "text-halo-color": "#fbfaf7",
+        "text-halo-width": 1.5
       }
     }
   ]

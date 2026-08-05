@@ -8,7 +8,7 @@ services:
       MAP_ROOM_DATA_DIR: /data/archive
       MAP_ROOM_STYLE_DIR: /data/styles
       MAP_ROOM_BASE_CONFIG: /app/config.json
-      MAP_ROOM_DEFAULT_REGION: ${MAP_ROOM_DEFAULT_REGION:-california}
+      MAP_ROOM_DEFAULT_REGION: ${MAP_ROOM_DEFAULT_REGION:-}
     volumes:
       - ./config.json:/app/config.json:ro
       - ./maintainer:/app/maintainer:ro

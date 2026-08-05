@@ -1,7 +1,10 @@
 import { chromium, devices } from "playwright";
+import { mkdir } from "node:fs/promises";
 
 const baseUrl = process.env.BASE_URL ?? "http://127.0.0.1:8088";
 const expectedOrigin = new URL(baseUrl).origin;
+const outputDir = new URL("../data/browser-test/", import.meta.url);
+await mkdir(outputDir, { recursive: true });
 const browser = await chromium.launch({ headless: true });
 const context = await browser.newContext({ ...devices["Pixel 7"] });
 const page = await context.newPage();
@@ -11,13 +14,14 @@ const vectorRequests = [];
 page.on("pageerror", (error) => failures.push(`page error: ${error.message}`));
 page.on("requestfailed", (request) => failures.push(`request failed: ${request.url()} (${request.failure()?.errorText})`));
 page.on("request", (request) => {
-  if (/\/data\/(?:california|florida)(?:\.json|\/)/.test(request.url())) vectorRequests.push(request.url());
+  if (/\/data\/[a-z0-9-]+(?:\.json|\/)/.test(request.url())) vectorRequests.push(request.url());
 });
 
 await page.goto(baseUrl, { waitUntil: "networkidle" });
 await page.locator(".maplibregl-canvas").waitFor({ state: "visible" });
 await page.waitForFunction(() => document.querySelector("#region")?.textContent === "All installed maps");
 await page.waitForTimeout(1000);
+const catalog = await page.evaluate(() => fetch("/regions.json").then((response) => response.json()));
 
 const initialPanel = await page.evaluate(() => {
   const panel = document.querySelector(".panel");
@@ -40,11 +44,21 @@ if (initialPanel.hasToggle) {
   const expandedPanel = await page.locator(".panel").evaluate((panel) => panel.getBoundingClientRect().height);
   if (await page.locator("#panel-toggle").getAttribute("aria-expanded") !== "true") failures.push("mobile controls did not report their expanded state");
   if (expandedPanel <= initialPanel.height) failures.push("mobile controls did not grow when expanded");
+  await page.locator("#hosted-path-title").scrollIntoViewIfNeeded();
+  await page.screenshot({ path: new URL("mobile-atak-paths.png", outputDir).pathname, fullPage: true });
+  const pathHeadings = await page.locator(".path-card h3").allTextContents();
+  if (!pathHeadings.includes("Host and stream maps") ||
+      !pathHeadings.includes("Make a completely offline map")) {
+    failures.push("mobile ATAK setup did not distinguish hosted and completely offline paths");
+  }
+  await page.locator(".delivery-guide summary").click();
+  await page.screenshot({ path: new URL("mobile-atak-delivery-guide.png", outputDir).pathname, fullPage: true });
+  if (await page.locator(".delivery-guide").getAttribute("open") === null) failures.push("mobile ATAK delivery guide could not be expanded");
   await page.locator("#panel-toggle").click();
   if (await page.locator("#panel-toggle").getAttribute("aria-expanded") !== "false") failures.push("mobile controls could not be collapsed again");
 }
 
-for (const region of ["california", "florida"]) {
+for (const { id: region } of catalog.regions) {
   if (!vectorRequests.some((url) => url.includes(`/data/${region}`))) {
     failures.push(`mobile Chrome did not request the ${region} vector source`);
   }
@@ -60,4 +74,4 @@ if (failures.length) {
   console.error(failures.join("\n"));
   process.exit(1);
 }
-console.log(`PASS mobile Chrome loaded both vector sources through ${expectedOrigin}`);
+console.log(`PASS mobile Chrome loaded ${catalog.regions.length} vector sources through ${expectedOrigin}`);

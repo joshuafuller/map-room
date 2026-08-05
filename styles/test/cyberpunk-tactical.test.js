@@ -26,13 +26,11 @@ test("generates Cyberpunk Tactical without changing the Classic core treatment",
     tilejson: { type: "baselayer" }
   });
   assert.match(html, /data-theme="cyberpunk-tactical"/);
-  assert.match(html, /id="grid-toggle"/);
+  assert.doesNotMatch(html, /id="grid-toggle"/);
   assert.match(css, /prefers-reduced-motion: reduce/);
 
   const layers = Object.fromEntries(tactical.layers.map((layer) => [layer.id, layer]));
   assert.equal(new Set(Object.keys(layers)).size, tactical.layers.length);
-  assert.equal(layers["coordinate-grid"].minzoom, 14);
-  assert.equal(layers["coordinate-grid"].layout.visibility, "none");
   assert.ok(layers["urban-glow"]);
   assert.ok(layers["coastline-glow"]);
   assert.ok(layers["airports"]);
@@ -55,16 +53,15 @@ test("generates Cyberpunk Tactical without changing the Classic core treatment",
   assert.ok(layerIds.indexOf("road-labels") < layerIds.indexOf("buildings-3d"));
   assert.ok(layerIds.indexOf("road-shields") < layerIds.indexOf("buildings-3d"));
   assert.ok(layerIds.indexOf("buildings-3d") < layerIds.indexOf("house-numbers"));
-  assert.ok(layerIds.indexOf("coordinate-grid") < layerIds.indexOf("buildings-3d"));
   assert.ok(layerIds.indexOf("poi-essential") < layerIds.indexOf("buildings-3d"));
   assert.ok(layerIds.indexOf("poi-explore") < layerIds.indexOf("buildings-3d"));
   assert.ok(layerIds.indexOf("poi-airports") < layerIds.indexOf("buildings-3d"));
   assert.ok(layerIds.indexOf("water-labels") < layerIds.indexOf("buildings-3d"));
   assert.ok(layerIds.indexOf("buildings-3d") < layerIds.indexOf("place-labels"));
   assert.deepEqual(layerIds.slice(layerIds.indexOf("buildings-3d") + 1), [
-    "house-numbers", "place-labels", "poi-essential-hud", "poi-explore-hud", "poi-airports-hud"
+    "house-numbers", "place-labels", "poi-essential-hud", "poi-explore-hud", "poi-parking-hud", "poi-airports-hud"
   ]);
-  for (const id of ["poi-essential-hud", "poi-explore-hud", "poi-airports-hud"]) {
+  for (const id of ["poi-essential-hud", "poi-explore-hud", "poi-parking-hud", "poi-airports-hud"]) {
     const base = layers[id.replace("-hud", "")];
     assert.equal(layers[id].type, "symbol");
     assert.equal(layers[id].layout.visibility, "none");

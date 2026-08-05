@@ -1,6 +1,9 @@
 const themeNames = {
   daylight: "Daylight",
   midnight: "Midnight",
+  "dark-blue": "Dark Blue",
+  "dark-red": "Dark Red",
+  "dark-green": "Dark Green",
   cyberpunk: "Cyberpunk Classic",
   "cyberpunk-tactical": "Cyberpunk Tactical"
 };
@@ -26,8 +29,10 @@ const poiGroups = {
     { id: "food", classes: ["restaurant", "fast_food"], icon: "poi-food" },
     { id: "lodging", classes: ["lodging"], icon: "poi-lodging" },
     { id: "attraction", classes: ["museum", "attraction"], icon: "poi-attraction" },
-    { id: "shopping", classes: ["grocery", "shop"], icon: "poi-shopping" },
-    { id: "parking", classes: ["parking"], icon: "poi-parking" }
+    { id: "shopping", classes: ["grocery", "shop"], icon: "poi-shopping" }
+  ],
+  "poi-parking": [
+    { id: "lot", classes: ["parking"], icon: "poi-parking" }
   ]
 };
 

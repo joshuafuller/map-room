@@ -1,6 +1,9 @@
 const atakThemes = {
   daylight: { name: "Daylight", color: "#f4f1ea" },
   midnight: { name: "Midnight", color: "#101820" },
+  "dark-blue": { name: "Dark Blue", color: "#07111f" },
+  "dark-red": { name: "Dark Red", color: "#160909" },
+  "dark-green": { name: "Dark Green", color: "#07120d" },
   cyberpunk: { name: "Cyberpunk", color: "#060711" },
   "cyberpunk-tactical": { name: "Cyberpunk Tactical", color: "#03040b" }
 };

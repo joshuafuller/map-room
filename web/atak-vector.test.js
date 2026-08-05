@@ -10,12 +10,12 @@ const sourceStyle = {
   sprite: "/styles/cyberpunk-tactical/sprite",
   sources: {
     osm: { type: "vector", url: "mbtiles://{osm}" },
-    "coordinate-grid": { type: "geojson", data: { type: "FeatureCollection", features: [] } }
+    overlay: { type: "geojson", data: { type: "FeatureCollection", features: [] } }
   },
   layers: [
     { id: "background", type: "background", paint: { "background-color": "#03040b" } },
     { id: "roads", type: "line", source: "osm", "source-layer": "transportation" },
-    { id: "coordinate-grid", type: "line", source: "coordinate-grid" },
+    { id: "overlay", type: "line", source: "overlay" },
     { id: "poi-essential", type: "symbol", source: "osm", "source-layer": "poi", layout: { "icon-image": "poi-fuel" } },
     { id: "aeroway-runway", type: "line", source: "osm", "source-layer": "aeroway" }
   ]
@@ -205,7 +205,7 @@ test("compiles the complete authored Cyberpunk theme without unsupported express
     "runway-glow", "runways", "taxiways", "poi-airports",
     "road-shields-interstate", "road-shields-us", "road-shields-state", "road-shields-county",
     "poi-essential-medical", "poi-essential-fire", "poi-essential-police", "poi-essential-fuel", "poi-essential-port",
-    "poi-explore-food", "poi-explore-lodging", "poi-explore-attraction", "poi-explore-shopping", "poi-explore-parking"
+    "poi-explore-food", "poi-explore-lodging", "poi-explore-attraction", "poi-explore-shopping", "poi-parking-lot"
   ]) assert.equal(ids.has(required), true, `missing ${required}`);
 
   assert.equal(style.layers.find(({ id }) => id === "poi-airports")["source-layer"], "aerodrome_label");
