@@ -55,7 +55,7 @@ export class MapLibrary {
     return maps;
   }
 
-  async create({ id, name, source, buildMemory, onProgress }) {
+  async create({ id, name, source, reuseSource, buildMemory, onProgress }) {
     ({ id, name } = validateMapIdentity(id, name));
     await mkdir(this.regionsDirectory, { recursive: true });
     const manifestPath = this.#manifestPath(id);
@@ -65,7 +65,7 @@ export class MapLibrary {
     const stagingArchive = path.join(this.dataDirectory, `.${id}-${token}.mbtiles`);
     const stagingManifest = path.join(this.regionsDirectory, `.${id}-${token}.json`);
     try {
-      await this.buildMap({ id, name, source, output: stagingArchive, buildMemory, onProgress });
+      await this.buildMap({ id, name, source, output: stagingArchive, reuseSource, buildMemory, onProgress });
       onProgress?.({ phase: "configuring", progress: null });
       const inspected = await this.inspectArchive({ name, archive: stagingArchive });
       const manifest = { ...inspected, archive: `${id}.mbtiles`, source };
@@ -88,10 +88,10 @@ export class MapLibrary {
     return publicMap(id, updated);
   }
 
-  async rebuild(id, { buildMemory, onProgress } = {}) {
+  async rebuild(id, { reuseSource, buildMemory, onProgress } = {}) {
     const { manifest } = await this.#load(id);
     if (!manifest.source?.url && !manifest.source?.catalogId && !manifest.source?.file) throw new Error(`Map '${id}' does not have a reusable source`);
-    return this.#replace(id, manifest, { buildMemory, onProgress });
+    return this.#replace(id, manifest, { reuseSource, buildMemory, onProgress });
   }
 
   async delete(id, { confirmation }) {
@@ -128,12 +128,12 @@ export class MapLibrary {
     }
   }
 
-  async #replace(id, manifest, { buildMemory, onProgress }) {
+  async #replace(id, manifest, { reuseSource, buildMemory, onProgress }) {
     const token = randomUUID();
     const archivePath = path.join(this.dataDirectory, manifest.archive);
     const stagingArchive = path.join(this.dataDirectory, `.${id}-${token}.mbtiles`);
     try {
-      await this.buildMap({ id, name: manifest.region, source: manifest.source, output: stagingArchive, buildMemory, onProgress });
+      await this.buildMap({ id, name: manifest.region, source: manifest.source, output: stagingArchive, reuseSource, buildMemory, onProgress });
       onProgress?.({ phase: "configuring", progress: null });
       const inspected = await this.inspectArchive({ name: manifest.region, archive: stagingArchive });
       const updated = { ...inspected, archive: manifest.archive, source: manifest.source };

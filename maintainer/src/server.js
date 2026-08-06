@@ -45,9 +45,10 @@ const applyRuntime = async () => {
 const queue = new JobQueue({ worker: async (job, update) => {
   const onProgress = (state) => update(state);
   const buildMemory = job.buildMemory ?? process.env.MAP_ROOM_BUILD_MEMORY ?? "2g";
+  const reuseSource = Boolean(job.retryOf);
   if (!job.buildMemory) update({ buildMemory });
-  if (job.type === "create") await library.create({ id: job.regionId, name: job.name, source: job.source, buildMemory, onProgress });
-  else if (job.type === "rebuild") await library.rebuild(job.regionId, { buildMemory, onProgress });
+  if (job.type === "create") await library.create({ id: job.regionId, name: job.name, source: job.source, reuseSource, buildMemory, onProgress });
+  else if (job.type === "rebuild") await library.rebuild(job.regionId, { reuseSource, buildMemory, onProgress });
   else throw new Error(`Unsupported job type: ${job.type}`);
 } });
 

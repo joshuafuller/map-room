@@ -94,6 +94,28 @@ test("a normal rebuild refreshes an existing managed source", async () => {
   assert.equal(await readFile(path.join(sources, "region.osm.pbf"), "utf8"), "new");
 });
 
+test("a failed refresh preserves the previous durable source", async () => {
+  const dataDirectory = await mkdtemp(path.join(tmpdir(), "map-room-builder-refresh-failure-"));
+  const sources = path.join(dataDirectory, "sources");
+  await mkdir(sources);
+  const url = "https://download.geofabrik.de/region.osm.pbf";
+  await writeFile(path.join(sources, "region.osm.pbf"), "old");
+  await writeFile(path.join(sources, "region.osm.pbf.json"), JSON.stringify({ url, etag: '"old"', totalBytes: 3 }));
+  const build = createMapBuilder({
+    dataDirectory,
+    fetchImpl: async () => new Response("unavailable", { status: 503 }),
+    spawnImpl: successfulSpawn([])
+  });
+
+  await assert.rejects(
+    () => build({ id: "region", source: { url }, output: path.join(dataDirectory, "output.mbtiles") }),
+    /HTTP 503/
+  );
+
+  assert.equal(await readFile(path.join(sources, "region.osm.pbf"), "utf8"), "old");
+  assert.equal(JSON.parse(await readFile(path.join(sources, "region.osm.pbf.json"), "utf8")).etag, '"old"');
+});
+
 test("resumes a validator-matched partial download and promotes it atomically", async () => {
   const dataDirectory = await mkdtemp(path.join(tmpdir(), "map-room-builder-resume-"));
   const sources = path.join(dataDirectory, "sources");
