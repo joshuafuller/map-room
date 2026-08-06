@@ -16,6 +16,12 @@ const shieldFit = {
   "shield-state": { content: [5, 6, 27, 26], stretchX: [[14, 18]] },
   "shield-county": { content: [4, 7, 28, 25], stretchX: [[14, 18]] }
 };
+const shieldPaths = {
+  "shield-interstate": "M18 18h92v52c0 23-18 35-46 44C36 105 18 93 18 70Z",
+  "shield-us": "M28 14C40 20 52 14 64 9c12 5 24 11 36 5l8 40c-3 29-19 50-44 62C39 104 23 83 20 54Z",
+  "shield-state": "M32 16h64q12 0 12 12v68q0 12-12 12H32q-12 0-12-12V28q0-12 12-12Z",
+  "shield-county": "M24 18h80l10 14v64l-10 14H24L14 96V32Z"
+};
 
 async function writeFileAtomic(path, data) {
   const temporaryPath = `${path}.${process.pid}.${randomUUID()}.tmp`;
@@ -41,8 +47,8 @@ const symbols = [
   { id: "poi-parking", icon: "circle-parking.svg", label: "Parking", accent: "leisure", silhouette: ["parking-ring", "letter-p"] }
 ];
 
-function shieldSvg({ accent, fill }, palette) {
-  const path = "M18 18h92v52c0 23-18 35-46 44C36 105 18 93 18 70Z";
+function shieldSvg({ id, accent, fill }, palette) {
+  const path = shieldPaths[id];
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 128 128">
   <path d="${path}" fill="${palette.shadow}" stroke="${palette.shadow}" stroke-width="12" stroke-linejoin="round"/>
   <path d="${path}" fill="${palette[fill]}" stroke="${palette.frame}" stroke-width="7" stroke-linejoin="round"/>
@@ -51,13 +57,7 @@ function shieldSvg({ accent, fill }, palette) {
 }
 
 function atakShieldSvg({ id, accent, fill }, palette) {
-  const paths = {
-    "shield-interstate": "M18 18h92v52c0 23-18 35-46 44C36 105 18 93 18 70Z",
-    "shield-us": "M28 14C40 20 52 14 64 9c12 5 24 11 36 5l8 40c-3 29-19 50-44 62C39 104 23 83 20 54Z",
-    "shield-state": "M32 16h64q12 0 12 12v68q0 12-12 12H32q-12 0-12-12V28q0-12 12-12Z",
-    "shield-county": "M24 18h80l10 14v64l-10 14H24L14 96V32Z"
-  };
-  const path = paths[id];
+  const path = shieldPaths[id];
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 128 128">
   <path d="${path}" fill="${palette.shadow}" stroke="${palette.shadow}" stroke-width="12" stroke-linejoin="round"/>
   <path d="${path}" fill="${palette[fill]}" stroke="${palette.frame}" stroke-width="7" stroke-linejoin="round"/>
@@ -96,7 +96,14 @@ export async function buildSpriteAtlas(outputDirectory, palette) {
       left: left / atakScale,
       top: top / atakScale
     });
-    metadata[symbol.id] = { width: size, height: size, x: left, y: top, pixelRatio };
+    const fit = shieldFit[symbol.id];
+    metadata[symbol.id] = {
+      width: size, height: size, x: left, y: top, pixelRatio,
+      ...(fit ? {
+        content: fit.content.map((value) => value * pixelRatio),
+        stretchX: fit.stretchX.map(([start, end]) => [start * pixelRatio, end * pixelRatio])
+      } : {})
+    };
     if (symbol.icon) {
       designs[symbol.id] = {
         label: symbol.label,
