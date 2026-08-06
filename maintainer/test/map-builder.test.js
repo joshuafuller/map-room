@@ -62,12 +62,58 @@ test("reuses a completed managed source and applies per-job build memory", async
     id: "us-south",
     source: { url: "https://download.geofabrik.de/us-south.osm.pbf" },
     output: path.join(dataDirectory, "output.mbtiles"),
+    reuseSource: true,
     buildMemory: "8g",
     onProgress: (state) => progress.push(state)
   });
 
   assert.equal(invocations[0].options.env.JAVA_TOOL_OPTIONS, "-Xmx8g");
   assert.equal(progress.some(({ sourceMode }) => sourceMode === "reused"), true);
+});
+
+test("a normal rebuild refreshes an existing managed source", async () => {
+  const dataDirectory = await mkdtemp(path.join(tmpdir(), "map-room-builder-refresh-"));
+  const sources = path.join(dataDirectory, "sources");
+  await mkdir(sources);
+  const url = "https://download.geofabrik.de/region.osm.pbf";
+  await writeFile(path.join(sources, "region.osm.pbf"), "old");
+  await writeFile(path.join(sources, "region.osm.pbf.json"), JSON.stringify({ url, etag: '"old"', totalBytes: 3 }));
+  let fetched = false;
+  const build = createMapBuilder({
+    dataDirectory,
+    fetchImpl: async () => {
+      fetched = true;
+      return new Response("new", { status: 200, headers: { "content-length": "3", etag: '"new"' } });
+    },
+    spawnImpl: successfulSpawn([])
+  });
+
+  await build({ id: "region", source: { url }, output: path.join(dataDirectory, "output.mbtiles") });
+
+  assert.equal(fetched, true);
+  assert.equal(await readFile(path.join(sources, "region.osm.pbf"), "utf8"), "new");
+});
+
+test("a failed refresh preserves the previous durable source", async () => {
+  const dataDirectory = await mkdtemp(path.join(tmpdir(), "map-room-builder-refresh-failure-"));
+  const sources = path.join(dataDirectory, "sources");
+  await mkdir(sources);
+  const url = "https://download.geofabrik.de/region.osm.pbf";
+  await writeFile(path.join(sources, "region.osm.pbf"), "old");
+  await writeFile(path.join(sources, "region.osm.pbf.json"), JSON.stringify({ url, etag: '"old"', totalBytes: 3 }));
+  const build = createMapBuilder({
+    dataDirectory,
+    fetchImpl: async () => new Response("unavailable", { status: 503 }),
+    spawnImpl: successfulSpawn([])
+  });
+
+  await assert.rejects(
+    () => build({ id: "region", source: { url }, output: path.join(dataDirectory, "output.mbtiles") }),
+    /HTTP 503/
+  );
+
+  assert.equal(await readFile(path.join(sources, "region.osm.pbf"), "utf8"), "old");
+  assert.equal(JSON.parse(await readFile(path.join(sources, "region.osm.pbf.json"), "utf8")).etag, '"old"');
 });
 
 test("resumes a validator-matched partial download and promotes it atomically", async () => {
@@ -208,8 +254,7 @@ test("resumes after a real HTTP connection drops mid-download", async () => {
     requests.push({ range: request.headers.range, ifRange: request.headers["if-range"] });
     if (requests.length === 1) {
       response.writeHead(200, { "content-length": "6", etag: '"v1"' });
-      response.write("abc");
-      setTimeout(() => response.destroy(), 25);
+      response.write("abc", () => setTimeout(() => response.destroy(), 250));
       return;
     }
     response.writeHead(206, {

@@ -40,21 +40,20 @@ async function cancel(response) {
 }
 
 export function createMapBuilder({ dataDirectory, fetchImpl = fetch, spawnImpl = spawn }) {
-  return async function buildMap({ id, source, output, buildMemory, onProgress = () => {} }) {
+  return async function buildMap({ id, source, output, reuseSource = false, buildMemory, onProgress = () => {} }) {
     const sources = path.join(dataDirectory, "sources");
     await mkdir(sources, { recursive: true });
     const durableSource = path.join(sources, `${id}.osm.pbf`);
     const durableMetadataFile = `${durableSource}.json`;
-    let hasDurableSource = await exists(durableSource);
-    if (source.url && hasDurableSource) {
+    const hasDurableSource = await exists(durableSource);
+    let canReuseDurableSource = reuseSource && hasDurableSource;
+    if (source.url && canReuseDurableSource) {
       const durableMetadata = await readDownloadMetadata(durableMetadataFile);
       if (durableMetadata && durableMetadata.url !== source.url) {
-        await rm(durableSource, { force: true });
-        await rm(durableMetadataFile, { force: true });
-        hasDurableSource = false;
+        canReuseDurableSource = false;
       }
     }
-    if (source.url && !hasDurableSource) {
+    if (source.url && !canReuseDurableSource) {
       const download = `${durableSource}.download`;
       const metadataFile = `${download}.json`;
       let partialBytes = await stat(download).then(({ size }) => size, () => 0);
