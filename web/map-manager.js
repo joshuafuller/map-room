@@ -63,10 +63,10 @@ const jobPresentation = (job, now = Date.now()) => {
   const phases = {
     queued: ["Waiting for another map", "Queued — the current map build must finish first"],
     starting: ["Starting build", "Preparing the map build"],
-    downloading: ["Downloading source", progress?.percent === null || progress?.percent === undefined
-      ? `Downloading source · ${formatBytes(progress?.completedBytes)}`
-      : `Downloading source · ${progress.percent}% · ${formatBytes(progress.completedBytes)} of ${formatBytes(progress.totalBytes)}${progress.bytesPerSecond ? ` · ${formatBytes(progress.bytesPerSecond)}/s` : ""}${Number.isFinite(progress.etaSeconds) ? ` · about ${formatDuration(progress.etaSeconds * 1000)} left` : ""}`],
-    building: ["Generating vector tiles", "Generating vector tiles with Planetiler — still working"],
+    downloading: [job.sourceMode === "resumed" ? "Resuming source" : "Downloading source", progress?.percent === null || progress?.percent === undefined
+      ? `${job.sourceMode === "resumed" ? "Resuming" : "Downloading"} source · ${formatBytes(progress?.completedBytes)}`
+      : `${job.sourceMode === "resumed" ? "Resuming" : "Downloading"} source · ${progress.percent}% · ${formatBytes(progress.completedBytes)} of ${formatBytes(progress.totalBytes)}${progress.bytesPerSecond ? ` · ${formatBytes(progress.bytesPerSecond)}/s` : ""}${Number.isFinite(progress.etaSeconds) ? ` · about ${formatDuration(progress.etaSeconds * 1000)} left` : ""}`],
+    building: ["Generating vector tiles", `${job.sourceMode === "reused" ? "Reusing verified source · " : job.sourceMode === "resumed" ? "Resumed source complete · " : ""}Generating vector tiles with Planetiler — still working`],
     configuring: ["Inspecting map", "Inspecting the completed map archive"],
     activating: ["Publishing map", "Publishing the map and refreshing the tile service"],
     complete: ["Map ready", "Build and publication complete"],
@@ -74,9 +74,18 @@ const jobPresentation = (job, now = Date.now()) => {
   };
   const [title, detail] = phases[job.phase] ?? ["Working", job.phase ?? "Working"];
   const error = /OutOfMemoryError|Java heap space/i.test(job.error ?? "")
-    ? "The map build ran out of memory. Restart with MAP_ROOM_BUILD_MEMORY=4g (or higher for large regions) and retry."
+    ? "The map build ran out of memory. Retry with 4 GB; larger regions may need 8 GB or more."
     : job.error?.split("\n")[0] ?? null;
   return { title, detail, elapsed, error };
+};
+
+const retryAction = (job) => {
+  if (job.status !== "failed" || !["create", "rebuild"].includes(job.type)) return null;
+  if (/OutOfMemoryError|Java heap space/i.test(job.error ?? "")) {
+    const nextMemory = ({ "4g": "8g", "8g": "12g", "12g": "16g", "16g": "16g" })[job.buildMemory] ?? "4g";
+    return { label: `Retry with ${nextMemory.replace("g", " GB")}`, buildMemory: nextMemory };
+  }
+  return { label: "Retry build", buildMemory: null };
 };
 
 const slug = (value) => value.toLowerCase().normalize("NFKD").replace(/\p{Mark}+/gu, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
@@ -115,9 +124,14 @@ export function setupMapManager({ onLibraryChanged = async () => {} } = {}) {
       row.className = "job-row";
       const percent = job.progress?.percent;
       const presentation = jobPresentation(job);
+      const retry = retryAction(job);
       const steps = jobPhaseSteps(job).map(({ id: stepId, label, state: stepState }) => `<li class="job-step ${stepState}"${stepState === "current" || stepState === "failed" ? ' aria-current="step"' : ""}><span class="job-step-dot" aria-hidden="true"></span><span>${escapeHtml(label)}</span><span class="sr-only">${escapeHtml(stepState)}</span></li>`).join("");
-      row.innerHTML = `<div class="job-row-head"><div><strong>${escapeHtml(job.name ?? job.regionId)}</strong><span class="map-meta">${escapeHtml(presentation.detail)} · ${escapeHtml(presentation.elapsed)}</span></div><span class="job-state ${job.status === "failed" ? "failed" : ""}">${escapeHtml(presentation.title)}</span></div><ol class="job-steps" aria-label="Map build phases">${steps}</ol>${percent === null || percent === undefined ? "" : `<progress class="job-progress" max="100" value="${Number(percent)}">${Number(percent)}%</progress>`}${presentation.error ? `<p class="job-error"></p>` : ""}`;
+      row.innerHTML = `<div class="job-row-head"><div><strong>${escapeHtml(job.name ?? job.regionId)}</strong><span class="map-meta">${escapeHtml(presentation.detail)} · ${escapeHtml(presentation.elapsed)}</span></div><span class="job-state ${job.status === "failed" ? "failed" : ""}">${escapeHtml(presentation.title)}</span></div><ol class="job-steps" aria-label="Map build phases">${steps}</ol>${percent === null || percent === undefined ? "" : `<progress class="job-progress" max="100" value="${Number(percent)}">${Number(percent)}%</progress>`}${presentation.error ? `<p class="job-error"></p>` : ""}${retry ? `<div class="job-actions"><button class="small-action retry-job" type="button">${escapeHtml(retry.label)}</button></div>` : ""}`;
       if (presentation.error) row.querySelector(".job-error").textContent = presentation.error;
+      if (retry) row.querySelector(".retry-job").addEventListener("click", () => action(
+        () => request(`/api/jobs/${job.id}/retry`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ buildMemory: retry.buildMemory }) }),
+        "Map retry queued"
+      ));
       return row;
     }));
   };
@@ -239,4 +253,4 @@ export function setupMapManager({ onLibraryChanged = async () => {} } = {}) {
   return { refresh, formatBytes, slug };
 }
 
-export { describeSource, escapeHtml, formatBytes, groupCatalogRegions, jobPhaseSteps, jobPresentation, slug };
+export { describeSource, escapeHtml, formatBytes, groupCatalogRegions, jobPhaseSteps, jobPresentation, retryAction, slug };

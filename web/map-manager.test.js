@@ -75,6 +75,7 @@ test("turns Planetiler heap failures into actionable guidance", () => {
   assert.match(presentation.error, /Retry with 4 GB/);
   assert.doesNotMatch(presentation.error, /java\.lang/);
   assert.deepEqual(retryAction({ status: "failed", error: "OutOfMemoryError", type: "create" }), { label: "Retry with 4 GB", buildMemory: "4g" });
+  assert.deepEqual(retryAction({ status: "failed", error: "Java heap space", type: "rebuild", buildMemory: "16g" }), { label: "Retry with 16 GB", buildMemory: "16g" });
   assert.deepEqual(retryAction({ status: "failed", error: "network lost", type: "create" }), { label: "Retry build", buildMemory: null });
   assert.equal(retryAction({ status: "complete", type: "create" }), null);
 });

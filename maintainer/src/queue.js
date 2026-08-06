@@ -30,6 +30,20 @@ export class JobQueue extends EventEmitter {
     return job;
   }
 
+  retry(id, { buildMemory } = {}) {
+    const original = this.jobs.find((job) => job.id === id);
+    if (!original) throw new Error(`Job '${id}' not found`);
+    if (original.status !== "failed") throw new Error("Only a failed job can be retried");
+    return this.enqueue({
+      type: original.type,
+      regionId: original.regionId,
+      name: original.name,
+      source: original.source,
+      buildMemory,
+      retryOf: original.id
+    });
+  }
+
   snapshot() {
     return this.jobs.map((job) => ({ ...job }));
   }

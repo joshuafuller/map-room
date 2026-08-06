@@ -55,7 +55,7 @@ export class MapLibrary {
     return maps;
   }
 
-  async create({ id, name, source, onProgress }) {
+  async create({ id, name, source, buildMemory, onProgress }) {
     ({ id, name } = validateMapIdentity(id, name));
     await mkdir(this.regionsDirectory, { recursive: true });
     const manifestPath = this.#manifestPath(id);
@@ -64,21 +64,18 @@ export class MapLibrary {
     const token = randomUUID();
     const stagingArchive = path.join(this.dataDirectory, `.${id}-${token}.mbtiles`);
     const stagingManifest = path.join(this.regionsDirectory, `.${id}-${token}.json`);
-    let published = false;
     try {
-      await this.buildMap({ id, name, source, output: stagingArchive, onProgress });
+      await this.buildMap({ id, name, source, output: stagingArchive, buildMemory, onProgress });
       onProgress?.({ phase: "configuring", progress: null });
       const inspected = await this.inspectArchive({ name, archive: stagingArchive });
       const manifest = { ...inspected, archive: `${id}.mbtiles`, source };
       await writeFile(stagingManifest, `${JSON.stringify(manifest, null, 2)}\n`, "utf8");
       onProgress?.({ phase: "activating", progress: null });
       await this.#activate({ archivePath, manifestPath, stagingArchive, stagingManifest });
-      published = true;
       return publicMap(id, manifest);
     } finally {
       await rm(stagingArchive, { force: true });
       await rm(stagingManifest, { force: true });
-      if (!published) await rm(path.join(this.dataDirectory, "sources", `${id}.osm.pbf`), { force: true });
     }
   }
 
@@ -91,10 +88,10 @@ export class MapLibrary {
     return publicMap(id, updated);
   }
 
-  async rebuild(id, { onProgress } = {}) {
+  async rebuild(id, { buildMemory, onProgress } = {}) {
     const { manifest } = await this.#load(id);
     if (!manifest.source?.url && !manifest.source?.catalogId && !manifest.source?.file) throw new Error(`Map '${id}' does not have a reusable source`);
-    return this.#replace(id, manifest, onProgress);
+    return this.#replace(id, manifest, { buildMemory, onProgress });
   }
 
   async delete(id, { confirmation }) {
@@ -106,6 +103,9 @@ export class MapLibrary {
     const parkedManifest = `${manifestPath}.${token}.deleting`;
     const parkedArchive = `${archivePath}.${token}.deleting`;
     const sourcePath = path.join(this.dataDirectory, "sources", `${id}.osm.pbf`);
+    const sourceMetadataPath = `${sourcePath}.json`;
+    const partialSourcePath = `${sourcePath}.download`;
+    const partialMetadataPath = `${partialSourcePath}.json`;
     const parkedSource = `${sourcePath}.${token}.deleting`;
     const hadSource = await access(sourcePath).then(() => true, () => false);
     await rename(manifestPath, parkedManifest);
@@ -116,6 +116,9 @@ export class MapLibrary {
       await rm(parkedManifest, { force: true });
       await rm(parkedArchive, { force: true });
       await rm(parkedSource, { force: true });
+      await rm(sourceMetadataPath, { force: true });
+      await rm(partialSourcePath, { force: true });
+      await rm(partialMetadataPath, { force: true });
     } catch (error) {
       if (hadSource) await rename(parkedSource, sourcePath);
       await rename(parkedArchive, archivePath);
@@ -125,12 +128,12 @@ export class MapLibrary {
     }
   }
 
-  async #replace(id, manifest, onProgress) {
+  async #replace(id, manifest, { buildMemory, onProgress }) {
     const token = randomUUID();
     const archivePath = path.join(this.dataDirectory, manifest.archive);
     const stagingArchive = path.join(this.dataDirectory, `.${id}-${token}.mbtiles`);
     try {
-      await this.buildMap({ id, name: manifest.region, source: manifest.source, output: stagingArchive, onProgress });
+      await this.buildMap({ id, name: manifest.region, source: manifest.source, output: stagingArchive, buildMemory, onProgress });
       onProgress?.({ phase: "configuring", progress: null });
       const inspected = await this.inspectArchive({ name: manifest.region, archive: stagingArchive });
       const updated = { ...inspected, archive: manifest.archive, source: manifest.source };
