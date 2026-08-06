@@ -22,6 +22,7 @@
     "test:empty-library": "./scripts/test-empty-library.sh",
     "test:coverage:atak": "c8 --all --include=web/atak.js --include=web/atak-vector.js --include=web/atak-import.js --include=web/qr-code.js --check-coverage --lines 100 --statements 100 --functions 100 --branches 100 node --test web/atak.test.js web/atak-vector.test.js web/atak-import.test.js web/qr-code.test.js",
     "test:browser": "node scripts/test-browser.mjs",
+    "test:webkit": "MAP_ROOM_BROWSER_ENGINE=webkit MAP_ROOM_DEVICE_SCALE=2 node scripts/test-browser.mjs",
     "test:mobile": "node scripts/test-mobile.mjs",
     "test:manager": "node scripts/test-manager.mjs",
     "test:manager:sources": "node scripts/test-manager-sources.mjs"

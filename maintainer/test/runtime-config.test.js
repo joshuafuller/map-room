@@ -7,7 +7,7 @@ const themes = {
     version: 8,
     name: "Daylight",
     sources: { osm: { type: "vector", url: "mbtiles://{osm}" } },
-    sprite: "/styles/daylight/browser-sprite-v2",
+    sprite: "/styles/daylight/sprite",
     layers: [
       { id: "background", type: "background" },
       { id: "roads", type: "line", source: "osm", "source-layer": "transportation" }
@@ -51,7 +51,7 @@ test("builds deterministic TileServer data and style entries for every region an
     california: { type: "vector", url: "mbtiles://{california}" },
     florida: { type: "vector", url: "mbtiles://{florida}" }
   });
-  assert.equal(styles["collections/all/daylight.json"].sprite, "daylight/browser-sprite-v2");
+  assert.equal(styles["collections/all/daylight.json"].sprite, "daylight/sprite");
   assert.deepEqual(styles["collections/all/daylight.json"].layers.map(({ id, source }) => ({ id, source })), [
     { id: "background", source: undefined },
     { id: "roads--california", source: "california" },

@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { mkdir, readFile } from "node:fs/promises";
-import { chromium } from "playwright";
+import { chromium, webkit } from "playwright";
 import jsQR from "jsqr";
 import sharp from "sharp";
 
@@ -8,10 +8,12 @@ const baseUrl = process.env.BASE_URL ?? "http://localhost:8088";
 const outputDir = new URL("../data/browser-test/", import.meta.url);
 await mkdir(outputDir, { recursive: true });
 
-const browser = await chromium.launch({ headless: true });
+const browserEngine = process.env.MAP_ROOM_BROWSER_ENGINE === "webkit" ? webkit : chromium;
+const browserName = browserEngine === webkit ? "WebKit" : "Chromium";
+const browser = await browserEngine.launch({ headless: true });
 const page = await browser.newPage({
   viewport: { width: 1440, height: 900 },
-  deviceScaleFactor: 1
+  deviceScaleFactor: Number(process.env.MAP_ROOM_DEVICE_SCALE ?? 1)
 });
 page.setDefaultTimeout(5000);
 const failures = [];
@@ -21,7 +23,9 @@ let verifiedAtakDefinitionUrl = null;
 page.on("pageerror", (error) => failures.push(`page error: ${error.message}`));
 page.on("requestfailed", (request) => {
   const error = request.failure()?.errorText;
-  if (error !== "net::ERR_ABORTED") failures.push(`request failed: ${request.url()} (${error})`);
+  if (error !== "net::ERR_ABORTED" && !/cancelled/i.test(error ?? "")) {
+    failures.push(`request failed: ${request.url()} (${error})`);
+  }
 });
 page.on("request", (request) => requestedUrls.push(request.url()));
 
@@ -41,23 +45,34 @@ const tileCenter = (tile) => {
 const testCenter = tileCenter(vectorTestRegion.testTile);
 const mapHash = (zoom, pitchBearing = "") => `#${zoom}/${testCenter.latitude}/${testCenter.longitude}${pitchBearing}`;
 const shieldAssets = await page.evaluate(async () => {
-  const style = await fetch("/styles/all-daylight/style.json").then((response) => response.json());
+  const styleResponse = await fetch("/styles/all-daylight/style.json");
+  const style = await styleResponse.json();
   const [spriteJson, spritePng] = await Promise.all([
     fetch(`${style.sprite}.json`),
     fetch(`${style.sprite}.png`)
   ]);
   return {
     spriteUrl: style.sprite,
+    styleCacheControl: styleResponse.headers.get("cache-control"),
+    spriteCacheControl: spritePng.headers.get("cache-control"),
     hasShieldLayer: style.layers.some(({ id }) => id.startsWith("road-shields--")),
     spriteJsonStatus: spriteJson.status,
     spritePngStatus: spritePng.status,
     hasInterstateShield: spriteJson.ok && Boolean((await spriteJson.json())["shield-interstate"])
   };
 });
-if (!shieldAssets.spriteUrl.endsWith("/browser-sprite-v2") ||
+if (!shieldAssets.spriteUrl.endsWith("/sprite") ||
+    !shieldAssets.styleCacheControl?.includes("must-revalidate") ||
+    !shieldAssets.spriteCacheControl?.includes("must-revalidate") ||
     !shieldAssets.hasShieldLayer || !shieldAssets.hasInterstateShield ||
     shieldAssets.spriteJsonStatus !== 200 || shieldAssets.spritePngStatus !== 200) {
   failures.push(`road shields were unavailable (${JSON.stringify(shieldAssets)})`);
+}
+const versionedVectorRequests = requestedUrls.filter((url) => url.includes("map-room-version=shields-v2"));
+if (!versionedVectorRequests.some((url) => url.includes("/style.json")) ||
+    !versionedVectorRequests.some((url) => /\/sprite(?:@2x)?\.json/.test(url)) ||
+    !versionedVectorRequests.some((url) => /\/sprite(?:@2x)?\.png/.test(url))) {
+  failures.push(`browser vector styles and sprites did not use versioned requests (${JSON.stringify(versionedVectorRequests)})`);
 }
 
 const collapsedPanel = await page.locator(".panel").evaluate((panel) => ({
@@ -441,7 +456,7 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log("PASS Chromium rendered the map, manifest, and controls");
+console.log(`PASS ${browserName} rendered the map, manifest, and controls`);
 console.log("PASS ATAK Raster mode requested the rendered PNG tile endpoint");
 console.log("PASS Daylight and Midnight produced distinct browser screenshots");
 console.log("PASS Dark Blue, Dark Red, and Dark Green produced distinct browser screenshots");
