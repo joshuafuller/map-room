@@ -13,6 +13,7 @@
     "qrcode-generator": "2.0.4"
   },
   "scripts": {
+    "benchmark:render": "node scripts/benchmark-render.mjs",
     "build:styles": "node styles/build-styles.mjs",
     "capture:readme": "node scripts/capture-readme.mjs",
     "dev": "docker compose -f compose.yaml -f compose.dev.yaml up --build --wait",

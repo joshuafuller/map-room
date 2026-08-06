@@ -3,10 +3,10 @@ import path from "node:path";
 import { buildRuntimeArtifacts } from "./runtime-config.js";
 
 const parseJson = async (file) => JSON.parse(await readFile(file, "utf8"));
-const writeJson = async (file, value) => {
+const writeJson = async (file, value, { compact = false } = {}) => {
   await mkdir(path.dirname(file), { recursive: true });
   const temporary = `${file}.${process.pid}.tmp`;
-  await writeFile(temporary, `${JSON.stringify(value, null, 2)}\n`);
+  await writeFile(temporary, `${JSON.stringify(value, null, compact ? 0 : 2)}\n`);
   await rename(temporary, file);
 };
 
@@ -34,7 +34,7 @@ export async function compileRuntime({ dataDirectory, styleDirectory, baseConfig
   });
   for (const [relativePath, style] of Object.entries(styles)) {
     const destination = path.join(styleDirectory, relativePath);
-    await writeJson(destination, style);
+    await writeJson(destination, style, { compact: true });
   }
   await mkdir(path.join(dataDirectory, "runtime"), { recursive: true });
   await writeJson(path.join(dataDirectory, "runtime", "config.json"), config);

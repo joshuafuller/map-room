@@ -64,7 +64,7 @@ printf 'PASS ATAK vector archive supports a resumable download\n'
 
 mobile_host=mobile.example.test:8088
 mobile_style="$tmp_dir/mobile-style.json"
-curl -fsS -H "Host: $mobile_host" "$base_url/styles/all-daylight/style.json" >"$mobile_style"
+curl -fsS -H "Host: $mobile_host" "$base_url/browser-styles/all-daylight/style.json" >"$mobile_style"
 if rg -q 'localhost' "$mobile_style"; then
 	printf 'FAIL remote-browser style redirected vector sources to localhost\n' >&2
 	exit 1
@@ -102,6 +102,7 @@ for region in $(python3 -c "import json; print(' '.join(region['id'] for region 
 	check_status "/data/$region/$region_tile.pbf" application/x-protobuf
 	for theme in $themes; do
 		check_status "/styles/all-$theme/style.json" application/json
+		check_status "/browser-styles/all-$theme/style.json" application/json
 		check_status "/styles/all-$theme/$region_tile@2x.png" image/png
 		check_png_dimensions "/styles/all-$theme/$region_tile@2x.png" 512x512
 	done

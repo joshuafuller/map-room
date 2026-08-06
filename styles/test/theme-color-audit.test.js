@@ -24,6 +24,19 @@ function colorDistance(first, second) {
   return Math.hypot(...left.map((channel, index) => channel - right[index])) * 100;
 }
 
+function relativeLuminance(hex) {
+  const [r, g, b] = hex.match(/[0-9a-f]{2}/gi)
+    .map((channel) => Number.parseInt(channel, 16) / 255)
+    .map((channel) => channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4);
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+function contrastRatio(first, second) {
+  const brightest = Math.max(relativeLuminance(first), relativeLuminance(second));
+  const darkest = Math.min(relativeLuminance(first), relativeLuminance(second));
+  return (brightest + 0.05) / (darkest + 0.05);
+}
+
 function colorLiterals(value, result = []) {
   if (typeof value === "string" && /^(?:#|hsl)/i.test(value)) result.push(value);
   else if (Array.isArray(value)) value.forEach((entry) => colorLiterals(entry, result));
@@ -52,4 +65,36 @@ test("keeps solid waterways perceptually distinct from every road class", async 
         `${theme} water ${water} is too close to road ${road}`);
     }
   }
+});
+
+test("keeps each colored theme's full semantic palette legible", async () => {
+  const backgrounds = new Set();
+  for (const theme of coloredThemes) {
+    const style = JSON.parse(await readFile(`styles/${theme}/style.json`, "utf8"));
+    const layers = Object.fromEntries(style.layers.map((layer) => [layer.id, layer]));
+    const background = layers.background.paint["background-color"];
+    const roadColors = colorLiterals(layers.roads.paint["line-color"]);
+    backgrounds.add(background);
+
+    assert.equal(new Set(roadColors.slice(0, 3)).size, 3, `${theme} must distinguish major road classes`);
+    for (const [first, second] of [[0, 1], [0, 2], [1, 2]]) {
+      assert.ok(colorDistance(roadColors[first], roadColors[second]) >= 8,
+        `${theme} major road classes ${roadColors[first]} and ${roadColors[second]} are too similar`);
+    }
+    assert.ok(Array.isArray(layers.rail.paint["line-dasharray"]), `${theme} rail needs a non-color cue`);
+    assert.ok(Array.isArray(layers.boundaries.paint["line-dasharray"]), `${theme} boundaries need a non-color cue`);
+    assert.notEqual(layers.water.paint["fill-color"], background, `${theme} water and background must differ`);
+
+    const extrusionColors = colorLiterals(layers["buildings-3d"].paint["fill-extrusion-color"]);
+    assert.ok(colorDistance(extrusionColors[0], extrusionColors.at(-1)) >= 20,
+      `${theme} building height ramp must remain visible`);
+    for (const layerId of [
+      "road-labels", "water-labels", "place-labels", "poi-essential", "poi-explore", "poi-parking", "poi-airports"
+    ]) {
+      const paint = layers[layerId].paint;
+      assert.ok(contrastRatio(paint["text-color"], paint["text-halo-color"]) >= 7,
+        `${theme} ${layerId} must retain enhanced text contrast`);
+    }
+  }
+  assert.equal(backgrounds.size, coloredThemes.length, "every selectable colored theme needs a distinct base state");
 });

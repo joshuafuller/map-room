@@ -121,7 +121,7 @@
       "source": "osm",
       "source-layer": "waterway",
       "paint": {
-        "line-color": "#285b55",
+        "line-color": "#16788a",
         "line-width": [
           "interpolate",
           [
@@ -2218,7 +2218,7 @@
         "text-max-width": 9
       },
       "paint": {
-        "text-color": "#6fb1a5",
+        "text-color": "#78bdc9",
         "text-halo-color": "#07120d",
         "text-halo-width": 1.4
       }

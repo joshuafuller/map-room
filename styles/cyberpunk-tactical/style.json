@@ -187,7 +187,7 @@
       "source": "osm",
       "source-layer": "water",
       "paint": {
-        "line-color": "#00eaff",
+        "line-color": "#1a6dff",
         "line-width": 5,
         "line-blur": 5,
         "line-opacity": 0.28
@@ -199,7 +199,7 @@
       "source": "osm",
       "source-layer": "waterway",
       "paint": {
-        "line-color": "#00eaff",
+        "line-color": "#1a6dff",
         "line-width": [
           "interpolate",
           [
@@ -223,7 +223,7 @@
       "source": "osm",
       "source-layer": "waterway",
       "paint": {
-        "line-color": "#00eaff",
+        "line-color": "#1a6dff",
         "line-width": [
           "interpolate",
           [
@@ -2517,7 +2517,7 @@
         "text-max-width": 9
       },
       "paint": {
-        "text-color": "#70f6ff",
+        "text-color": "#91b4ff",
         "text-halo-color": "#03040b",
         "text-halo-width": 1.4
       }
