@@ -62,12 +62,36 @@ test("reuses a completed managed source and applies per-job build memory", async
     id: "us-south",
     source: { url: "https://download.geofabrik.de/us-south.osm.pbf" },
     output: path.join(dataDirectory, "output.mbtiles"),
+    reuseSource: true,
     buildMemory: "8g",
     onProgress: (state) => progress.push(state)
   });
 
   assert.equal(invocations[0].options.env.JAVA_TOOL_OPTIONS, "-Xmx8g");
   assert.equal(progress.some(({ sourceMode }) => sourceMode === "reused"), true);
+});
+
+test("a normal rebuild refreshes an existing managed source", async () => {
+  const dataDirectory = await mkdtemp(path.join(tmpdir(), "map-room-builder-refresh-"));
+  const sources = path.join(dataDirectory, "sources");
+  await mkdir(sources);
+  const url = "https://download.geofabrik.de/region.osm.pbf";
+  await writeFile(path.join(sources, "region.osm.pbf"), "old");
+  await writeFile(path.join(sources, "region.osm.pbf.json"), JSON.stringify({ url, etag: '"old"', totalBytes: 3 }));
+  let fetched = false;
+  const build = createMapBuilder({
+    dataDirectory,
+    fetchImpl: async () => {
+      fetched = true;
+      return new Response("new", { status: 200, headers: { "content-length": "3", etag: '"new"' } });
+    },
+    spawnImpl: successfulSpawn([])
+  });
+
+  await build({ id: "region", source: { url }, output: path.join(dataDirectory, "output.mbtiles") });
+
+  assert.equal(fetched, true);
+  assert.equal(await readFile(path.join(sources, "region.osm.pbf"), "utf8"), "new");
 });
 
 test("resumes a validator-matched partial download and promotes it atomically", async () => {
