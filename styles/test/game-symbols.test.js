@@ -18,6 +18,19 @@ async function countPixels(image, predicate) {
   return count;
 }
 
+async function countHorizontalMirrorDifferences(image, tolerance = 20) {
+  const { data, info } = await image.ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+  let differences = 0;
+  for (let y = 0; y < info.height; y += 1) {
+    for (let x = 0; x < Math.floor(info.width / 2); x += 1) {
+      const leftAlpha = data[(y * info.width + x) * 4 + 3];
+      const rightAlpha = data[(y * info.width + (info.width - x - 1)) * 4 + 3];
+      if (Math.abs(leftAlpha - rightAlpha) > tolerance) differences += 1;
+    }
+  }
+  return differences;
+}
+
 function evaluateStyleExpression(expression, properties) {
   if (!Array.isArray(expression)) return expression;
   const [operator, ...operands] = expression;
@@ -64,6 +77,8 @@ test("renders unmistakable high-contrast browser road shields", async () => {
     "US route shields need a substantial white field");
   assert.ok(await countPixels(usRoute.clone(), (r, g, b, a) => a > 220 && r < 55 && g < 55 && b < 65) > 550,
     "US route shields need a substantial dark border");
+  assert.ok(await countHorizontalMirrorDifferences(usRoute.clone()) <= 80,
+    "FHWA M1-4 U.S. Route markers must be bilaterally symmetric");
 
   const shield = style.layers.find(({ id }) => id === "road-shields");
   assert.deepEqual(shield.layout["icon-size"], [
