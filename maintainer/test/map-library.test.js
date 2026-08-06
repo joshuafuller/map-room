@@ -88,7 +88,7 @@ test("failed runtime activation rolls back a replacement archive and metadata", 
   assert.equal(calls, 2);
 });
 
-test("failed first-map activation removes the unpublished files and managed source", async () => {
+test("failed first-map activation removes unpublished output but retains its managed source", async () => {
   const { root, sources, library } = await fixture();
   await import("node:fs/promises").then(({ mkdir }) => mkdir(sources, { recursive: true }));
   await writeFile(join(sources, "florida.osm.pbf"), "source");
@@ -97,7 +97,7 @@ test("failed first-map activation removes the unpublished files and managed sour
   await assert.rejects(() => library.create({ id: "florida", name: "Florida", source: { type: "catalog", catalogId: "us/florida" } }), /activation failed/);
   assert.deepEqual(await library.list(), []);
   await assert.rejects(() => readFile(join(root, "florida.mbtiles")), /ENOENT/);
-  await assert.rejects(() => readFile(join(sources, "florida.osm.pbf")), /ENOENT/);
+  assert.equal(await readFile(join(sources, "florida.osm.pbf"), "utf8"), "source");
 });
 
 test("retained uploaded sources can rebuild and report the configuration phase", async () => {
@@ -119,6 +119,8 @@ test("updates a map name and deletes exactly the confirmed map", async () => {
   await import("node:fs/promises").then(({ mkdir }) => Promise.all([mkdir(regions, { recursive: true }), mkdir(sources, { recursive: true })]));
   await writeFile(join(root, "florida.mbtiles"), "archive");
   await writeFile(join(sources, "florida.osm.pbf"), "source");
+  await writeFile(join(sources, "florida.osm.pbf.download"), "partial");
+  await writeFile(join(sources, "florida.osm.pbf.download.json"), "metadata");
   await writeFile(join(regions, "florida.json"), JSON.stringify(manifest("Florida")));
 
   await library.update("florida", { name: "Florida Ops" });
@@ -127,6 +129,8 @@ test("updates a map name and deletes exactly the confirmed map", async () => {
   await library.delete("florida", { confirmation: "florida" });
   assert.deepEqual(await library.list(), []);
   await assert.rejects(() => readFile(join(sources, "florida.osm.pbf")), /ENOENT/);
+  await assert.rejects(() => readFile(join(sources, "florida.osm.pbf.download")), /ENOENT/);
+  await assert.rejects(() => readFile(join(sources, "florida.osm.pbf.download.json")), /ENOENT/);
   assert.deepEqual(runtimeCalls, ["applied", "applied"]);
 });
 

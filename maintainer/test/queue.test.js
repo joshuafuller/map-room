@@ -54,3 +54,23 @@ test("runs work enqueued after the active batch started even when that job fails
   assert.equal(second.status, "complete");
   assert.deepEqual(visits, ["first", "second"]);
 });
+
+test("retries a failed job as a new attempt with validated resource options", async () => {
+  let attempts = 0;
+  const queue = new JobQueue({ worker: async () => {
+    attempts += 1;
+    if (attempts === 1) throw new Error("heap exhausted");
+  } });
+  const failed = queue.enqueue({ type: "create", regionId: "us-south", name: "US South", source: { type: "catalog", url: "https://download.geofabrik.de/us-south.osm.pbf" } });
+  await queue.whenIdle();
+
+  const retry = queue.retry(failed.id, { buildMemory: "4g" });
+  await queue.whenIdle();
+
+  assert.notEqual(retry.id, failed.id);
+  assert.equal(retry.retryOf, failed.id);
+  assert.equal(retry.buildMemory, "4g");
+  assert.equal(retry.status, "complete");
+  assert.throws(() => queue.retry(retry.id), /failed job/);
+  assert.throws(() => queue.retry("missing"), /not found/);
+});
