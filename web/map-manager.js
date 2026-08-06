@@ -130,6 +130,11 @@ export function setupMapManager({ onLibraryChanged = async () => {} } = {}) {
   const summary = document.querySelector("#catalog-summary");
   const name = document.querySelector("#map-name");
   const id = document.querySelector("#map-id");
+  const libraryView = document.querySelector("#manager-library-view");
+  const createView = document.querySelector("#manager-create-view");
+  const addMap = document.querySelector("#manager-add-map");
+  const managerTitle = document.querySelector("#manager-title");
+  const form = document.querySelector("#map-create-form");
   let polling = null;
   let completedJobs = new Set();
   let renderedMaps = null;
@@ -164,6 +169,18 @@ export function setupMapManager({ onLibraryChanged = async () => {} } = {}) {
   const setStatus = (message, error = false) => {
     status.textContent = message;
     status.style.color = error ? "#8a342d" : "#315e54";
+  };
+
+  const showManagerView = (view, { focus = true, clearStatus = true } = {}) => {
+    const creating = view === "create";
+    libraryView.hidden = creating;
+    createView.hidden = !creating;
+    managerTitle.textContent = creating ? "Create map" : "Manage maps";
+    if (clearStatus) status.textContent = "";
+    closeCatalog();
+    if (!focus) return;
+    if (creating) (sourceType.value === "catalog" ? search : sourceType).focus();
+    else addMap.focus();
   };
 
   const renderJobs = (jobs) => {
@@ -232,8 +249,8 @@ export function setupMapManager({ onLibraryChanged = async () => {} } = {}) {
   };
 
   const action = async (operation, message, libraryChanged = false) => {
-    try { await operation(); setStatus(message); await refresh(); if (libraryChanged) await onLibraryChanged(); }
-    catch (error) { setStatus(error.message, true); }
+    try { await operation(); setStatus(message); await refresh(); if (libraryChanged) await onLibraryChanged(); return true; }
+    catch (error) { setStatus(error.message, true); return false; }
   };
 
   const closeCatalog = () => {
@@ -364,10 +381,10 @@ export function setupMapManager({ onLibraryChanged = async () => {} } = {}) {
     if (!id.value || id.value === suggestedId) id.value = nextSuggestion;
     suggestedId = nextSuggestion;
   });
-  document.querySelector("#map-create-form").addEventListener("submit", async (event) => {
+  form.addEventListener("submit", async (event) => {
     event.preventDefault();
     const type = sourceType.value;
-    await action(async () => {
+    const created = await action(async () => {
       if (type === "upload") {
         const file = document.querySelector("#map-upload").files[0];
         if (!file) throw new Error("Choose an .osm.pbf file");
@@ -376,15 +393,30 @@ export function setupMapManager({ onLibraryChanged = async () => {} } = {}) {
       if (type === "catalog" && !region.value) throw new Error("Choose a map region from the search results");
       return request("/api/maps", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ sourceType: type, catalogId: region.value, url: document.querySelector("#map-source-url").value, id: id.value, name: name.value }) });
     }, "Map build queued");
+    if (created) {
+      form.reset();
+      region.value = "";
+      suggestedId = "";
+      updateSourceFields();
+      showManagerView("library", { focus: false, clearStatus: false });
+      document.querySelector("#jobs-title").focus();
+    }
   });
+  addMap.addEventListener("click", () => showManagerView("create"));
+  document.querySelector("#manager-back").addEventListener("click", () => showManagerView("library"));
   document.querySelector("#manage-maps").addEventListener("click", async () => {
+    showManagerView("library", { focus: false });
     dialog.showModal();
     await action(async () => { await refresh(); showCatalogShortcuts(); }, "Map library ready");
     polling = setInterval(() => refresh().catch((error) => setStatus(error.message, true)), 2000);
   });
   const close = () => { clearInterval(polling); polling = null; dialog.close(); };
   document.querySelector("#manager-close").addEventListener("click", close);
-  dialog.addEventListener("cancel", (event) => { event.preventDefault(); close(); });
+  dialog.addEventListener("cancel", (event) => {
+    event.preventDefault();
+    if (!createView.hidden) showManagerView("library");
+    else close();
+  });
 
   return { refresh, formatBytes, slug };
 }

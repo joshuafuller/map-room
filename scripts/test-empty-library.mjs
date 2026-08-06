@@ -21,7 +21,9 @@ try {
   await page.locator("#map-upload").setInputFiles(smokePbf);
   await page.locator("#map-name").fill("First Map");
   await page.locator("#map-create-form button[type=submit]").click();
+  await page.locator("#manager-library-view").waitFor({ state: "visible" });
   const job = page.locator(".job-row").filter({ hasText: "First Map" }).first();
+  await job.waitFor();
   const deadline = Date.now() + 10 * 60 * 1000;
   while (Date.now() < deadline) {
     const { maps, jobs } = await fetch(`${baseUrl}/api/maps`).then((response) => response.json());

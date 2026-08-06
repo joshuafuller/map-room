@@ -22,7 +22,7 @@ try {
   if (!await page.locator("#map-manager").isVisible() || !await page.locator("#manager-library-view").isVisible()) failures.push("Escape did not return from creation to the library");
   await page.locator("#manager-add-map").click();
   await page.locator("#manager-back").click();
-  if (!await page.locator("#manager-add-map").isFocused()) failures.push("Back to library did not restore focus to Add map");
+  if (!await page.locator("#manager-add-map").evaluate((button) => button === document.activeElement)) failures.push("Back to library did not restore focus to Add map");
   await page.locator("#manager-add-map").click();
   const mapState = await page.evaluate(() => fetch("/api/maps").then((response) => response.json()));
   initialMaps = mapState.maps;
@@ -71,6 +71,7 @@ try {
   if (await page.locator("#map-id").inputValue() !== "unsafe-source") failures.push("map name did not generate the hidden stable ID");
   await page.locator("#map-create-form button[type=submit]").click();
   await page.waitForFunction(() => document.querySelector("#manager-status")?.textContent.includes("not allowed"));
+  await page.locator("#manager-back").click();
 
   const renameTarget = mapState.maps[0];
   if (renameTarget) {

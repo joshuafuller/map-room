@@ -160,9 +160,26 @@
         <button id="manager-close" class="icon-button" type="button" aria-label="Close map manager">×</button>
       </div>
       <p class="manager-warning"><strong>Trusted local network only.</strong> Map administration does not have user authentication yet.</p>
-      <section class="manager-section" aria-labelledby="add-map-title">
-        <h3 id="add-map-title">Add a map</h3>
-        <form id="map-create-form">
+      <div id="manager-library-view" class="manager-view">
+        <section class="manager-section manager-library-heading" aria-labelledby="library-title">
+          <div><p class="eyebrow">Your maps</p><h3 id="library-title">Map library</h3></div>
+          <button id="manager-add-map" class="action primary" type="button">Add map</button>
+        </section>
+        <section class="manager-section" aria-labelledby="jobs-title">
+          <h3 id="jobs-title" tabindex="-1">Build activity</h3>
+          <div id="map-jobs" class="manager-list"><p class="empty-state">No map jobs yet.</p></div>
+        </section>
+        <section class="manager-section" aria-labelledby="installed-title">
+          <h3 id="installed-title">Installed maps</h3>
+          <div id="installed-maps" class="manager-list"><p class="empty-state">Loading installed maps…</p></div>
+        </section>
+      </div>
+      <div id="manager-create-view" class="manager-view" hidden>
+        <section class="manager-section" aria-labelledby="add-map-title">
+          <button id="manager-back" class="manager-back" type="button">← Back to library</button>
+          <p class="eyebrow">New map</p>
+          <h3 id="add-map-title">Add a map</h3>
+          <form id="map-create-form">
           <label>Source
             <select id="map-source-type" name="sourceType">
               <option value="catalog">Worldwide regional catalog</option>
@@ -192,16 +209,9 @@
           </details>
           <p class="manager-help">Building may take several minutes and substantial temporary disk space. The current map remains live until the replacement succeeds.</p>
           <button class="action primary" type="submit">Build map</button>
-        </form>
-      </section>
-      <section class="manager-section" aria-labelledby="jobs-title">
-        <h3 id="jobs-title">Build activity</h3>
-        <div id="map-jobs" class="manager-list"><p class="empty-state">No map jobs yet.</p></div>
-      </section>
-      <section class="manager-section" aria-labelledby="installed-title">
-        <h3 id="installed-title">Installed maps</h3>
-        <div id="installed-maps" class="manager-list"><p class="empty-state">Loading installed maps…</p></div>
-      </section>
+          </form>
+        </section>
+      </div>
       <p id="manager-status" class="manager-status" role="status" aria-live="polite"></p>
     </dialog>
 
