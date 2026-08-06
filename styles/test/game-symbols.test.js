@@ -156,7 +156,9 @@ test("builds local game-inspired shields and truthful POI categories", async () 
   assert.equal(selectShield("US:CA", "1", "us-state"), "shield-state");
   assert.equal(selectShield("US:TX:Loop", "360", "road"), "shield-state-wide");
   assert.equal(selectShield("US:FL:CR", "12", "road"), "shield-county");
-  assert.equal(selectShield("US:WA:CR", "507", "us-county"), "shield-county");
+  assert.equal(selectShield("US:WA:CR", "507", "us-county"), "shield-county-wide");
+  assert.equal(selectShield("US:FL:CR", "184A", "road"), "shield-county-wide",
+    "long county references must widen the pentagon instead of distorting or overrunning it");
   const textOffset = layers["road-shields"].layout["text-offset"];
   assert.deepEqual(evaluateStyleExpression(textOffset, { route_1_network: "US:I", network: "us-interstate" }), [0, 0.18],
     "Interstate route numbers must sit below the red crown and white separator");
@@ -214,7 +216,7 @@ test("builds local game-inspired shields and truthful POI categories", async () 
 
   const requiredSprites = [
     "shield-interstate", "shield-interstate-wide", "shield-us", "shield-us-wide",
-    "shield-state", "shield-state-wide", "shield-county",
+    "shield-state", "shield-state-wide", "shield-county", "shield-county-wide",
     "poi-medical", "poi-fire", "poi-police", "poi-fuel", "poi-airport", "poi-port",
     "poi-food", "poi-lodging", "poi-attraction", "poi-shopping", "poi-parking"
   ];
@@ -244,7 +246,7 @@ test("builds local game-inspired shields and truthful POI categories", async () 
     assert.equal(sprite[shieldId].content, undefined, `${shieldId} must not publish an elastic browser text-content box`);
     assert.equal(sprite[shieldId].stretchX, undefined, `${shieldId} must not publish a browser stretch region`);
   }
-  for (const shieldId of ["shield-interstate-wide", "shield-us-wide", "shield-state-wide"]) {
+  for (const shieldId of ["shield-interstate-wide", "shield-us-wide", "shield-state-wide", "shield-county-wide"]) {
     assert.equal(sprite[shieldId].width / sprite[shieldId].height, 30 / 24,
       `${shieldId} must use the MUTCD three-digit 30:24 proportion`);
     assert.equal(sprite[shieldId].content, undefined);
