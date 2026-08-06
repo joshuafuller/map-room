@@ -10,7 +10,7 @@ const failures = [];
 const smokePbf = process.env.MAP_ROOM_BUILD_SMOKE_PBF;
 
 try {
-  await page.goto(baseUrl, { waitUntil: "networkidle" });
+  await page.goto(baseUrl, { waitUntil: "domcontentloaded" });
   await page.locator("#manage-maps").click();
   await page.locator("#map-manager").waitFor({ state: "visible" });
   if (!await page.locator(".manager-warning").getByText("Trusted local network only").isVisible()) failures.push("manager did not disclose the unauthenticated trusted-network boundary");
@@ -54,10 +54,16 @@ try {
 
   const restored = page.locator(".map-row").filter({ hasText: "florida" }).first();
   await restored.locator(".delete").click();
-  await restored.locator(".delete-confirm input").fill("wrong-id");
-  await restored.locator(".confirm-delete").click();
-  await page.waitForFunction(() => document.querySelector("#manager-status")?.textContent.includes("confirmation"));
-  if (await page.locator(".map-row").filter({ hasText: "florida" }).count() !== 1) failures.push("incorrect delete confirmation changed the map library");
+  const deleteConfirmation = restored.locator(".delete-confirm");
+  if (!(await deleteConfirmation.getByText("Are you sure you want to delete Florida?").isVisible()) ||
+      await deleteConfirmation.locator("input").count() !== 0) {
+    failures.push("delete confirmation did not name the map without requiring typed input");
+  }
+  await deleteConfirmation.locator(".cancel-delete").click();
+  if (await deleteConfirmation.isVisible() ||
+      await page.locator(".map-row").filter({ hasText: "florida" }).count() !== 1) {
+    failures.push("canceling delete changed the map library or left confirmation open");
+  }
 
   await page.screenshot({ path: new URL("map-manager.png", outputDirectory).pathname, fullPage: false });
   await page.setViewportSize({ width: 390, height: 844 });
@@ -94,7 +100,6 @@ try {
     if (rebuildJob.status === "failed") throw new Error(`CRUD smoke rebuild failed: ${rebuildJob.error}`);
     const smoke = page.locator(".map-row").filter({ hasText: "crud-smoke" }).first();
     await smoke.locator(".delete").click();
-    await smoke.locator(".delete-confirm input").fill("crud-smoke");
     await smoke.locator(".confirm-delete").click();
     await page.waitForFunction(() => ![...document.querySelectorAll('#region-select option')].some(({ value }) => value === "crud-smoke"));
   }

@@ -45,7 +45,6 @@ try {
 
   const row = page.locator(".map-row").filter({ hasText: "first-map" }).first();
   await row.locator(".delete").click();
-  await row.locator(".delete-confirm input").fill("first-map");
   await row.locator(".confirm-delete").click();
   await page.waitForFunction(() => document.querySelector("#region-select")?.disabled === true);
   await page.getByText("No maps installed. Add the first one above.").waitFor();
