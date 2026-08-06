@@ -70,3 +70,21 @@ test("caches parsed styles for fast repeat theme switches without sharing mutati
   assert.equal(requests, 1);
   assert.equal(second.name, undefined);
 });
+
+test("caches the prepared browser style so expensive transforms run only once", async () => {
+  let transforms = 0;
+  const load = createCachedMapStyleLoader({
+    baseUrl: "http://10.10.20.24:8088/",
+    fetcher: async () => new Response(JSON.stringify({ version: 8, sources: {}, layers: [] })),
+    transform: async (style) => {
+      transforms += 1;
+      return { ...style, name: "prepared once" };
+    }
+  });
+
+  const first = await load("/styles/all-daylight/style.json");
+  first.name = "mutated by MapLibre";
+  const second = await load("/styles/all-daylight/style.json");
+  assert.equal(transforms, 1);
+  assert.equal(second.name, "prepared once");
+});

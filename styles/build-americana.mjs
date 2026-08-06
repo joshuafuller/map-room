@@ -1,6 +1,7 @@
 import { copyFile, mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { withRealBuildingExtrusion } from "./building-extrusion.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const upstreamDirectory = join(here, "vendor", "americana");
@@ -139,6 +140,7 @@ export async function buildAmericanaDaylight() {
       if (layer.id === "building") {
         layer.id = "buildings-3d";
         layer.layout = { ...layer.layout, visibility: "visible" };
+        layer.paint = withRealBuildingExtrusion(layer.paint);
       }
       return layer;
     });

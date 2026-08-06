@@ -27,9 +27,10 @@ const regionCatalog = new Map();
 let manifest = null;
 let map = null;
 let hasMaps = false;
-const loadCachedMapStyle = createCachedMapStyleLoader();
-const loadBrowserMapStyle = async (url) => applyAmericanaShields(await loadCachedMapStyle(url), {
-  templateUrl: `/vendor/americana-shield-layer.json?map-room-version=${VECTOR_ASSET_VERSION}`
+const loadBrowserMapStyle = createCachedMapStyleLoader({
+  transform: (style) => applyAmericanaShields(style, {
+    templateUrl: `/vendor/americana-shield-layer.json?map-room-version=${VECTOR_ASSET_VERSION}`
+  })
 });
 const allViewPadding = () => window.innerWidth <= 680
   ? { top: 80, right: 40, bottom: 190, left: 40 }
@@ -260,7 +261,7 @@ async function applyMapStyle() {
     updatePoiLayers();
     document.documentElement.dataset.loadedMapTheme = requestedTheme;
   });
-  map.setStyle(style);
+  map.setStyle(style, { diff: false });
   document.documentElement.style.colorScheme = activeTheme === "daylight" ? "light" : "dark";
   document.querySelector('meta[name="theme-color"]').content = themes[activeTheme].color;
   document.documentElement.dataset.mapTheme = activeTheme;
