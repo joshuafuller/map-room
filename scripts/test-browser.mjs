@@ -16,6 +16,7 @@ const page = await browser.newPage({
 page.setDefaultTimeout(5000);
 const failures = [];
 const requestedUrls = [];
+let verifiedAtakDefinitionUrl = null;
 
 page.on("pageerror", (error) => failures.push(`page error: ${error.message}`));
 page.on("requestfailed", (request) => {
@@ -24,7 +25,7 @@ page.on("requestfailed", (request) => {
 });
 page.on("request", (request) => requestedUrls.push(request.url()));
 
-await page.goto(baseUrl, { waitUntil: "networkidle" });
+await page.goto(baseUrl, { waitUntil: "domcontentloaded" });
 await page.locator(".maplibregl-canvas").waitFor({ state: "visible" });
 await page.waitForFunction(() => document.querySelector("#region")?.textContent !== "Loading local map…");
 await page.waitForTimeout(1000);
@@ -112,9 +113,40 @@ if (!(await page.locator("#atak-vector-share").isVisible())) {
   await page.locator("#atak-vector-share").click();
   if (!(await page.locator("#atak-share-dialog").isVisible()) ||
       !(await page.locator("#atak-share-warning").textContent()).includes("localhost") ||
+      !(await page.locator("#atak-server-url").isVisible()) ||
       await page.locator("#atak-share-qr").isVisible()) {
-    failures.push("Loopback onboarding did not explain reachability before displaying a QR code");
+    failures.push("Loopback onboarding did not request a reachable server address before displaying a QR code");
   }
+
+  const reachableOrigin = "http://maps.example.test:8088";
+  const definitionUrl = `${reachableOrigin}/api/atak/vector/${vectorTestRegion.id}.json`;
+  verifiedAtakDefinitionUrl = definitionUrl;
+  await page.route(definitionUrl, (route) => route.fulfill({
+    status: 200,
+    headers: { "access-control-allow-origin": "*", "content-type": "application/json" },
+    body: "{}"
+  }));
+  await page.locator("#atak-server-url").fill("maps.example.test:8088");
+  await page.locator("#atak-create-qr").click();
+  await page.locator("#atak-share-qr svg").waitFor();
+  const expectedTakUri = `tak://com.atakmap.app/import?url=${encodeURIComponent(definitionUrl)}`;
+  if (await page.locator("#atak-share-link").inputValue() !== expectedTakUri) {
+    failures.push("localhost onboarding did not create the exact TAK URI from the verified server address");
+  }
+  const modalQrPng = await page.locator("#atak-share-qr").screenshot();
+  const { data: modalQrPixels, info: modalQrInfo } = await sharp(modalQrPng).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+  const decodedModalQr = jsQR(new Uint8ClampedArray(modalQrPixels), modalQrInfo.width, modalQrInfo.height, { inversionAttempts: "dontInvert" });
+  if (decodedModalQr?.data !== expectedTakUri) failures.push("The localhost onboarding QR did not decode to its displayed TAK URI");
+  await page.locator("#atak-change-server").click();
+  if (!(await page.locator("#atak-server-url").isVisible()) || await page.locator("#atak-share-qr").isVisible()) {
+    failures.push("Verified onboarding did not allow the saved server address to be changed");
+  }
+  await page.locator("#atak-create-qr").click();
+  await page.locator("#atak-share-qr svg").waitFor();
+  await page.locator("#atak-share-close").click();
+  await page.locator("#atak-vector-share").click();
+  await page.locator("#atak-share-qr svg").waitFor();
+  if (await page.locator("#atak-server-setup").isVisible()) failures.push("Verified Map Room address was not reused on the next onboarding attempt");
   await page.locator("#atak-share-close").click();
 }
 if (requestedUrls.some((url) => url.includes(`/styles/${vectorTestRegion.id}-daylight/`))) {
@@ -241,20 +273,6 @@ if (!downloadedXml.includes('<?xml version="1.0" encoding="UTF-8" standalone="ye
   failures.push("ATAK download did not contain the hardened customMapSource contract");
 }
 
-const exactQrValue = "tak://com.atakmap.app/import?url=https%3A%2F%2Fmaps.example.test%2Froot%2Fapi%2Fatak%2Fvector%2Fcaf%25C3%25A9.json%3Fstyle%3Ddark%2520blue%26next%3Dhttps%253A%252F%252Ftiles.example%252Fa%253Fx%253D1%2526y%253D%2523frag";
-await page.evaluate(async (value) => {
-  const { renderQrSvg } = await import("/qr-code.js");
-  const fixture = document.createElement("div");
-  fixture.id = "qr-browser-fixture";
-  fixture.style.cssText = "position:fixed;inset:0 auto auto 0;width:420px;height:420px;padding:20px;background:white;z-index:10000";
-  fixture.innerHTML = renderQrSvg(value);
-  document.body.append(fixture);
-}, exactQrValue);
-const qrPng = await page.locator("#qr-browser-fixture").screenshot();
-const { data: qrPixels, info: qrInfo } = await sharp(qrPng).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
-const decodedQr = jsQR(new Uint8ClampedArray(qrPixels), qrInfo.width, qrInfo.height, { inversionAttempts: "dontInvert" });
-if (decodedQr?.data !== exactQrValue) failures.push("Browser-rendered QR did not decode to the exact TAK URI");
-await page.locator("#qr-browser-fixture").evaluate((element) => element.remove());
 const progressiveDetail = await page.evaluate(async () => {
   const style = await fetch("/styles/all-cyberpunk-tactical/style.json").then((response) => response.json());
   const first = (prefix) => style.layers.find(({ id }) => id.startsWith(prefix));
@@ -400,7 +418,7 @@ if (tacticalMiamiDigest === tacticalDigest) failures.push("Cyberpunk Tactical de
 if (tacticalRasterMiamiDigest === tacticalMiamiDigest) failures.push("Tactical raster evidence did not exercise the PNG route");
 if ((await page.locator(".maplibregl-ctrl").count()) < 2) failures.push("MapLibre controls did not render");
 const baseOrigin = new URL(baseUrl).origin;
-const externalRequests = requestedUrls.filter((url) => /^https?:/.test(url) && new URL(url).origin !== baseOrigin);
+const externalRequests = requestedUrls.filter((url) => /^https?:/.test(url) && new URL(url).origin !== baseOrigin && url !== verifiedAtakDefinitionUrl);
 if (externalRequests.length) failures.push(`runtime requested third-party URLs: ${externalRequests.join(", ")}`);
 
 await browser.close();
@@ -417,5 +435,5 @@ console.log("PASS Dark Blue, Dark Red, and Dark Green produced distinct browser 
 console.log("PASS Cyberpunk produced a distinct vector screenshot");
 console.log("PASS every vector theme exposes 3D buildings and right-drag rotates the camera");
 console.log("PASS Cyberpunk Tactical rendered distinctly with a real preview tile and ATAK raster request");
-console.log("PASS local QR rendering decoded to the exact TAK URI without third-party requests");
+console.log("PASS localhost onboarding verified its Map Room address and decoded the exact TAK URI without QR-service requests");
 console.log(`Screenshots: ${outputDir.pathname}`);

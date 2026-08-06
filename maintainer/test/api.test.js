@@ -112,6 +112,7 @@ test("serves stable ATAK raster and vector definitions on the requesting origin"
     const options = { headers: { "x-forwarded-host": "maps.example.test:8088", "x-forwarded-proto": "https" } };
     const raster = await fetch(`${base}/api/atak/raster/dark-blue.xml`, options);
     assert.equal(raster.status, 200);
+    assert.equal(raster.headers.get("access-control-allow-origin"), "*");
     assert.match(raster.headers.get("content-type"), /^application\/xml/);
     assert.match(await raster.text(), /https:\/\/maps\.example\.test:8088\/styles\/all-dark-blue\/\{\$z\}\/\{\$x\}\/\{\$y\}@2x\.png/);
 

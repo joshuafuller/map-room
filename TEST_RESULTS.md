@@ -15,9 +15,10 @@ Automated validation now establishes that:
 - nested download URLs containing queries, Unicode, and reserved characters
   round-trip exactly through the fully percent-encoded TAK import URI;
 - Chromium renders the QR locally, jsQR decodes the resulting pixels back to
-  the exact TAK URI, and the runtime makes no third-party HTTP requests;
-- `localhost` and other loopback origins show a device-reachability warning
-  before any QR is displayed; and
+  the exact TAK URI, and the runtime makes no third-party QR-service requests;
+- a `localhost` workflow accepts a separate LAN/DNS Map Room address, verifies
+  the hosted definition through that origin, persists it locally, and only then
+  displays a QR; and
 - the production-like container build and HTTP integration suite serve both
   hosted definition types alongside the local QR generator asset.
 

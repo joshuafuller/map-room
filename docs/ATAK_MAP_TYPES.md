@@ -142,11 +142,14 @@ Map Room, and passes it to the normal importer. The page also exposes the exact
 deep link and the definition file as fallbacks. QR codes are generated locally;
 the setup link is not sent to a third-party QR service.
 
-Open Map Room through a device-reachable LAN address or DNS name. The page
-withholds the QR on `localhost` and other loopback addresses because ATAK would
-try to fetch the definition from the Android device itself. The QR is only an
-onboarding shortcut; the device still needs access to Map Room for uncached
-tiles. It contains no map tiles, credentials, MBTiles archive, or Data Package.
+Open Map Room through a device-reachable LAN address or DNS name when possible.
+If the page was opened at `localhost`, enter the LAN/DNS Map Room address in the
+onboarding dialog. Map Room verifies the hosted definition through that origin,
+saves the address in that browser, and only then displays the QR. A loopback
+address is rejected because ATAK would try to fetch the definition from the
+Android device itself. The QR is only an onboarding shortcut; the device still
+needs access to Map Room for uncached tiles. It contains no map tiles,
+credentials, MBTiles archive, or Data Package.
 
 Do not use QR onboarding or a TAK Data Package as the default way to push a
 large regional MBTiles archive. As a conservative field guideline, keep a

@@ -9,7 +9,11 @@ const json = (response, status, value) => {
 };
 
 const document = (response, contentType, value) => {
-  response.writeHead(200, { "content-type": contentType, "cache-control": "no-store" });
+  response.writeHead(200, {
+    "content-type": contentType,
+    "cache-control": "no-store",
+    "access-control-allow-origin": "*"
+  });
   response.end(value);
 };
 
