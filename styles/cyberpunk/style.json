@@ -792,7 +792,7 @@
       "type": "symbol",
       "source": "osm",
       "source-layer": "transportation_name",
-      "minzoom": 8,
+      "minzoom": 6,
       "filter": [
         "any",
         [
