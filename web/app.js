@@ -1,6 +1,6 @@
 import * as maplibregl from "/vendor/maplibre-gl.mjs";
 import { buildAtakVectorDescriptor, buildAtakXml, RASTER_MAX_ZOOM, RASTER_PIXEL_RATIO } from "/atak.js";
-import { buildAtakImportUri, isLoopbackMapRoomUrl } from "/atak-import.js";
+import { buildAtakImportUri, isLoopbackMapRoomUrl, normalizeAtakServerUrl } from "/atak-import.js";
 import { buildAtakVectorStyle } from "/atak-vector.js";
 import { buildingLayerIds } from "/buildings.js";
 import { poiLayerIds, poiLayerVisibility } from "/poi-visibility.js";
@@ -304,46 +304,99 @@ document.querySelectorAll(".mode").forEach((button) => {
 document.querySelector("#region-select").addEventListener("change", (event) => selectView(event.target.value));
 
 const atakShareDialog = document.querySelector("#atak-share-dialog");
+const atakServerStorageKey = "map-room-atak-server-url";
+let pendingAtakShareKind = null;
 
-function openAtakShare(kind) {
+function atakDefinitionPath(kind, publication) {
+  return kind === "vector"
+    ? `/api/atak/vector/${publication.id}.json`
+    : `/api/atak/raster/${activeTheme}.xml`;
+}
+
+async function verifyAndRenderAtakShare(kind, rawServerUrl) {
+  const publication = vectorPublication();
+  const setup = document.querySelector("#atak-server-setup");
+  const status = document.querySelector("#atak-server-status");
+  const content = document.querySelector("#atak-share-content");
+  status.textContent = "Checking the hosted setup file…";
+  try {
+    const serverUrl = normalizeAtakServerUrl(rawServerUrl);
+    const path = atakDefinitionPath(kind, publication);
+    const definitionUrl = `${serverUrl}${path}`;
+    const response = await fetch(definitionUrl, { cache: "no-store" });
+    const expectedType = kind === "vector" ? "application/json" : "application/xml";
+    if (!response.ok || !response.headers.get("content-type")?.startsWith(expectedType)) {
+      throw new Error(`Map Room did not return the expected ${kind} setup file`);
+    }
+    localStorage.setItem(atakServerStorageKey, serverUrl);
+    document.querySelector("#atak-server-url").value = serverUrl;
+    const importUri = buildAtakImportUri(definitionUrl);
+    document.querySelector("#atak-share-qr").innerHTML = renderQrSvg(importUri);
+    document.querySelector("#atak-add-link").href = importUri;
+    document.querySelector("#atak-share-link").value = importUri;
+    const definitionLink = document.querySelector("#atak-definition-link");
+    definitionLink.href = definitionUrl;
+    definitionLink.download = kind === "vector"
+      ? `map-room-${publication.id}-atak-vector.json`
+      : `map-room-${activeTheme}.xml`;
+    const name = kind === "vector" ? (publication.name ?? publication.region) : themes[activeTheme].name;
+    document.querySelector("#atak-share-details").textContent = kind === "vector"
+      ? `This adds the small ${name} vector source. Keep Map Room reachable while streaming; then download and apply the selected style from the map controls.`
+      : `This adds the ${name} raster source. Keep Map Room reachable because ATAK requests PNG tiles while you pan and zoom.`;
+    document.querySelector("#atak-share-warning").hidden = true;
+    setup.hidden = true;
+    content.hidden = false;
+  } catch (error) {
+    content.hidden = true;
+    setup.hidden = false;
+    status.textContent = `${error.message}. Confirm this address opens Map Room from the ATAK device.`;
+  }
+}
+
+async function openAtakShare(kind) {
   const publication = vectorPublication();
   if (kind === "vector" && !publication) return;
+  pendingAtakShareKind = kind;
 
   const warning = document.querySelector("#atak-share-warning");
   const content = document.querySelector("#atak-share-content");
+  const setup = document.querySelector("#atak-server-setup");
   const name = kind === "vector" ? (publication.name ?? publication.region) : themes[activeTheme].name;
   document.querySelector("#atak-share-title").textContent = `Add ${name} to ATAK`;
   atakShareDialog.showModal();
+  content.hidden = true;
 
   if (isLoopbackMapRoomUrl(window.location.origin)) {
-    content.hidden = true;
     warning.hidden = false;
-    warning.innerHTML = `<strong>This address only works on this computer.</strong> Open Map Room using a device-reachable LAN address or DNS name instead of localhost, then return here to display the QR code.`;
+    warning.innerHTML = `<strong>ATAK cannot use localhost.</strong> Enter the LAN address or DNS name that opens Map Room from the ATAK device. Map Room will check it before creating the QR.`;
+    setup.hidden = false;
+    const savedServerUrl = localStorage.getItem(atakServerStorageKey) ?? "";
+    document.querySelector("#atak-server-url").value = savedServerUrl;
+    document.querySelector("#atak-server-status").textContent = "The address stays in this browser and can be changed later.";
+    if (savedServerUrl) await verifyAndRenderAtakShare(kind, savedServerUrl);
     return;
   }
 
-  const path = kind === "vector"
-    ? `/api/atak/vector/${publication.id}.json`
-    : `/api/atak/raster/${activeTheme}.xml`;
-  const definitionUrl = new URL(path, window.location.href).href;
-  const importUri = buildAtakImportUri(definitionUrl);
   warning.hidden = true;
-  content.hidden = false;
-  document.querySelector("#atak-share-qr").innerHTML = renderQrSvg(importUri);
-  document.querySelector("#atak-add-link").href = importUri;
-  document.querySelector("#atak-share-link").value = importUri;
-  const definitionLink = document.querySelector("#atak-definition-link");
-  definitionLink.href = definitionUrl;
-  definitionLink.download = kind === "vector"
-    ? `map-room-${publication.id}-atak-vector.json`
-    : `map-room-${activeTheme}.xml`;
-  document.querySelector("#atak-share-details").textContent = kind === "vector"
-    ? `This adds the small ${name} vector source. Keep Map Room reachable while streaming; then download and apply the selected style from the map controls.`
-    : `This adds the ${name} raster source. Keep Map Room reachable because ATAK requests PNG tiles while you pan and zoom.`;
+  setup.hidden = false;
+  document.querySelector("#atak-server-status").textContent = "Checking this Map Room address…";
+  await verifyAndRenderAtakShare(kind, window.location.origin);
 }
 
 document.querySelector("#atak-vector-share").addEventListener("click", () => openAtakShare("vector"));
 document.querySelector("#atak-raster-share").addEventListener("click", () => openAtakShare("raster"));
+document.querySelector("#atak-create-qr").addEventListener("click", () => {
+  if (pendingAtakShareKind) verifyAndRenderAtakShare(pendingAtakShareKind, document.querySelector("#atak-server-url").value);
+});
+document.querySelector("#atak-change-server").addEventListener("click", () => {
+  document.querySelector("#atak-share-content").hidden = true;
+  document.querySelector("#atak-server-setup").hidden = false;
+  const warning = document.querySelector("#atak-share-warning");
+  warning.hidden = false;
+  warning.innerHTML = `<strong>Choose the address ATAK will use.</strong> It must open this Map Room server from the ATAK device.`;
+  document.querySelector("#atak-server-status").textContent = "The saved address will be replaced after the new setup file is verified.";
+  document.querySelector("#atak-server-url").focus();
+});
 document.querySelector("#atak-share-close").addEventListener("click", () => atakShareDialog.close());
 document.querySelector("#atak-copy-link").addEventListener("click", async () => {
   const input = document.querySelector("#atak-share-link");

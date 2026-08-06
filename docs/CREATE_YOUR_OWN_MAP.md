@@ -119,6 +119,12 @@ Before choosing, read [ATAK map delivery and file types](ATAK_MAP_TYPES.md) for
 the difference between hosted streaming, ATAK area caching, and a complete
 regional MBTiles archive.
 
+You may also open Map Room at `localhost` on the server computer and scan the
+QR with the ATAK device. In that case, the onboarding dialog asks for the LAN
+address or DNS name that reaches Map Room from the device. It verifies the
+hosted setup file through that origin and saves the address in the browser
+before displaying the QR. Use **Use a different server address** to replace it.
+
 ### Streaming vector map — preferred
 
 Select one installed region, then choose **Add to ATAK / show QR**. Scan the QR

@@ -157,7 +157,10 @@ button { font: inherit; }
 .manager-dialog::backdrop, .atak-share-dialog::backdrop { background: rgba(8,14,18,.56); backdrop-filter: blur(5px); }
 .atak-share-dialog { width: min(430px, calc(100vw - 28px)); max-height: calc(100dvh - 28px); padding: 0; border: 1px solid rgba(255,255,255,.78); border-radius: 20px; color: var(--ink); background: #fbfaf7; box-shadow: 0 28px 90px rgba(10,18,24,.36); }
 .atak-share-content { padding: 18px 22px 22px; }
-.atak-share-content[hidden], .manager-warning[hidden], .atak-share-qr[hidden] { display: none; }
+.atak-share-content[hidden], .atak-server-setup[hidden], .manager-warning[hidden], .atak-share-qr[hidden] { display: none; }
+.atak-server-setup { padding: 16px 22px 22px; }
+.atak-server-setup label { display: block; color: var(--ink); font-size: 11px; font-weight: 750; }
+.atak-server-setup input { width: 100%; margin-top: 6px; padding: 10px; border: 1px solid var(--line); border-radius: 9px; color: var(--ink); background: white; font: 12px/1.35 monospace; }
 .atak-share-qr { width: min(100%, 310px); margin: 0 auto 12px; padding: 10px; border: 1px solid var(--line); border-radius: 14px; background: white; }
 .atak-share-qr svg { display: block; width: 100%; height: auto; }
 .atak-link-label { display: block; margin-top: 12px; color: var(--muted); font-size: 10px; font-weight: 700; }

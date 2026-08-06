@@ -24,3 +24,15 @@ export function isLoopbackMapRoomUrl(value) {
   const normalized = hostname.replace(/^\[|\]$/g, "").toLowerCase();
   return normalized === "::1" || normalized === "localhost" || normalized.endsWith(".localhost") || /^127(?:\.|$)/.test(normalized);
 }
+
+export function normalizeAtakServerUrl(value) {
+  const trimmed = typeof value === "string" ? value.trim() : value;
+  const defaultScheme = "http:";
+  const candidate = typeof trimmed === "string" && !/^[a-z][a-z0-9+.-]*:\/\//i.test(trimmed)
+    ? `${defaultScheme}//${trimmed}`
+    : trimmed;
+  const parsed = parseHttpUrl(candidate);
+  if (parsed.search || parsed.hash) throw new Error("Map Room address must not contain a query or fragment");
+  if (isLoopbackMapRoomUrl(parsed.href)) throw new Error("Enter a device-reachable Map Room address, not localhost");
+  return `${parsed.origin}${parsed.pathname.replace(/\/+$/, "")}`;
+}
