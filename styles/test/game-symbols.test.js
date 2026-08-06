@@ -131,6 +131,7 @@ test("builds the same information contract with distinct sprites for every theme
     for (const layerId of ["road-shields", "poi-essential", "poi-explore", "poi-parking", "poi-airports", "airports", "runways", "taxiways"]) {
       assert.ok(layers[layerId], `${id} is missing ${layerId}`);
     }
+    assert.equal(layers["road-shields"].minzoom, 6, `${id} must show the available major route shields in browser overviews`);
     assert.equal(layers["buildings-3d"].type, "fill-extrusion", `${id} must support 3D buildings`);
     assert.equal(layers["buildings-3d"].layout.visibility, "none");
     for (const layerId of ["poi-essential-hud", "poi-explore-hud", "poi-parking-hud", "poi-airports-hud"]) {
