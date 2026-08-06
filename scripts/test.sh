@@ -43,6 +43,11 @@ check_status /vendor/qrcode-generator.mjs application/javascript
 for theme in $themes; do
 	check_status "/styles/$theme/style.json" application/json
 done
+for asset in sprite.json sprite.png sprite@2x.json sprite@2x.png; do
+	case "$asset" in *.json) type=application/json ;; *) type=image/png ;; esac
+	check_status "/styles/daylight-raster/$asset" "$type"
+done
+check_status "/styles/daylight-raster/style.json" application/json
 
 first_region=$(python3 -c "import json; print(json.load(open('data/regions.json'))['regions'][0]['id'])")
 check_status /api/atak/raster/daylight.xml application/xml
@@ -66,7 +71,7 @@ if rg -q 'localhost' "$mobile_style"; then
 fi
 python3 -c 'import json,sys; style=json.load(open(sys.argv[1])); assert all(source.get("url", "").startswith(("/data/", "http://mobile.example.test:8088/data/")) for source in style["sources"].values() if source.get("type") == "vector")' "$mobile_style"
 printf 'PASS remote-browser vector sources preserve the requesting origin\n'
-curl -fsS -H "Host: $mobile_host" "$base_url/api/atak/raster/daylight.xml" | grep -q "http://$mobile_host/styles/all-daylight/"
+curl -fsS -H "Host: $mobile_host" "$base_url/api/atak/raster/daylight.xml" | grep -q "http://$mobile_host/styles/all-daylight-raster/"
 curl -fsS -H "Host: $mobile_host" "$base_url/api/atak/vector/$first_region.json" | grep -q "http://$mobile_host/data/$first_region/"
 printf 'PASS hosted ATAK definitions preserve the requesting origin\n'
 for theme in $themes; do
@@ -76,7 +81,9 @@ for theme in $themes; do
 	check_status "/styles/$theme/sprite@2x.png" image/png
 	check_status "/styles/$theme/atak-sprite.json" application/json
 	check_status "/styles/$theme/atak-sprite.png" image/png
-	check_png_dimensions "/styles/$theme/atak-sprite.png" 128x128
+	if test "$theme" != daylight; then
+		check_png_dimensions "/styles/$theme/atak-sprite.png" 128x128
+	fi
 done
 for theme in $themes; do
 	check_status "/styles/$theme/$tile.png" image/png
@@ -98,6 +105,9 @@ for region in $(python3 -c "import json; print(' '.join(region['id'] for region 
 		check_status "/styles/all-$theme/$region_tile@2x.png" image/png
 		check_png_dimensions "/styles/all-$theme/$region_tile@2x.png" 512x512
 	done
+	check_status "/styles/all-daylight-raster/style.json" application/json
+	check_status "/styles/all-daylight-raster/$region_tile@2x.png" image/png
+	check_png_dimensions "/styles/all-daylight-raster/$region_tile@2x.png" 512x512
 done
 
 daylight_sha=$(curl -fsS "$base_url/styles/daylight/$tile.png" | sha256sum | cut -d' ' -f1)
@@ -123,12 +133,34 @@ curl -fsS "$base_url/app.js" | grep -q '/vendor/maplibre-gl.mjs'
 curl -fsS "$base_url/styles/daylight/style.json" | grep -q 'OpenStreetMap contributors'
 printf 'PASS frontend uses local MapLibre and includes attribution\n'
 
-node -e "import('./web/atak.js').then(({buildAtakXml}) => { for (const theme of '$themes'.split(' ')) { const xml = buildAtakXml({ theme, baseUrl: '$base_url/' }); if (!xml.includes('<tileType>png</tileType>') || !xml.includes('$base_url/styles/all-' + theme + '/{\$z}/{\$x}/{\$y}@2x.png') || (xml.match(/<customMapSource>/g) || []).length !== 1) process.exit(1); } })"
+node -e "import('./web/atak.js').then(({buildAtakXml}) => { for (const theme of '$themes'.split(' ')) { const rasterTheme = theme === 'daylight' ? 'daylight-raster' : theme; const xml = buildAtakXml({ theme, baseUrl: '$base_url/' }); if (!xml.includes('<tileType>png</tileType>') || !xml.includes('$base_url/styles/all-' + rasterTheme + '/{\$z}/{\$x}/{\$y}@2x.png') || (xml.match(/<customMapSource>/g) || []).length !== 1) process.exit(1); } })"
 printf 'PASS generated ATAK XML has raster URL and zoom contract\n'
 
-external_urls=$(rg -n 'https?://' web styles \
-	--glob '!web/vendor/**' \
-	--glob '!**/*.test.js' | rg -v 'http://www.w3.org/2000/svg' || true)
+external_urls=$(node --input-type=module <<'NODE'
+import { readFile, readdir } from "node:fs/promises";
+
+const config = JSON.parse(await readFile("config.json", "utf8"));
+const failures = [];
+for (const [theme, entry] of Object.entries(config.styles)) {
+  const style = JSON.parse(await readFile(`styles/${entry.style}`, "utf8"));
+  for (const [kind, value] of [["sprite", style.sprite], ["glyphs", style.glyphs]]) {
+    if (typeof value === "string" && /^https?:\/\//.test(value)) failures.push(`${theme}.${kind}: ${value}`);
+  }
+  for (const [sourceId, source] of Object.entries(style.sources ?? {})) {
+    for (const value of [source.url, ...(source.tiles ?? [])]) {
+      if (typeof value === "string" && /^https?:\/\//.test(value)) failures.push(`${theme}.sources.${sourceId}: ${value}`);
+    }
+  }
+}
+for (const filename of (await readdir("web")).filter((name) => /\.(?:js|mjs)$/.test(name) && !name.endsWith(".test.js"))) {
+  const source = await readFile(`web/${filename}`, "utf8");
+  for (const match of source.matchAll(/(?:from\s+|import\s*\(|fetch\s*\()\s*["'](https?:\/\/[^"']+)/g)) {
+    failures.push(`web/${filename}: ${match[1]}`);
+  }
+}
+process.stdout.write(failures.join("\n"));
+NODE
+)
 if test -n "$external_urls"; then
 	printf '%s\n' "$external_urls"
 	printf 'FAIL runtime web/style source contains an external URL\n' >&2

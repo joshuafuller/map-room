@@ -2,6 +2,8 @@ data/*
 !data/.gitkeep
 node_modules/
 coverage/
-web/vendor/
+web/vendor/*
+!web/vendor/americana-shield-renderer.mjs
+!web/vendor/americana-shields.json
 styles/regions/
 styles/collections/

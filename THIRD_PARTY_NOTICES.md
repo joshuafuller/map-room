@@ -1,5 +1,20 @@
 # Third-party notices
 
+## OpenStreetMap Americana
+
+Map Room packages the generated StyleJSON, sprite atlas, shield definitions,
+and shield-rendering runtime from
+[OpenStreetMap Americana](https://github.com/osm-americana/openstreetmap-americana)
+at commit `6098606aae8119de34a5de08e7bedc1ffdd712a8`. OpenStreetMap Americana is
+dedicated to the public domain under CC0-1.0. Map Room preserves its actual
+layer hierarchy and visual assets while rewriting the tile, sprite, glyph, and
+shield locations to self-hosted Map Room resources. Americana font families
+are mapped to Map Room's locally packaged Open Sans glyphs, and its external
+terrain source is omitted so the style remains usable on offline networks.
+
+The complete upstream license text and provenance record are included under
+`styles/vendor/americana/`.
+
 ## MapLibre GL JS
 
 Map Room's browser setup copies MapLibre GL JS, version 6.1.0, into the local

@@ -7,6 +7,7 @@ import { poiLayerIds, poiLayerVisibility } from "/poi-visibility.js";
 import { setupMapManager } from "/map-manager.js";
 import { loadMapStyle, versionMapAssetRequest } from "/map-assets.js";
 import { renderQrSvg } from "/qr-code.js";
+import { setupAmericana } from "/americana.js";
 
 const themes = {
   daylight: { name: "Daylight", color: "#f4f1ea" },
@@ -21,7 +22,7 @@ const themes = {
 let activeTheme = "daylight";
 let activeMode = "vector";
 let activeView = "all";
-let buildings3dEnabled = false;
+let buildings3dEnabled = true;
 const regionCatalog = new Map();
 let manifest = null;
 let map = null;
@@ -44,6 +45,10 @@ panelToggle.addEventListener("click", () => setPanelExpanded(panelToggle.getAttr
 
 function styleId(theme = activeTheme) {
   return `all-${theme}`;
+}
+
+function rasterStyleId(theme = activeTheme) {
+  return styleId(theme === "daylight" ? "daylight-raster" : theme);
 }
 
 function updateRegionPresentation() {
@@ -166,6 +171,13 @@ map = new maplibregl.Map({
   transformRequest: versionMapAssetRequest
 });
 
+setupAmericana(map);
+map.once("load", () => {
+  document.documentElement.dataset.loadedMapTheme = activeTheme;
+  updateBuildingLayers();
+  updatePoiLayers();
+});
+
 map.addControl(new maplibregl.NavigationControl({ showCompass: true }), "bottom-right");
 map.addControl(new maplibregl.ScaleControl({ unit: "metric" }), "bottom-right");
 
@@ -195,7 +207,7 @@ function rasterStyle(id) {
     sources: {
       atak: {
         type: "raster",
-        tiles: [`${window.location.origin}/styles/${styleId(id)}/{z}/{x}/{y}${RASTER_PIXEL_RATIO}.png`],
+        tiles: [`${window.location.origin}/styles/${rasterStyleId(id)}/{z}/{x}/{y}${RASTER_PIXEL_RATIO}.png`],
         tileSize: 256,
         minzoom: 0,
         maxzoom: RASTER_MAX_ZOOM,
@@ -241,15 +253,17 @@ let styleRequestId = 0;
 
 async function applyMapStyle() {
   const requestId = ++styleRequestId;
+  const requestedTheme = activeTheme;
   const style = !hasMaps ? emptyStyle : activeMode === "vector"
     ? await loadMapStyle(`/styles/${styleId()}/style.json`)
     : rasterStyle(activeTheme);
   if (requestId !== styleRequestId) return;
-  map.setStyle(style);
   map.once("style.load", () => {
     updateBuildingLayers();
     updatePoiLayers();
+    document.documentElement.dataset.loadedMapTheme = requestedTheme;
   });
+  map.setStyle(style);
   document.documentElement.style.colorScheme = activeTheme === "daylight" ? "light" : "dark";
   document.querySelector('meta[name="theme-color"]').content = themes[activeTheme].color;
   document.documentElement.dataset.mapTheme = activeTheme;
@@ -474,7 +488,7 @@ document.querySelector("#atak-vector-style").addEventListener("click", async () 
 });
 
 document.querySelector("#copy-raster").addEventListener("click", async () => {
-  await navigator.clipboard.writeText(`${window.location.origin}/styles/${styleId()}/{z}/{x}/{y}${RASTER_PIXEL_RATIO}.png`);
+  await navigator.clipboard.writeText(`${window.location.origin}/styles/${rasterStyleId()}/{z}/{x}/{y}${RASTER_PIXEL_RATIO}.png`);
   toast("Raster tile URL copied");
 });
 

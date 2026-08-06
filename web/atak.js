@@ -94,7 +94,7 @@ export function buildAtakXml({ theme: themeId, baseUrl }) {
   <maxZoom>${RASTER_MAX_ZOOM}</maxZoom>
   <tileType>png</tileType>
   <tileUpdate>IfNoneMatch</tileUpdate>
-  <url>${base}/styles/all-${themeId}/{$z}/{$x}/{$y}${RASTER_PIXEL_RATIO}.png</url>
+  <url>${base}/styles/all-${themeId === "daylight" ? "daylight-raster" : themeId}/{$z}/{$x}/{$y}${RASTER_PIXEL_RATIO}.png</url>
   <backgroundColor>${theme.color}</backgroundColor>
   <ignoreErrors>false</ignoreErrors>
   <serverParts></serverParts>

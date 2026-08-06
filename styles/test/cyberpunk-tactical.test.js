@@ -37,7 +37,7 @@ test("generates Cyberpunk Tactical without changing the Classic core treatment",
   assert.equal(layers["airports"].type, "fill");
   assert.ok(layers["operational-landmarks"]);
   assert.equal(layers["buildings-3d"].type, "fill-extrusion");
-  assert.equal(layers["buildings-3d"].layout.visibility, "none");
+  assert.equal(layers["buildings-3d"].layout.visibility, "visible");
   assert.deepEqual(layers["buildings-3d"].paint["fill-extrusion-height"], ["coalesce", ["get", "render_height"], 3]);
   assert.deepEqual(layers["buildings-3d"].paint["fill-extrusion-base"], ["coalesce", ["get", "render_min_height"], 0]);
   assert.equal(layers["buildings-3d"].paint["fill-extrusion-opacity"], 0.82);

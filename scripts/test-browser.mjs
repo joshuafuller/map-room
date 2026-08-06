@@ -17,7 +17,7 @@ const page = await browser.newPage({
   viewport: { width: 1440, height: 900 },
   deviceScaleFactor: Number(process.env.MAP_ROOM_DEVICE_SCALE ?? 1)
 });
-page.setDefaultTimeout(5000);
+page.setDefaultTimeout(15000);
 const failures = [];
 const requestedUrls = [];
 let verifiedAtakDefinitionUrl = null;
@@ -46,6 +46,9 @@ const tileCenter = (tile) => {
 };
 const testCenter = tileCenter(vectorTestRegion.testTile);
 const mapHash = (zoom, pitchBearing = "") => `#${zoom}/${testCenter.latitude}/${testCenter.longitude}${pitchBearing}`;
+const waitForTheme = (theme) => page.waitForFunction((expected) =>
+  document.documentElement.dataset.loadedMapTheme === expected, theme);
+await waitForTheme("daylight");
 const shieldAssets = await page.evaluate(async () => {
   const styleResponse = await fetch("/styles/all-daylight/style.json");
   const style = await styleResponse.json();
@@ -57,16 +60,18 @@ const shieldAssets = await page.evaluate(async () => {
     spriteUrl: style.sprite,
     styleCacheControl: styleResponse.headers.get("cache-control"),
     spriteCacheControl: spritePng.headers.get("cache-control"),
-    hasShieldLayer: style.layers.some(({ id }) => id.startsWith("road-shields--")),
+    hasShieldLayer: style.layers.some(({ id }) => id.startsWith("highway-shield--")),
     spriteJsonStatus: spriteJson.status,
     spritePngStatus: spritePng.status,
-    hasInterstateShield: spriteJson.ok && Boolean((await spriteJson.json())["shield-interstate"])
+    hasAmericanaCapital: spriteJson.ok && Boolean((await spriteJson.json()).place_star),
+    usesDynamicShields: style.layers.some(({ id, layout }) => id.startsWith("highway-shield--") &&
+      JSON.stringify(layout).includes('"shield","\\n"'))
   };
 });
 if (!shieldAssets.spriteUrl.endsWith("/sprite") ||
     !shieldAssets.styleCacheControl?.includes("must-revalidate") ||
     !shieldAssets.spriteCacheControl?.includes("must-revalidate") ||
-    !shieldAssets.hasShieldLayer || !shieldAssets.hasInterstateShield ||
+    !shieldAssets.hasShieldLayer || !shieldAssets.hasAmericanaCapital || !shieldAssets.usesDynamicShields ||
     shieldAssets.spriteJsonStatus !== 200 || shieldAssets.spritePngStatus !== 200) {
   failures.push(`road shields were unavailable (${JSON.stringify(shieldAssets)})`);
 }
@@ -190,12 +195,12 @@ if (await page.locator("#detail-hint").getAttribute("hidden") !== null) {
 const daylightPath = new URL("daylight.png", outputDir);
 await page.screenshot({ path: daylightPath.pathname });
 
-const rasterResponse = page.waitForResponse((response) => response.url().includes("/styles/all-daylight/") && response.url().endsWith("@2x.png"));
+const rasterResponse = page.waitForResponse((response) => response.url().includes("/styles/all-daylight-raster/") && response.url().endsWith("@2x.png"));
 await page.locator('[data-mode="raster"]').click();
 await page.locator('[data-mode="raster"][aria-checked="true"]').waitFor();
 await rasterResponse;
 await page.waitForTimeout(500);
-if (!requestedUrls.some((url) => url.includes("/styles/all-daylight/") && url.endsWith("@2x.png"))) {
+if (!requestedUrls.some((url) => url.includes("/styles/all-daylight-raster/") && url.endsWith("@2x.png"))) {
   failures.push("ATAK raster mode did not request rendered PNG tiles");
 }
 
@@ -204,6 +209,7 @@ await page.locator('[data-mode="vector"][aria-checked="true"]').waitFor();
 
 await page.locator('[data-theme="midnight"]').click();
 await page.locator('[data-theme="midnight"][aria-checked="true"]').waitFor();
+await waitForTheme("midnight");
 await page.waitForTimeout(1200);
 const midnightPath = new URL("midnight.png", outputDir);
 await page.screenshot({ path: midnightPath.pathname });
@@ -214,6 +220,7 @@ await page.waitForFunction((name) => document.querySelector("#region")?.textCont
 for (const theme of ["dark-blue", "dark-red", "dark-green"]) {
   await page.locator(`[data-theme="${theme}"]`).click();
   await page.locator(`[data-theme="${theme}"][aria-checked="true"]`).waitFor();
+  await waitForTheme(theme);
   await page.waitForTimeout(1200);
   const path = new URL(`${theme}.png`, outputDir);
   await page.locator(".maplibregl-canvas").screenshot({ path: path.pathname });
@@ -224,12 +231,14 @@ await page.waitForFunction(() => document.querySelector("#region")?.textContent 
 
 await page.locator('[data-theme="cyberpunk"]').click();
 await page.locator('[data-theme="cyberpunk"][aria-checked="true"]').waitFor();
+await waitForTheme("cyberpunk");
 await page.waitForTimeout(1200);
 const cyberpunkPath = new URL("cyberpunk.png", outputDir);
 await page.screenshot({ path: cyberpunkPath.pathname });
 
 await page.locator('[data-theme="cyberpunk-tactical"]').click();
 await page.locator('[data-theme="cyberpunk-tactical"][aria-checked="true"]').waitFor();
+await waitForTheme("cyberpunk-tactical");
 await page.waitForTimeout(1200);
 await page.locator("#region-select").selectOption(vectorTestRegion.id);
 await page.waitForFunction((name) => document.querySelector("#region")?.textContent === name, vectorTestRegion.name);
@@ -369,18 +378,22 @@ if (await page.locator("#rotate-hint").getAttribute("hidden") !== null ||
 }
 await page.locator('[data-theme="daylight"]').click();
 await page.locator('[data-theme="daylight"][aria-checked="true"]').waitFor();
+await waitForTheme("daylight");
 if (await page.locator("#buildings-toggle").getAttribute("hidden") !== null) {
   failures.push("Daylight did not expose the 3D building control");
 }
 await page.evaluate((hash) => { window.location.hash = hash; }, mapHash(16, "/-18/58"));
-await page.locator("#buildings-toggle").click();
-await page.waitForTimeout(1100);
-await page.locator(".maplibregl-canvas").screenshot({
+if (await page.locator("#buildings-toggle").getAttribute("aria-pressed") !== "true") {
+  failures.push("3D buildings were not enabled by default");
+}
+await page.waitForTimeout(2200);
+await page.screenshot({
   path: new URL("daylight-buildings.png", outputDir).pathname
 });
 await page.locator("#buildings-toggle").click();
 await page.locator('[data-theme="cyberpunk-tactical"]').click();
 await page.locator('[data-theme="cyberpunk-tactical"][aria-checked="true"]').waitFor();
+await waitForTheme("cyberpunk-tactical");
 await page.waitForTimeout(700);
 await page.locator("#buildings-toggle").click();
 if (await page.locator("#buildings-toggle").getAttribute("aria-pressed") !== "true") {

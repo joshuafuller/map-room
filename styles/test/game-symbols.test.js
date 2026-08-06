@@ -18,19 +18,6 @@ async function countPixels(image, predicate) {
   return count;
 }
 
-async function countHorizontalMirrorDifferences(image, tolerance = 20) {
-  const { data, info } = await image.ensureAlpha().raw().toBuffer({ resolveWithObject: true });
-  let differences = 0;
-  for (let y = 0; y < info.height; y += 1) {
-    for (let x = 0; x < Math.floor(info.width / 2); x += 1) {
-      const leftAlpha = data[(y * info.width + x) * 4 + 3];
-      const rightAlpha = data[(y * info.width + (info.width - x - 1)) * 4 + 3];
-      if (Math.abs(leftAlpha - rightAlpha) > tolerance) differences += 1;
-    }
-  }
-  return differences;
-}
-
 function evaluateStyleExpression(expression, properties) {
   if (!Array.isArray(expression)) return expression;
   const [operator, ...operands] = expression;
@@ -86,30 +73,17 @@ function evaluateStyleExpression(expression, properties) {
   throw new Error(`Unsupported test expression: ${operator}`);
 }
 
-test("renders unmistakable high-contrast browser road shields", async () => {
+test("uses Americana's dynamic nationwide shield system for Daylight", async () => {
   await execute(process.execPath, ["styles/build-styles.mjs"]);
   const style = JSON.parse(await readFile("styles/daylight/style.json", "utf8"));
-  const sprite = await sharp(await readFile("styles/daylight/sprite.png"));
-  const interstate = sprite.clone().extract({ left: 0, top: 0, width: 128, height: 128 });
-  const usRoute = sprite.clone().extract({ left: 128, top: 0, width: 128, height: 128 });
-
-  assert.ok(await countPixels(interstate.clone(), (r, g, b, a) => a > 220 && b > 80 && b > r * 1.25 && b > g * 1.1) > 1800,
-    "Interstate shields need a substantial blue field, not a hairline outline");
-  assert.ok(await countPixels(interstate.clone(), (r, g, b, a) => a > 220 && r > 145 && r > g * 1.45 && r > b * 1.25) > 400,
-    "Interstate shields need a visible red crown");
-  assert.ok(await countPixels(usRoute.clone(), (r, g, b, a) => a > 220 && r > 230 && g > 230 && b > 230) > 2500,
-    "US route shields need a substantial white field");
-  assert.ok(await countPixels(usRoute.clone(), (r, g, b, a) => a > 220 && r < 55 && g < 55 && b < 65) > 550,
-    "US route shields need a substantial dark border");
-  assert.ok(await countHorizontalMirrorDifferences(usRoute.clone()) <= 80,
-    "FHWA M1-4 U.S. Route markers must be bilaterally symmetric");
-
-  const shield = style.layers.find(({ id }) => id === "road-shields");
-  assert.deepEqual(shield.layout["icon-size"], [
-    "interpolate", ["linear"], ["zoom"], 6, 1, 9, 1.08, 13, 1.2
-  ]);
-  assert.match(JSON.stringify(shield.paint["text-color"]), /#ffffff/,
-    "Interstate route numbers need white text on the blue field");
+  const shield = style.layers.find(({ id }) => id === "highway-shield");
+  const shieldLayout = JSON.stringify(shield.layout);
+  assert.equal(shield.type, "symbol");
+  assert.ok(shieldLayout.includes('"shield","\\n"'));
+  assert.match(shieldLayout, /route_1_network/);
+  assert.match(shieldLayout, /route_8_network/);
+  assert.match(await readFile("web/vendor/americana-shields.json", "utf8"), /US:I/,
+    "the packaged Americana renderer must include nationwide network definitions");
 });
 
 test("builds local game-inspired shields and truthful POI categories", async () => {
@@ -289,7 +263,7 @@ test("builds local game-inspired shields and truthful POI categories", async () 
   assert.match(html, /detail appears automatically/i);
 });
 
-test("builds the same information contract with distinct sprites for every theme", async () => {
+test("uses Americana for Daylight while colored-theme migration remains separate", async () => {
   await execute(process.execPath, ["styles/build-styles.mjs"]);
   const spriteDigests = new Set();
   let canonicalSemantics;
@@ -305,6 +279,15 @@ test("builds the same information contract with distinct sprites for every theme
     const retinaPng = await readFile(`styles/${id}/sprite@2x.png`);
 
     assert.equal(style.sprite, "{styleJsonFolder}/sprite");
+    if (id === "daylight") {
+      assert.equal(style.metadata["map-room:upstream"], "https://github.com/osm-americana/openstreetmap-americana");
+      assert.equal(layers["highway-shield"].type, "symbol");
+      assert.equal(layers["buildings-3d"].type, "fill-extrusion");
+      assert.equal(layers["buildings-3d"].layout.visibility, "visible");
+      assert.ok(sprite.place_star);
+      assert.ok(sprite.poi_hospital);
+      continue;
+    }
     assert.equal(atakSprite["shield-interstate"].pixelRatio, 1, `${id} must publish ATAK-normalized shields`);
     assert.equal(atakPng.readUInt32BE(16), 128, `${id} must publish a 128 px ATAK atlas`);
     for (const layerId of ["road-shields", "poi-essential", "poi-explore", "poi-parking", "poi-airports", "airports", "runways", "taxiways"]) {
@@ -312,7 +295,7 @@ test("builds the same information contract with distinct sprites for every theme
     }
     assert.equal(layers["road-shields"].minzoom, 6, `${id} must show the available major route shields in browser overviews`);
     assert.equal(layers["buildings-3d"].type, "fill-extrusion", `${id} must support 3D buildings`);
-    assert.equal(layers["buildings-3d"].layout.visibility, "none");
+    assert.equal(layers["buildings-3d"].layout.visibility, "visible");
     for (const layerId of ["poi-essential-hud", "poi-explore-hud", "poi-parking-hud", "poi-airports-hud"]) {
       assert.ok(layers[layerId], `${id} is missing ${layerId}`);
     }
@@ -340,16 +323,15 @@ test("builds the same information contract with distinct sprites for every theme
     assert.deepEqual(semantics, canonicalSemantics);
   }
 
-  assert.equal(spriteDigests.size, themeIds.length);
+  assert.equal(spriteDigests.size, themeIds.length - 1);
 });
 
-test("uses a light-specific neutral extrusion palette for Daylight", async () => {
+test("preserves Americana's neutral building treatment for Daylight", async () => {
   await execute(process.execPath, ["styles/build-styles.mjs"]);
   const style = JSON.parse(await readFile("styles/daylight/style.json", "utf8"));
   const buildings = style.layers.find(({ id }) => id === "buildings-3d");
   assert.deepEqual(buildings.paint["fill-extrusion-color"], [
-    "interpolate", ["linear"], ["coalesce", ["get", "render_height"], 3],
-    0, "#d8d0c6", 30, "#ddd5ca", 100, "#e5d8c5", 220, "#edd3aa"
+    "interpolate", ["linear"], ["zoom"], 13, "hsl(0, 0%, 87%)", 16, "hsl(0, 0%, 80%)"
   ]);
-  assert.equal(style.light.color, "#fff8ea");
+  assert.equal(buildings.layout.visibility, "visible");
 });
