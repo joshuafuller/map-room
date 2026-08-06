@@ -1,4 +1,4 @@
-export const VECTOR_ASSET_VERSION = "shields-v3";
+export const VECTOR_ASSET_VERSION = "shields-v4";
 
 const versionedResourceTypes = new Set(["Style", "SpriteImage", "SpriteJSON"]);
 

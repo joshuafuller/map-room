@@ -273,6 +273,20 @@ function makeStyle(id, theme) {
   };
   const routeLength = ["length", ["to-string", ["coalesce", ["get", "route_1_ref"], ["get", "ref"], ""]]];
   const routeNetwork = ["coalesce", ["get", "route_1_network"], ["get", "network"], ""];
+  const routeClass = ["coalesce", ["get", "network"], ""];
+  const routeKind = ["case",
+    ["any", ["==", routeClass, "us-interstate"], ["==", ["slice", routeNetwork, 0, 4], "US:I"]], "interstate",
+    ["any", ["==", routeClass, "us-highway"], ["==", ["slice", routeNetwork, 0, 5], "US:US"]], "us",
+    ["any", ["==", routeClass, "us-county"], [">=", ["index-of", ":CR", routeNetwork], 0]], "county",
+    "state"];
+  const standardRouteTextSize = ["interpolate", ["linear"], ["zoom"],
+    6, ["step", routeLength, 13, 3, 12, 5, 11],
+    10, ["step", routeLength, 15, 3, 14, 5, 12.5],
+    14, ["step", routeLength, 17, 3, 15, 5, 13.5]];
+  const countyRouteTextSize = ["interpolate", ["linear"], ["zoom"],
+    6, ["step", routeLength, 12, 3, 10, 4, 8],
+    10, ["step", routeLength, 14, 3, 11, 4, 9],
+    14, ["step", routeLength, 16, 3, 12, 4, 10]];
 
   const selectedRoadWidth = theme.tactical ? tacticalRoadWidth : roadWidth;
   const selectedRoadCasingWidth = theme.tactical ? tacticalRoadCasingWidth : roadCasingWidth;
@@ -363,25 +377,23 @@ function makeStyle(id, theme) {
         filter: ["any", ["has", "ref"], ["has", "route_1_ref"]],
         layout: {
           "symbol-placement": "line", "symbol-spacing": 340,
-          "icon-image": ["match", routeNetwork,
-            ["US:I", "us-interstate"], ["case", [">=", routeLength, 3], "shield-interstate-wide", "shield-interstate"],
-            ["US:US", "us-highway"], ["case", [">=", routeLength, 3], "shield-us-wide", "shield-us"],
-            ["US:FL", "us-state"], ["case", [">=", routeLength, 3], "shield-state-wide", "shield-state"],
-            "US:FL:CR", "shield-county", ["case", [">=", routeLength, 3], "shield-state-wide", "shield-state"]],
+          "icon-image": ["match", routeKind,
+            "interstate", ["case", [">=", routeLength, 3], "shield-interstate-wide", "shield-interstate"],
+            "us", ["case", [">=", routeLength, 3], "shield-us-wide", "shield-us"],
+            "county", ["case", [">=", routeLength, 3], "shield-county-wide", "shield-county"],
+            ["case", [">=", routeLength, 3], "shield-state-wide", "shield-state"]],
           "icon-size": ["interpolate", ["linear"], ["zoom"], 6, 1, 9, 1.08, 13, 1.2],
           "icon-rotation-alignment": "viewport",
           "text-field": ["coalesce", ["get", "route_1_ref"], ["get", "ref"]],
           "text-font": ["Open Sans Semibold"],
-          "text-size": ["interpolate", ["linear"], ["zoom"],
-            6, ["step", routeLength, 13, 3, 12, 5, 11],
-            10, ["step", routeLength, 15, 3, 14, 5, 12.5],
-            14, ["step", routeLength, 17, 3, 15, 5, 13.5]],
+          "text-size": ["match", routeKind, "county", countyRouteTextSize, standardRouteTextSize],
+          "text-offset": ["match", routeKind, "interstate", ["literal", [0, 0.18]], ["literal", [0, 0]]],
           "text-rotation-alignment": "viewport", "text-allow-overlap": false
         },
         paint: {
-          "text-color": ["match", routeNetwork, ["US:I", "us-interstate"], "#ffffff", ["US:US", "us-highway"], "#111827", ["US:FL", "us-state"], "#102a33", "US:FL:CR", "#35270f", "#111827"],
-          "text-halo-color": ["match", routeNetwork, ["US:I", "us-interstate"], "#174a7e", "#ffffff"],
-          "text-halo-width": ["match", routeNetwork, ["US:I", "us-interstate"], 0.45, 0.35]
+          "text-color": ["match", routeKind, "interstate", "#ffffff", "county", "#ffcc32", "#111827"],
+          "text-halo-color": ["match", routeKind, "interstate", "#1f5fa5", "county", "#1f5fa5", "#ffffff"],
+          "text-halo-width": ["match", routeKind, "interstate", 0.45, "county", 0.55, 0.35]
         }
       },
       {
