@@ -806,7 +806,7 @@
       ],
       "layout": {
         "symbol-placement": "line",
-        "symbol-spacing": 320,
+        "symbol-spacing": 340,
         "icon-image": [
           "match",
           [
@@ -840,8 +840,29 @@
           "shield-county",
           "shield-state"
         ],
-        "icon-size": 0.86,
+        "icon-size": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          6,
+          0.86,
+          9,
+          0.94,
+          13,
+          1.06
+        ],
         "icon-rotation-alignment": "viewport",
+        "icon-text-fit": "width",
+        "icon-text-fit-padding": [
+          0,
+          3,
+          0,
+          3
+        ],
         "text-field": [
           "coalesce",
           [
@@ -857,30 +878,94 @@
           "Open Sans Semibold"
         ],
         "text-size": [
-          "step",
+          "interpolate",
           [
-            "length",
-            [
-              "to-string",
-              [
-                "coalesce",
-                [
-                  "get",
-                  "route_1_ref"
-                ],
-                [
-                  "get",
-                  "ref"
-                ],
-                ""
-              ]
-            ]
+            "linear"
           ],
-          17,
-          3,
-          15,
-          5,
-          13.5
+          [
+            "zoom"
+          ],
+          6,
+          [
+            "step",
+            [
+              "length",
+              [
+                "to-string",
+                [
+                  "coalesce",
+                  [
+                    "get",
+                    "route_1_ref"
+                  ],
+                  [
+                    "get",
+                    "ref"
+                  ],
+                  ""
+                ]
+              ]
+            ],
+            13,
+            3,
+            12,
+            5,
+            11
+          ],
+          10,
+          [
+            "step",
+            [
+              "length",
+              [
+                "to-string",
+                [
+                  "coalesce",
+                  [
+                    "get",
+                    "route_1_ref"
+                  ],
+                  [
+                    "get",
+                    "ref"
+                  ],
+                  ""
+                ]
+              ]
+            ],
+            15,
+            3,
+            14,
+            5,
+            12.5
+          ],
+          14,
+          [
+            "step",
+            [
+              "length",
+              [
+                "to-string",
+                [
+                  "coalesce",
+                  [
+                    "get",
+                    "route_1_ref"
+                  ],
+                  [
+                    "get",
+                    "ref"
+                  ],
+                  ""
+                ]
+              ]
+            ],
+            17,
+            3,
+            15,
+            5,
+            13.5
+          ]
         ],
         "text-rotation-alignment": "viewport",
         "text-allow-overlap": false

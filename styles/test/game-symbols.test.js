@@ -26,15 +26,18 @@ test("builds local game-inspired shields and truthful POI categories", async () 
   assert.equal(style.sprite, "{styleJsonFolder}/sprite");
   const layers = Object.fromEntries(style.layers.map((layer) => [layer.id, layer]));
   assert.equal(layers["road-shields"].type, "symbol");
-  assert.ok(layers["road-shields"].layout["icon-size"] >= 1.05);
+  assert.deepEqual(layers["road-shields"].layout["icon-size"], [
+    "interpolate", ["linear"], ["zoom"], 6, 0.86, 9, 0.94, 13, 1.06
+  ]);
+  assert.equal(layers["road-shields"].layout["symbol-spacing"], 340);
   assert.equal(layers["road-shields"].layout["icon-text-fit"], "width");
   assert.deepEqual(layers["road-shields"].layout["icon-text-fit-padding"], [0, 3, 0, 3]);
+  const routeLength = ["length", ["to-string", ["coalesce", ["get", "route_1_ref"], ["get", "ref"], ""]]];
   assert.deepEqual(layers["road-shields"].layout["text-size"], [
-    "step",
-    ["length", ["to-string", ["coalesce", ["get", "route_1_ref"], ["get", "ref"], ""]]],
-    17,
-    3, 15,
-    5, 13.5
+    "interpolate", ["linear"], ["zoom"],
+    6, ["step", routeLength, 13, 3, 12, 5, 11],
+    10, ["step", routeLength, 15, 3, 14, 5, 12.5],
+    14, ["step", routeLength, 17, 3, 15, 5, 13.5]
   ]);
   assert.ok(Array.isArray(layers["road-shields"].paint["text-halo-color"]));
   assert.match(JSON.stringify(layers["road-shields"].paint["text-halo-color"]), /#f6f8ff/);

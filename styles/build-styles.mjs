@@ -271,6 +271,7 @@ function makeStyle(id, theme) {
     "text-size": ["interpolate", ["linear"], ["zoom"], 7, 11, 14, 15],
     "text-max-width": 9
   };
+  const routeLength = ["length", ["to-string", ["coalesce", ["get", "route_1_ref"], ["get", "ref"], ""]]];
 
   const selectedRoadWidth = theme.tactical ? tacticalRoadWidth : roadWidth;
   const selectedRoadCasingWidth = theme.tactical ? tacticalRoadCasingWidth : roadCasingWidth;
@@ -360,17 +361,19 @@ function makeStyle(id, theme) {
         id: "road-shields", type: "symbol", source: "osm", "source-layer": "transportation_name", minzoom: 6,
         filter: ["any", ["has", "ref"], ["has", "route_1_ref"]],
         layout: {
-          "symbol-placement": "line", "symbol-spacing": 320,
+          "symbol-placement": "line", "symbol-spacing": 340,
           "icon-image": ["match", ["coalesce", ["get", "route_1_network"], ["get", "network"], ""],
             ["US:I", "us-interstate"], "shield-interstate", ["US:US", "us-highway"], "shield-us",
             ["US:FL", "us-state"], "shield-state", "US:FL:CR", "shield-county", "shield-state"],
-          "icon-size": 0.86, "icon-rotation-alignment": "viewport",
+          "icon-size": ["interpolate", ["linear"], ["zoom"], 6, 0.86, 9, 0.94, 13, 1.06],
+          "icon-rotation-alignment": "viewport",
+          "icon-text-fit": "width", "icon-text-fit-padding": [0, 3, 0, 3],
           "text-field": ["coalesce", ["get", "route_1_ref"], ["get", "ref"]],
           "text-font": ["Open Sans Semibold"],
-          "text-size": [
-            "step", ["length", ["to-string", ["coalesce", ["get", "route_1_ref"], ["get", "ref"], ""]]],
-            17, 3, 15, 5, 13.5
-          ],
+          "text-size": ["interpolate", ["linear"], ["zoom"],
+            6, ["step", routeLength, 13, 3, 12, 5, 11],
+            10, ["step", routeLength, 15, 3, 14, 5, 12.5],
+            14, ["step", routeLength, 17, 3, 15, 5, 13.5]],
           "text-rotation-alignment": "viewport", "text-allow-overlap": false
         },
         paint: {
