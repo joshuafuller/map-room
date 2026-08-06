@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 import { buildingLayerIds } from "./buildings.js";
 
 test("finds every 3D building layer in a composed multi-region style", () => {
@@ -14,4 +15,19 @@ test("finds every 3D building layer in a composed multi-region style", () => {
 test("supports a single-publication style and an unavailable style", () => {
   assert.deepEqual(buildingLayerIds({ layers: [{ id: "buildings-3d" }] }), ["buildings-3d"]);
   assert.deepEqual(buildingLayerIds(null), []);
+});
+
+test("keeps 3D buildings always on without a redundant UI toggle", async () => {
+  const [app, html] = await Promise.all([
+    readFile(new URL("./app.js", import.meta.url), "utf8"),
+    readFile(new URL("./index.html", import.meta.url), "utf8")
+  ]);
+  assert.doesNotMatch(app, /buildings3dEnabled|#buildings-toggle/);
+  assert.doesNotMatch(html, /id="buildings-toggle"/);
+
+  for (const theme of ["daylight", "midnight", "dark-blue", "dark-red", "dark-green", "cyberpunk", "cyberpunk-tactical"]) {
+    const style = JSON.parse(await readFile(new URL(`../styles/${theme}/style.json`, import.meta.url), "utf8"));
+    const buildings = style.layers.find(({ id }) => id === "buildings-3d");
+    assert.equal(buildings?.layout?.visibility, "visible", `${theme} must start with 3D buildings enabled`);
+  }
 });

@@ -2,6 +2,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { buildSpriteAtlas } from "./build-sprite.mjs";
+import { buildAmericanaDaylight } from "./build-americana.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 
@@ -548,7 +549,7 @@ function makeStyle(id, theme) {
       },
       {
         id: "buildings-3d", type: "fill-extrusion", source: "osm", "source-layer": "building", minzoom: 13,
-        layout: { visibility: "none" },
+        layout: { visibility: "visible" },
         paint: {
           "fill-extrusion-color": extrusionColor(extrusion),
           "fill-extrusion-height": ["coalesce", ["get", "render_height"], 3],
@@ -569,9 +570,12 @@ function makeStyle(id, theme) {
 }
 
 for (const [id, theme] of Object.entries(themes)) {
+  if (id === "daylight") continue;
   const output = resolve(here, id, "style.json");
   await mkdir(dirname(output), { recursive: true });
   await writeFile(output, `${JSON.stringify(makeStyle(id, theme), null, 2)}\n`);
   await buildSpriteAtlas(dirname(output), theme.symbols);
   console.log(`wrote ${output}`);
 }
+
+await buildAmericanaDaylight();

@@ -147,6 +147,7 @@ function expandRoadShields(layer) {
     shield.layout["icon-text-fit"] = "width";
     shield.layout["icon-text-fit-padding"] = [0, 3, 0, 3];
     shield.layout["text-field"] = "{route_1_ref}";
+    shield.layout["text-font"] = ["Open Sans Semibold"];
     shield.layout["text-size"] = group.textSize;
     shield.layout["text-anchor"] = "center";
     shield.layout["text-transform"] = "uppercase";

@@ -5,6 +5,6 @@ export function poiLayerIds(style, layerId) {
     .filter((id) => id === layerId || id.startsWith(`${layerId}--`));
 }
 
-export function poiLayerVisibility({ enabled, buildings3dEnabled, hud }) {
-  return enabled && buildings3dEnabled === hud ? "visible" : "none";
+export function poiLayerVisibility({ enabled, hud }) {
+  return enabled && hud ? "visible" : "none";
 }

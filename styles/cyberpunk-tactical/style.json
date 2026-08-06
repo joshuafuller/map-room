@@ -2526,7 +2526,7 @@
       "source-layer": "building",
       "minzoom": 13,
       "layout": {
-        "visibility": "none"
+        "visibility": "visible"
       },
       "paint": {
         "fill-extrusion-color": [
