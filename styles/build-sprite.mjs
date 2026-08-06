@@ -10,12 +10,6 @@ const size = 128;
 const pixelRatio = 4;
 const columns = 4;
 const atakScale = 4;
-const shieldFit = {
-  "shield-interstate": { content: [3, 7, 29, 25], stretchX: [[14, 18]] },
-  "shield-us": { content: [4, 6, 28, 25], stretchX: [[14, 18]] },
-  "shield-state": { content: [3, 7, 29, 26], stretchX: [[14, 18]] },
-  "shield-county": { content: [3, 8, 29, 25], stretchX: [[14, 18]] }
-};
 const atakShieldFit = {
   "shield-interstate": { content: [5, 5, 27, 24], stretchX: [[14, 18]] },
   "shield-us": { content: [7, 5, 25, 24], stretchX: [[14, 18]] },
@@ -24,8 +18,11 @@ const atakShieldFit = {
 };
 const shieldPaths = {
   "shield-interstate": "M7 26h114v42c0 19-21 32-57 42C28 100 7 87 7 68Z",
+  "shield-interstate-wide": "M7 26h146v42c0 19-26 32-73 42C33 100 7 87 7 68Z",
   "shield-us": "M17 22c16 7 31 1 47-7 16 8 31 14 47 7l7 31c-3 27-21 46-54 59-33-13-51-32-54-59Z",
+  "shield-us-wide": "M21 22c20 7 39 1 59-7 20 8 39 14 59 7l9 31c-4 27-26 46-68 59-42-13-64-32-68-59Z",
   "shield-state": "M17 25h94q10 0 10 10v58q0 10-10 10H17Q7 103 7 93V35q0-10 10-10Z",
+  "shield-state-wide": "M17 25h126q10 0 10 10v58q0 10-10 10H17Q7 103 7 93V35q0-10 10-10Z",
   "shield-county": "M17 24h94l10 12v56l-10 12H17L7 92V36Z"
 };
 const atakShieldPaths = {
@@ -56,16 +53,21 @@ const symbols = [
   { id: "poi-lodging", icon: "bed.svg", label: "Lodging", accent: "leisure", silhouette: ["bed-frame", "pillow"] },
   { id: "poi-attraction", icon: "star.svg", label: "Attraction", accent: "utility", silhouette: ["five-point-star", "center-field"] },
   { id: "poi-shopping", icon: "shopping-bag.svg", label: "Shopping", accent: "emergency", silhouette: ["bag", "handles"] },
-  { id: "poi-parking", icon: "circle-parking.svg", label: "Parking", accent: "leisure", silhouette: ["parking-ring", "letter-p"] }
+  { id: "poi-parking", icon: "circle-parking.svg", label: "Parking", accent: "leisure", silhouette: ["parking-ring", "letter-p"] },
+  { id: "shield-interstate-wide", type: "shield", accent: "emergency", fill: "shieldFill", browserOnly: true, wide: true },
+  { id: "shield-us-wide", type: "shield", accent: "frame", fill: "lightFill", browserOnly: true, wide: true },
+  { id: "shield-state-wide", type: "shield", accent: "service", fill: "shieldFill", browserOnly: true, wide: true }
 ];
 
 function shieldSvg({ id, accent, fill }, palette) {
   const path = shieldPaths[id];
-  if (id === "shield-interstate") return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 128 128">
+  const baseId = id.replace(/-wide$/, "");
+  const viewBoxWidth = id.endsWith("-wide") ? 160 : 128;
+  if (baseId === "shield-interstate") return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${viewBoxWidth} 128">
   <defs><clipPath id="interstate-field"><path d="${path}"/></clipPath></defs>
   <path d="${path}" fill="#174a7e" stroke="#111827" stroke-width="12" stroke-linejoin="round"/>
   <path d="${path}" fill="#174a7e"/>
-  <path d="M0 18h128v36H0z" fill="#c8323e" clip-path="url(#interstate-field)"/>
+  <path d="M0 18h${viewBoxWidth}v36H0z" fill="#c8323e" clip-path="url(#interstate-field)"/>
   <path d="${path}" fill="none" stroke="#ffffff" stroke-width="6" stroke-linejoin="round"/>
   <path d="${path}" fill="none" stroke="#111827" stroke-width="2" stroke-linejoin="round"/>
   </svg>`;
@@ -73,8 +75,8 @@ function shieldSvg({ id, accent, fill }, palette) {
     "shield-us": { field: "#ffffff", border: "#111827" },
     "shield-state": { field: "#ffffff", border: "#087b91" },
     "shield-county": { field: "#fff1c2", border: "#6b4f1d" }
-  }[id];
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 128 128">
+  }[baseId];
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${viewBoxWidth} 128">
   <path d="${path}" fill="${colors.field}" stroke="#111827" stroke-width="12" stroke-linejoin="round"/>
   <path d="${path}" fill="${colors.field}" stroke="${colors.border}" stroke-width="7" stroke-linejoin="round"/>
   </svg>`;
@@ -110,23 +112,25 @@ export async function buildSpriteAtlas(outputDirectory, palette) {
   const designs = {};
 
   for (const [index, symbol] of symbols.entries()) {
-    const left = index % columns * size;
-    const top = Math.floor(index / columns) * size;
+    const cellLeft = index % columns * size;
+    const cellTop = Math.floor(index / columns) * size;
+    const spriteWidth = symbol.type === "shield" ? (symbol.wide ? 120 : 96) : size;
+    const spriteHeight = symbol.type === "shield" ? 96 : size;
+    const left = cellLeft + Math.floor((size - spriteWidth) / 2);
+    const top = cellTop + Math.floor((size - spriteHeight) / 2);
     const svg = symbol.type === "shield" ? shieldSvg(symbol, palette) : await markerSvg(symbol, palette);
-    composites.push({ input: await sharp(Buffer.from(svg)).png().toBuffer(), left, top });
-    const atakSvg = symbol.type === "shield" ? atakShieldSvg(symbol, palette) : svg;
-    atakComposites.push({
-      input: await sharp(Buffer.from(atakSvg)).resize(size / atakScale, size / atakScale).png().toBuffer(),
-      left: left / atakScale,
-      top: top / atakScale
-    });
-    const fit = shieldFit[symbol.id];
+    composites.push({ input: await sharp(Buffer.from(svg)).resize(spriteWidth, spriteHeight).png().toBuffer(), left, top });
+    if (!symbol.browserOnly) {
+      const atakSvg = symbol.type === "shield" ? atakShieldSvg(symbol, palette) : svg;
+      atakComposites.push({
+        input: await sharp(Buffer.from(atakSvg)).resize(size / atakScale, size / atakScale).png().toBuffer(),
+        left: cellLeft / atakScale,
+        top: cellTop / atakScale
+      });
+    }
     metadata[symbol.id] = {
-      width: size, height: size, x: left, y: top, pixelRatio,
-      ...(fit ? {
-        content: fit.content.map((value) => value * pixelRatio),
-        stretchX: fit.stretchX.map(([start, end]) => [start * pixelRatio, end * pixelRatio])
-      } : {})
+      width: spriteWidth, height: spriteHeight, x: left, y: top,
+      pixelRatio: symbol.type === "shield" ? 3 : pixelRatio
     };
     if (symbol.icon) {
       designs[symbol.id] = {
@@ -142,18 +146,19 @@ export async function buildSpriteAtlas(outputDirectory, palette) {
     .composite(composites)
     .png()
     .toBuffer();
-  const atakMetadata = Object.fromEntries(Object.entries(metadata).map(([id, symbol]) => [id, {
-    width: symbol.width / atakScale,
-    height: symbol.height / atakScale,
-    x: symbol.x / atakScale,
-    y: symbol.y / atakScale,
+  const atakMetadata = Object.fromEntries(symbols.filter(({ browserOnly }) => !browserOnly).map((entry, index) => [entry.id, {
+    width: size / atakScale,
+    height: size / atakScale,
+    x: index % columns * size / atakScale,
+    y: Math.floor(index / columns) * size / atakScale,
     pixelRatio: 1,
-    ...(atakShieldFit[id] ?? {})
+    ...(atakShieldFit[entry.id] ?? {})
   }]));
+  const atakHeight = Math.ceil(symbols.filter(({ browserOnly }) => !browserOnly).length / columns) * size / atakScale;
   const atakAtlas = await sharp({
     create: {
       width: width / atakScale,
-      height: height / atakScale,
+      height: atakHeight,
       channels: 4,
       background: { r: 0, g: 0, b: 0, alpha: 0 }
     }

@@ -3,6 +3,7 @@ import { mkdir, readFile } from "node:fs/promises";
 import { chromium, firefox, webkit } from "playwright";
 import jsQR from "jsqr";
 import sharp from "sharp";
+import { VECTOR_ASSET_VERSION } from "../web/map-assets.js";
 
 const baseUrl = process.env.BASE_URL ?? "http://localhost:8088";
 const outputDir = new URL("../data/browser-test/", import.meta.url);
@@ -69,7 +70,7 @@ if (!shieldAssets.spriteUrl.endsWith("/sprite") ||
     shieldAssets.spriteJsonStatus !== 200 || shieldAssets.spritePngStatus !== 200) {
   failures.push(`road shields were unavailable (${JSON.stringify(shieldAssets)})`);
 }
-const versionedVectorRequests = requestedUrls.filter((url) => url.includes("map-room-version=shields-v2"));
+const versionedVectorRequests = requestedUrls.filter((url) => url.includes(`map-room-version=${VECTOR_ASSET_VERSION}`));
 if (!versionedVectorRequests.some((url) => url.includes("/style.json")) ||
     !versionedVectorRequests.some((url) => /\/sprite(?:@2x)?\.json/.test(url)) ||
     !versionedVectorRequests.some((url) => /\/sprite(?:@2x)?\.png/.test(url))) {

@@ -825,20 +825,124 @@
             "US:I",
             "us-interstate"
           ],
-          "shield-interstate",
+          [
+            "case",
+            [
+              ">=",
+              [
+                "length",
+                [
+                  "to-string",
+                  [
+                    "coalesce",
+                    [
+                      "get",
+                      "route_1_ref"
+                    ],
+                    [
+                      "get",
+                      "ref"
+                    ],
+                    ""
+                  ]
+                ]
+              ],
+              3
+            ],
+            "shield-interstate-wide",
+            "shield-interstate"
+          ],
           [
             "US:US",
             "us-highway"
           ],
-          "shield-us",
+          [
+            "case",
+            [
+              ">=",
+              [
+                "length",
+                [
+                  "to-string",
+                  [
+                    "coalesce",
+                    [
+                      "get",
+                      "route_1_ref"
+                    ],
+                    [
+                      "get",
+                      "ref"
+                    ],
+                    ""
+                  ]
+                ]
+              ],
+              3
+            ],
+            "shield-us-wide",
+            "shield-us"
+          ],
           [
             "US:FL",
             "us-state"
           ],
-          "shield-state",
+          [
+            "case",
+            [
+              ">=",
+              [
+                "length",
+                [
+                  "to-string",
+                  [
+                    "coalesce",
+                    [
+                      "get",
+                      "route_1_ref"
+                    ],
+                    [
+                      "get",
+                      "ref"
+                    ],
+                    ""
+                  ]
+                ]
+              ],
+              3
+            ],
+            "shield-state-wide",
+            "shield-state"
+          ],
           "US:FL:CR",
           "shield-county",
-          "shield-state"
+          [
+            "case",
+            [
+              ">=",
+              [
+                "length",
+                [
+                  "to-string",
+                  [
+                    "coalesce",
+                    [
+                      "get",
+                      "route_1_ref"
+                    ],
+                    [
+                      "get",
+                      "ref"
+                    ],
+                    ""
+                  ]
+                ]
+              ],
+              3
+            ],
+            "shield-state-wide",
+            "shield-state"
+          ]
         ],
         "icon-size": [
           "interpolate",
@@ -856,13 +960,6 @@
           1.2
         ],
         "icon-rotation-alignment": "viewport",
-        "icon-text-fit": "both",
-        "icon-text-fit-padding": [
-          3,
-          3,
-          3,
-          3
-        ],
         "text-field": [
           "coalesce",
           [
