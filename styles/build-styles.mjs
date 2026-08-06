@@ -357,7 +357,7 @@ function makeStyle(id, theme) {
     ],
     symbols: [
       {
-        id: "road-shields", type: "symbol", source: "osm", "source-layer": "transportation_name", minzoom: 8,
+        id: "road-shields", type: "symbol", source: "osm", "source-layer": "transportation_name", minzoom: 6,
         filter: ["any", ["has", "ref"], ["has", "route_1_ref"]],
         layout: {
           "symbol-placement": "line", "symbol-spacing": 320,
