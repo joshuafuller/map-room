@@ -5,6 +5,7 @@ import { buildAtakVectorStyle } from "/atak-vector.js";
 import { buildingLayerIds } from "/buildings.js";
 import { poiLayerIds, poiLayerVisibility } from "/poi-visibility.js";
 import { setupMapManager } from "/map-manager.js";
+import { versionMapAssetRequest } from "/map-assets.js";
 import { renderQrSvg } from "/qr-code.js";
 
 const themes = {
@@ -157,7 +158,8 @@ map = new maplibregl.Map({
   fitBoundsOptions: { padding: allViewPadding() },
   hash: true,
   dragRotate: true,
-  pitchWithRotate: true
+  pitchWithRotate: true,
+  transformRequest: versionMapAssetRequest
 });
 
 map.addControl(new maplibregl.NavigationControl({ showCompass: true }), "bottom-right");
