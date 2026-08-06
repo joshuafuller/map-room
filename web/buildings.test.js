@@ -29,5 +29,9 @@ test("keeps 3D buildings always on without a redundant UI toggle", async () => {
     const style = JSON.parse(await readFile(new URL(`../styles/${theme}/style.json`, import.meta.url), "utf8"));
     const buildings = style.layers.find(({ id }) => id === "buildings-3d");
     assert.equal(buildings?.layout?.visibility, "visible", `${theme} must start with 3D buildings enabled`);
+    assert.deepEqual(buildings?.paint?.["fill-extrusion-height"], ["coalesce", ["get", "render_height"], 3],
+      `${theme} must use the tileset's real building height`);
+    assert.deepEqual(buildings?.paint?.["fill-extrusion-base"], ["coalesce", ["get", "render_min_height"], 0],
+      `${theme} must preserve elevated building parts instead of clipping them to the ground`);
   }
 });
