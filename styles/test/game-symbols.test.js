@@ -36,6 +36,7 @@ function evaluateStyleExpression(expression, properties) {
   const [operator, ...operands] = expression;
   const evaluate = (value) => evaluateStyleExpression(value, properties);
   if (operator === "literal") return operands[0];
+  if (operator === "zoom") return properties.$zoom;
   if (operator === "get") return properties[operands[0]];
   if (operator === "coalesce") return operands.map(evaluate).find((value) => value !== null && value !== undefined);
   if (operator === "to-string") return String(evaluate(operands[0]));
@@ -56,6 +57,29 @@ function evaluateStyleExpression(expression, properties) {
     for (let index = 1; index < operands.length - 1; index += 2) {
       const labels = Array.isArray(operands[index]) ? operands[index] : [operands[index]];
       if (labels.includes(input)) return evaluate(operands[index + 1]);
+    }
+    return evaluate(operands.at(-1));
+  }
+  if (operator === "step") {
+    const input = evaluate(operands[0]);
+    let output = evaluate(operands[1]);
+    for (let index = 2; index < operands.length; index += 2) {
+      if (input < evaluate(operands[index])) break;
+      output = evaluate(operands[index + 1]);
+    }
+    return output;
+  }
+  if (operator === "interpolate") {
+    const input = evaluate(operands[1]);
+    for (let index = 2; index < operands.length - 2; index += 2) {
+      const lowerStop = evaluate(operands[index]);
+      const upperStop = evaluate(operands[index + 2]);
+      if (input <= lowerStop) return evaluate(operands[index + 1]);
+      if (input <= upperStop) {
+        const lower = evaluate(operands[index + 1]);
+        const upper = evaluate(operands[index + 3]);
+        return lower + (upper - lower) * (input - lowerStop) / (upperStop - lowerStop);
+      }
     }
     return evaluate(operands.at(-1));
   }
@@ -137,12 +161,23 @@ test("builds local game-inspired shields and truthful POI categories", async () 
   assert.deepEqual(evaluateStyleExpression(textOffset, { route_1_network: "US:I", network: "us-interstate" }), [0, 0.18],
     "Interstate route numbers must sit below the red crown and white separator");
   assert.deepEqual(evaluateStyleExpression(textOffset, { route_1_network: "US:US", network: "us-highway" }), [0, 0]);
-  assert.deepEqual(layers["road-shields"].layout["text-size"], [
+  const standardRouteTextSize = [
     "interpolate", ["linear"], ["zoom"],
     6, ["step", routeLength, 13, 3, 12, 5, 11],
     10, ["step", routeLength, 15, 3, 14, 5, 12.5],
-    14, ["step", routeLength, 17, 3, 15, 5, 13.5]
+    14, ["step", routeLength, 17, 3, 15, 5, 13.5]];
+  const countyRouteTextSize = [
+    "interpolate", ["linear"], ["zoom"],
+    6, ["step", routeLength, 12, 3, 10, 4, 8],
+    10, ["step", routeLength, 14, 3, 11, 4, 9],
+    14, ["step", routeLength, 16, 3, 12, 4, 10]];
+  assert.deepEqual(layers["road-shields"].layout["text-size"], [
+    "match", layers["road-shields"].layout["icon-image"][1],
+    "county", countyRouteTextSize, standardRouteTextSize
   ]);
+  assert.equal(evaluateStyleExpression(layers["road-shields"].layout["text-size"], {
+    route_1_network: "US:FL:CR", route_1_ref: "184A", network: "road", $zoom: 10
+  }), 9, "four-character county references must fit inside the fixed M1-6 pentagon");
   assert.ok(Array.isArray(layers["road-shields"].paint["text-halo-color"]));
   assert.match(JSON.stringify(layers["road-shields"].paint["text-halo-color"]), /#1f5fa5/);
   assert.match(JSON.stringify(layers["road-shields"].paint["text-halo-color"]), /#ffffff/);
