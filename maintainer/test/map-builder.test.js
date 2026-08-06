@@ -254,8 +254,7 @@ test("resumes after a real HTTP connection drops mid-download", async () => {
     requests.push({ range: request.headers.range, ifRange: request.headers["if-range"] });
     if (requests.length === 1) {
       response.writeHead(200, { "content-length": "6", etag: '"v1"' });
-      response.write("abc");
-      setTimeout(() => response.destroy(), 25);
+      response.write("abc", () => setTimeout(() => response.destroy(), 250));
       return;
     }
     response.writeHead(206, {
