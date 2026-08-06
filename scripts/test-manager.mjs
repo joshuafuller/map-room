@@ -8,61 +8,84 @@ const browser = await chromium.launch({ headless: true });
 const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
 const failures = [];
 const smokePbf = process.env.MAP_ROOM_BUILD_SMOKE_PBF;
+let initialMaps = [];
 
 try {
   await page.goto(baseUrl, { waitUntil: "domcontentloaded" });
   await page.locator("#manage-maps").click();
   await page.locator("#map-manager").waitFor({ state: "visible" });
   if (!await page.locator(".manager-warning").getByText("Trusted local network only").isVisible()) failures.push("manager did not disclose the unauthenticated trusted-network boundary");
-  const mapCount = (await page.evaluate(() => fetch("/api/maps").then((response) => response.json()))).maps.length;
-  if (await page.locator(".map-row").count() !== mapCount) failures.push("manager did not list every installed map");
+  const mapState = await page.evaluate(() => fetch("/api/maps").then((response) => response.json()));
+  initialMaps = mapState.maps;
+  if (await page.locator(".map-row").count() !== mapState.maps.length) failures.push("manager did not list every installed map");
 
-  await page.waitForFunction(() => document.querySelectorAll("#catalog-region optgroup").length > 1);
-  const catalogShape = await page.locator("#catalog-region").evaluate((select) => ({
-    groups: select.querySelectorAll("optgroup").length,
-    options: select.querySelectorAll("option").length,
-    overflow: select.scrollWidth > select.clientWidth
-  }));
-  if (catalogShape.groups < 2 || catalogShape.options <= 100) failures.push("catalog did not expose the complete grouped regional list");
-  if (catalogShape.overflow) failures.push("catalog chooser overflowed its available width");
+  if (await page.locator("#catalog-region").getAttribute("type") !== "hidden" ||
+      await page.locator("#catalog-search").getAttribute("role") !== "combobox") {
+    failures.push("catalog did not use a search-first combobox with a hidden provider identity");
+  }
+  if (await page.locator("#catalog-results [role=option]").count() > 40) failures.push("catalog rendered too many shortcut options");
+
+  await page.locator("#catalog-search").fill("no-region-has-this-name");
+  await page.waitForFunction(() => document.querySelector("#catalog-summary")?.textContent === "No regions match this search.");
+  if (!await page.locator("#catalog-results").isHidden()) failures.push("empty catalog search left a stale result list open");
+
+  await page.route("**/api/catalog?q=catalog-failure", (route) => route.fulfill({ status: 503, contentType: "application/json", body: JSON.stringify({ error: "Catalog fixture unavailable" }) }));
+  await page.locator("#catalog-search").fill("catalog-failure");
+  await page.waitForFunction(() => document.querySelector("#catalog-summary")?.textContent.includes("could not be loaded"));
+  await page.unroute("**/api/catalog?q=catalog-failure");
 
   await page.locator("#catalog-search").fill("morocco");
-  await page.waitForFunction(() => [...document.querySelectorAll("#catalog-region option")].some(({ value }) => value === "morocco"));
-  if (await page.locator('#catalog-region optgroup[label="Africa"] option[value="morocco"]').count() !== 1) failures.push("worldwide search did not keep Morocco in its geographic category");
+  await page.locator('#catalog-results [role="option"][data-region-id="morocco"]').waitFor();
+  if (await page.locator('#catalog-results [role="group"][aria-label="Africa"] [data-region-id="morocco"]').count() !== 1) failures.push("worldwide search did not keep Morocco in its geographic category");
 
   await page.locator("#catalog-search").fill("florida");
-  await page.waitForFunction(() => [...document.querySelectorAll("#catalog-region option")].some(({ value }) => value === "us/florida"));
-  await page.locator("#catalog-region").selectOption("us/florida");
+  await page.locator('#catalog-results [role="option"][data-region-id="us/florida"]').waitFor();
+  await page.locator("#catalog-search").press("ArrowDown");
+  await page.locator("#catalog-search").press("Enter");
   if (await page.locator("#map-name").inputValue() !== "Florida" || await page.locator("#map-id").inputValue() !== "florida") failures.push("catalog selection did not suggest a name and safe ID");
+  if (await page.locator(".advanced-fields").getAttribute("open") !== null) failures.push("stable ID was not hidden under advanced settings");
+  await page.locator(".advanced-fields summary").click();
+  await page.locator("#map-id").fill("operator-defined-id");
+  await page.locator("#map-name").fill("Operator Map");
+  if (await page.locator("#map-id").inputValue() !== "operator-defined-id") failures.push("editing the map name overwrote an advanced stable ID");
+  await page.locator("#map-id").fill("operator-map");
+  await page.locator(".advanced-fields summary").click();
+  await page.locator("#catalog-search").fill("");
+  await page.locator("#catalog-search").focus();
+  if (await page.locator('#catalog-results [role="group"][aria-label="Recent regions"] [data-region-id="us/florida"]').count() !== 1) failures.push("recently selected region was not easy to reach again");
 
   await page.locator("#map-source-type").selectOption("upload");
   if (!await page.locator("#upload-fields").isVisible() || await page.locator("#catalog-fields").isVisible()) failures.push("source chooser did not reveal only the upload workflow");
   await page.locator("#map-source-type").selectOption("url");
   await page.locator("#map-source-url").fill("https://example.test/unsafe.osm.pbf");
   await page.locator("#map-name").fill("Unsafe Source");
-  await page.locator("#map-id").fill("unsafe-source");
+  if (await page.locator("#map-id").inputValue() !== "unsafe-source") failures.push("map name did not generate the hidden stable ID");
   await page.locator("#map-create-form button[type=submit]").click();
   await page.waitForFunction(() => document.querySelector("#manager-status")?.textContent.includes("not allowed"));
 
-  const florida = page.locator(".map-row").filter({ hasText: "florida" }).first();
-  page.once("dialog", (dialog) => dialog.accept("Florida UI Test"));
-  await florida.locator(".rename").click();
-  await page.waitForFunction(() => [...document.querySelectorAll('#region-select option')].some((option) => option.value === "florida" && option.textContent === "Florida UI Test"));
-  page.once("dialog", (dialog) => dialog.accept("Florida"));
-  await page.locator(".map-row").filter({ hasText: "florida" }).first().locator(".rename").click();
-  await page.waitForFunction(() => [...document.querySelectorAll('#region-select option')].some((option) => option.value === "florida" && option.textContent === "Florida"));
+  const renameTarget = mapState.maps[0];
+  if (renameTarget) {
+    const changedName = `${renameTarget.name} UI Test`;
+    const row = page.locator(".map-row").filter({ hasText: renameTarget.id }).first();
+    page.once("dialog", (dialog) => dialog.accept(changedName));
+    await row.locator(".rename").click();
+    await page.waitForFunction(({ id, name }) => [...document.querySelectorAll('#region-select option')].some((option) => option.value === id && option.textContent === name), { id: renameTarget.id, name: changedName });
+    page.once("dialog", (dialog) => dialog.accept(renameTarget.name));
+    await page.locator(".map-row").filter({ hasText: renameTarget.id }).first().locator(".rename").click();
+    await page.waitForFunction(({ id, name }) => [...document.querySelectorAll('#region-select option')].some((option) => option.value === id && option.textContent === name), renameTarget);
 
-  const restored = page.locator(".map-row").filter({ hasText: "florida" }).first();
-  await restored.locator(".delete").click();
-  const deleteConfirmation = restored.locator(".delete-confirm");
-  if (!(await deleteConfirmation.getByText("Are you sure you want to delete Florida?").isVisible()) ||
-      await deleteConfirmation.locator("input").count() !== 0) {
-    failures.push("delete confirmation did not name the map without requiring typed input");
-  }
-  await deleteConfirmation.locator(".cancel-delete").click();
-  if (await deleteConfirmation.isVisible() ||
-      await page.locator(".map-row").filter({ hasText: "florida" }).count() !== 1) {
-    failures.push("canceling delete changed the map library or left confirmation open");
+    const restored = page.locator(".map-row").filter({ hasText: renameTarget.id }).first();
+    await restored.locator(".delete").click();
+    const deleteConfirmation = restored.locator(".delete-confirm");
+    if (!(await deleteConfirmation.getByText(`Are you sure you want to delete ${renameTarget.name}?`).isVisible()) ||
+        await deleteConfirmation.locator("input").count() !== 0) {
+      failures.push("delete confirmation did not name the map without requiring typed input");
+    }
+    await deleteConfirmation.locator(".cancel-delete").click();
+    if (await deleteConfirmation.isVisible() ||
+        await page.locator(".map-row").filter({ hasText: renameTarget.id }).count() !== 1) {
+      failures.push("canceling delete changed the map library or left confirmation open");
+    }
   }
 
   await page.screenshot({ path: new URL("map-manager.png", outputDirectory).pathname, fullPage: false });
@@ -75,7 +98,6 @@ try {
     await page.locator("#map-source-type").selectOption("upload");
     await page.locator("#map-upload").setInputFiles(smokePbf);
     await page.locator("#map-name").fill("CRUD Smoke");
-    await page.locator("#map-id").fill("crud-smoke");
     await page.locator("#map-create-form button[type=submit]").click();
     await page.waitForFunction(() => document.querySelector("#manager-status")?.textContent.includes("Map build queued"));
     await page.waitForFunction(async () => {
@@ -105,8 +127,11 @@ try {
   }
 } finally {
   const state = await fetch(`${baseUrl}/api/maps`).then((response) => response.json()).catch(() => ({ maps: [] }));
-  if (state.maps.some(({ id, name }) => id === "florida" && name !== "Florida")) {
-    await fetch(`${baseUrl}/api/maps/florida`, { method: "PATCH", body: JSON.stringify({ name: "Florida" }) });
+  for (const original of initialMaps) {
+    const current = state.maps.find(({ id }) => id === original.id);
+    if (current && current.name !== original.name) {
+      await fetch(`${baseUrl}/api/maps/${original.id}`, { method: "PATCH", body: JSON.stringify({ name: original.name }) });
+    }
   }
   if (state.maps.some(({ id }) => id === "crud-smoke")) {
     await fetch(`${baseUrl}/api/maps/crud-smoke?confirm=crud-smoke`, { method: "DELETE" });

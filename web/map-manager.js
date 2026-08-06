@@ -55,6 +55,35 @@ const groupCatalogRegions = (regions) => {
     .map(([label, items]) => ({ label, regions: items.sort((left, right) => left.name.localeCompare(right.name) || left.id.localeCompare(right.id)) }));
 };
 
+const catalogResultGroups = (regions, limit = 40) => {
+  const visibleRegions = regions.slice(0, Math.max(0, limit));
+  return {
+    groups: groupCatalogRegions(visibleRegions),
+    total: regions.length,
+    visible: visibleRegions.length,
+    truncated: regions.length > visibleRegions.length
+  };
+};
+
+const catalogShortcutRegions = (maps, recent) => {
+  const shortcuts = [];
+  const seen = new Set();
+  for (const map of maps) {
+    const catalogId = map.source?.catalogId;
+    if (!catalogId || seen.has(catalogId)) continue;
+    seen.add(catalogId);
+    shortcuts.push({ id: catalogId, name: map.name, group: "Installed maps", installed: true });
+  }
+  for (const item of recent) {
+    if (!item?.id || !item?.name || seen.has(item.id)) continue;
+    seen.add(item.id);
+    shortcuts.push({ id: item.id, name: item.name, group: "Recent regions" });
+  }
+  return shortcuts;
+};
+
+const moveCatalogFocus = (current, direction, count) => count === 0 ? -1 : (current + direction + count) % count;
+
 const jobPresentation = (job, now = Date.now()) => {
   const started = Date.parse(job.startedAt ?? job.createdAt);
   const ended = job.completedAt ? Date.parse(job.completedAt) : now;
@@ -97,12 +126,33 @@ export function setupMapManager({ onLibraryChanged = async () => {} } = {}) {
   const sourceType = document.querySelector("#map-source-type");
   const search = document.querySelector("#catalog-search");
   const region = document.querySelector("#catalog-region");
+  const results = document.querySelector("#catalog-results");
+  const summary = document.querySelector("#catalog-summary");
   const name = document.querySelector("#map-name");
   const id = document.querySelector("#map-id");
   let polling = null;
   let completedJobs = new Set();
   let renderedMaps = null;
   let renderedJobs = null;
+  let installedMaps = [];
+  let catalogOptions = [];
+  let focusedCatalogOption = -1;
+  let catalogRequest = 0;
+  let suggestedId = "";
+
+  const loadRecentRegions = () => {
+    try {
+      const value = JSON.parse(localStorage.getItem("map-room-recent-regions") ?? "[]");
+      return Array.isArray(value) ? value.slice(0, 5) : [];
+    } catch { return []; }
+  };
+
+  const rememberRegion = (item) => {
+    try {
+      const recent = [{ id: item.id, name: item.name, group: item.group }, ...loadRecentRegions().filter(({ id: recentId }) => recentId !== item.id)].slice(0, 5);
+      localStorage.setItem("map-room-recent-regions", JSON.stringify(recent));
+    } catch { /* Private browsing may disable storage. */ }
+  };
 
   const request = async (url, options) => {
     const response = await fetch(url, options);
@@ -170,6 +220,7 @@ export function setupMapManager({ onLibraryChanged = async () => {} } = {}) {
 
   const refresh = async () => {
     const { maps, jobs } = await request("/api/maps");
+    installedMaps = maps;
     const mapState = JSON.stringify(maps);
     const activeClock = jobs.some(({ status: jobStatus }) => jobStatus === "queued" || jobStatus === "running") ? Math.floor(Date.now() / 1000) : null;
     const jobState = JSON.stringify([jobs, activeClock]);
@@ -185,28 +236,95 @@ export function setupMapManager({ onLibraryChanged = async () => {} } = {}) {
     catch (error) { setStatus(error.message, true); }
   };
 
-  const searchCatalog = async () => {
-    const { regions } = await request(`/api/catalog?q=${encodeURIComponent(search.value)}`);
-    const groups = groupCatalogRegions(regions);
-    region.replaceChildren();
-    const prompt = document.createElement("option");
-    prompt.value = "";
-    prompt.textContent = regions.length ? "Choose a region" : "No matching regions";
-    region.append(prompt);
-    for (const group of groups) {
-      const options = document.createElement("optgroup");
-      options.label = group.label;
-      for (const item of group.regions) {
-        const option = document.createElement("option");
-        option.value = item.id;
-        option.textContent = `${item.name}${item.isoCode ? ` (${item.isoCode})` : ""}`;
-        option.dataset.name = item.name;
-        options.append(option);
-      }
-      region.append(options);
+  const closeCatalog = () => {
+    results.hidden = true;
+    search.setAttribute("aria-expanded", "false");
+    search.removeAttribute("aria-activedescendant");
+    focusedCatalogOption = -1;
+  };
+
+  const focusCatalogOption = (index) => {
+    focusedCatalogOption = index;
+    const options = [...results.querySelectorAll(".catalog-option")];
+    options.forEach((option, optionIndex) => {
+      const active = optionIndex === index;
+      option.classList.toggle("active", active);
+      option.setAttribute("aria-selected", String(active));
+    });
+    if (index < 0) search.removeAttribute("aria-activedescendant");
+    else {
+      search.setAttribute("aria-activedescendant", options[index].id);
+      options[index].scrollIntoView({ block: "nearest" });
     }
-    const summary = document.querySelector("#catalog-summary");
-    summary.textContent = regions.length === 0 ? "No regions match this search." : `${regions.length} ${regions.length === 1 ? "region" : "regions"} in ${groups.length} geographic ${groups.length === 1 ? "group" : "groups"}.`;
+  };
+
+  const chooseCatalogRegion = (item) => {
+    region.value = item.id;
+    search.value = item.name;
+    name.value = item.name;
+    suggestedId = slug(item.name);
+    id.value = suggestedId;
+    rememberRegion(item);
+    summary.textContent = `${item.name} selected · ${item.group || item.id}`;
+    closeCatalog();
+  };
+
+  const renderCatalogResults = (regions, { shortcuts = false } = {}) => {
+    const result = catalogResultGroups(regions);
+    catalogOptions = result.groups.flatMap(({ regions: items }) => items);
+    results.replaceChildren();
+    let optionIndex = 0;
+    for (const group of result.groups) {
+      const section = document.createElement("section");
+      section.className = "catalog-result-group";
+      section.setAttribute("role", "group");
+      section.setAttribute("aria-label", group.label);
+      const heading = document.createElement("p");
+      heading.className = "catalog-group-label";
+      heading.textContent = group.label;
+      section.append(heading);
+      for (const item of group.regions) {
+        const option = document.createElement("button");
+        option.id = `catalog-option-${optionIndex}`;
+        option.className = "catalog-option";
+        option.type = "button";
+        option.setAttribute("role", "option");
+        option.setAttribute("aria-selected", "false");
+        option.dataset.regionId = item.id;
+        option.innerHTML = `<strong>${escapeHtml(item.name)}</strong><span>${escapeHtml([item.isoCode, item.group, item.id].filter(Boolean).join(" · "))}</span>`;
+        option.addEventListener("pointerdown", (event) => event.preventDefault());
+        option.addEventListener("click", () => chooseCatalogRegion(item));
+        section.append(option);
+        optionIndex += 1;
+      }
+      results.append(section);
+    }
+    focusedCatalogOption = -1;
+    results.hidden = result.visible === 0;
+    search.setAttribute("aria-expanded", String(result.visible > 0));
+    if (shortcuts) summary.textContent = result.visible ? "Installed and recently selected regions." : "Type at least 2 characters to search every available region.";
+    else if (result.total === 0) summary.textContent = "No regions match this search.";
+    else if (result.truncated) summary.textContent = `Showing ${result.visible} of ${result.total} matches. Keep typing to narrow the results.`;
+    else summary.textContent = `${result.total} ${result.total === 1 ? "region" : "regions"} in ${result.groups.length} geographic ${result.groups.length === 1 ? "group" : "groups"}.`;
+  };
+
+  const showCatalogShortcuts = () => renderCatalogResults(catalogShortcutRegions(installedMaps, loadRecentRegions()), { shortcuts: true });
+
+  const searchCatalog = async () => {
+    const query = search.value.trim();
+    region.value = "";
+    if (query.length < 2) { showCatalogShortcuts(); return; }
+    const requestId = ++catalogRequest;
+    summary.textContent = "Searching regional catalog…";
+    try {
+      const { regions } = await request(`/api/catalog?q=${encodeURIComponent(query)}`);
+      if (requestId === catalogRequest) renderCatalogResults(regions);
+    } catch (error) {
+      if (requestId !== catalogRequest) return;
+      closeCatalog();
+      summary.textContent = "Regional catalog could not be loaded. Try again.";
+      setStatus(error.message, true);
+    }
   };
 
   const updateSourceFields = () => {
@@ -216,18 +334,35 @@ export function setupMapManager({ onLibraryChanged = async () => {} } = {}) {
       fields.hidden = !active;
       for (const control of fields.querySelectorAll("input, select")) control.disabled = !active;
     }
-    region.required = sourceType.value === "catalog";
     document.querySelector("#map-upload").required = sourceType.value === "upload";
     document.querySelector("#map-source-url").required = sourceType.value === "url";
   };
   sourceType.addEventListener("change", updateSourceFields);
   updateSourceFields();
-  search.addEventListener("input", () => { clearTimeout(search.timeout); search.timeout = setTimeout(() => action(searchCatalog, "Catalog updated"), 250); });
-  region.addEventListener("change", () => {
-    const option = region.selectedOptions[0];
-    if (!option?.value) return;
-    name.value = option.dataset.name;
-    id.value = slug(option.dataset.name);
+  search.addEventListener("focus", () => {
+    if (search.value.trim().length < 2) showCatalogShortcuts();
+  });
+  search.addEventListener("input", () => {
+    clearTimeout(search.timeout);
+    if (search.value.trim().length < 2) showCatalogShortcuts();
+    else search.timeout = setTimeout(searchCatalog, 250);
+  });
+  search.addEventListener("keydown", (event) => {
+    if (!["ArrowDown", "ArrowUp", "Enter", "Escape"].includes(event.key)) return;
+    if (event.key === "Escape") { closeCatalog(); return; }
+    if (event.key === "Enter") {
+      if (focusedCatalogOption >= 0) { event.preventDefault(); chooseCatalogRegion(catalogOptions[focusedCatalogOption]); }
+      return;
+    }
+    event.preventDefault();
+    if (results.hidden && search.value.trim().length < 2) showCatalogShortcuts();
+    focusCatalogOption(moveCatalogFocus(focusedCatalogOption, event.key === "ArrowDown" ? 1 : -1, catalogOptions.length));
+  });
+  search.addEventListener("blur", () => setTimeout(closeCatalog, 100));
+  name.addEventListener("input", () => {
+    const nextSuggestion = slug(name.value);
+    if (!id.value || id.value === suggestedId) id.value = nextSuggestion;
+    suggestedId = nextSuggestion;
   });
   document.querySelector("#map-create-form").addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -238,12 +373,13 @@ export function setupMapManager({ onLibraryChanged = async () => {} } = {}) {
         if (!file) throw new Error("Choose an .osm.pbf file");
         return request(`/api/maps/import?id=${encodeURIComponent(id.value)}&name=${encodeURIComponent(name.value)}`, { method: "POST", headers: { "content-type": "application/octet-stream" }, body: file });
       }
+      if (type === "catalog" && !region.value) throw new Error("Choose a map region from the search results");
       return request("/api/maps", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ sourceType: type, catalogId: region.value, url: document.querySelector("#map-source-url").value, id: id.value, name: name.value }) });
     }, "Map build queued");
   });
   document.querySelector("#manage-maps").addEventListener("click", async () => {
     dialog.showModal();
-    await action(async () => { await Promise.all([refresh(), searchCatalog()]); }, "Map library ready");
+    await action(async () => { await refresh(); showCatalogShortcuts(); }, "Map library ready");
     polling = setInterval(() => refresh().catch((error) => setStatus(error.message, true)), 2000);
   });
   const close = () => { clearInterval(polling); polling = null; dialog.close(); };
@@ -253,4 +389,4 @@ export function setupMapManager({ onLibraryChanged = async () => {} } = {}) {
   return { refresh, formatBytes, slug };
 }
 
-export { describeSource, escapeHtml, formatBytes, groupCatalogRegions, jobPhaseSteps, jobPresentation, retryAction, slug };
+export { catalogResultGroups, catalogShortcutRegions, describeSource, escapeHtml, formatBytes, groupCatalogRegions, jobPhaseSteps, jobPresentation, moveCatalogFocus, retryAction, slug };

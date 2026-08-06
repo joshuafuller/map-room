@@ -31,10 +31,8 @@ try {
   await page.locator("#map-manager").waitFor({ state: "visible" });
 
   await page.locator("#catalog-search").fill("Rhode Island");
-  await page.waitForFunction(() => [...document.querySelectorAll("#catalog-region option")].some(({ value }) => value === "us/rhode-island"));
-  await page.locator("#catalog-region").selectOption("us/rhode-island");
+  await page.locator('#catalog-results [role="option"][data-region-id="us/rhode-island"]').click();
   await page.locator("#map-name").fill("Catalog Smoke");
-  await page.locator("#map-id").fill("catalog-smoke");
   await page.locator("#map-create-form button[type=submit]").click();
   await page.waitForFunction(() => {
     const row = [...document.querySelectorAll(".job-row")].find((item) => item.textContent.includes("Catalog Smoke"));
@@ -44,7 +42,6 @@ try {
   await page.locator("#map-source-type").selectOption("url");
   await page.locator("#map-source-url").fill("https://download.geofabrik.de/north-america/us/rhode-island-latest.osm.pbf");
   await page.locator("#map-name").fill("HTTPS Smoke");
-  await page.locator("#map-id").fill("https-smoke");
   await page.locator("#map-create-form button[type=submit]").click();
   await page.locator(".job-row").filter({ hasText: "HTTPS Smoke" }).getByText("Waiting for another map").waitFor();
 

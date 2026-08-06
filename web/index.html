@@ -171,9 +171,13 @@
             </select>
           </label>
           <div id="catalog-fields" class="source-fields">
-            <label>Find a region<input id="catalog-search" type="search" placeholder="Florida, Germany, Japan…" autocomplete="off" /></label>
-            <label>Region<select id="catalog-region" name="catalogId" required><option value="">Loading regions…</option></select></label>
-            <p id="catalog-summary" class="catalog-summary" aria-live="polite">Loading regional catalog…</p>
+            <label for="catalog-search">Find a region</label>
+            <div class="catalog-combobox">
+              <input id="catalog-search" type="search" role="combobox" aria-autocomplete="list" aria-haspopup="listbox" aria-controls="catalog-results" aria-expanded="false" placeholder="Florida, US-FL, Germany…" autocomplete="off" />
+              <input id="catalog-region" name="catalogId" type="hidden" />
+              <div id="catalog-results" class="catalog-results" role="listbox" aria-label="Matching map regions" hidden></div>
+            </div>
+            <p id="catalog-summary" class="catalog-summary" aria-live="polite">Search by region, country, provider ID, or geographic group.</p>
           </div>
           <div id="upload-fields" class="source-fields" hidden>
             <label>OpenStreetMap PBF file<input id="map-upload" type="file" accept=".osm.pbf,application/octet-stream" /></label>
@@ -181,10 +185,11 @@
           <div id="url-fields" class="source-fields" hidden>
             <label>HTTPS source URL<input id="map-source-url" type="url" placeholder="Paste an approved .osm.pbf HTTPS URL" /></label>
           </div>
-          <div class="field-row">
-            <label>Map name<input id="map-name" name="name" maxlength="120" required /></label>
+          <label class="map-name-field">Map name<input id="map-name" name="name" maxlength="120" required /></label>
+          <details class="advanced-fields">
+            <summary>Advanced settings</summary>
             <label>Stable ID<input id="map-id" name="id" pattern="[a-z0-9]+(?:-[a-z0-9]+)*" placeholder="florida" required /></label>
-          </div>
+          </details>
           <p class="manager-help">Building may take several minutes and substantial temporary disk space. The current map remains live until the replacement succeeds.</p>
           <button class="action primary" type="submit">Build map</button>
         </form>
