@@ -95,3 +95,25 @@ test("uses Americana dynamic shields in every browser theme", async () => {
       `${theme} must not use Map Room's retired fixed shield sprites`);
   }
 });
+
+test("uses only Americana POI and place icons in every browser and raster theme", async () => {
+  await execute(process.execPath, ["styles/build-styles.mjs"]);
+  const americanaSprite = JSON.parse(await readFile("styles/daylight/sprite.json", "utf8"));
+  const americanaPng = await readFile("styles/daylight/sprite.png");
+  const legacyIcons = /"poi-(?:medical|fire|police|airport|port|food|lodging|attraction|shopping|parking)"/;
+
+  for (const theme of ["midnight", "dark-blue", "dark-red", "dark-green", "cyberpunk", "cyberpunk-tactical"]) {
+    const style = JSON.parse(await readFile(`styles/${theme}/style.json`, "utf8"));
+    const sprite = JSON.parse(await readFile(`styles/${theme}/sprite.json`, "utf8"));
+    const spritePng = await readFile(`styles/${theme}/sprite.png`);
+    const symbols = style.layers.filter(({ type }) => type === "symbol");
+    const serialized = JSON.stringify(symbols.map(({ layout }) => layout?.["icon-image"]));
+
+    assert.doesNotMatch(serialized, legacyIcons, `${theme} still references a retired Map Room POI`);
+    for (const id of ["poi_hospital", "poi_fire_station", "poi_police_shield", "poi_fuel", "poi_plane", "poi_restaurant", "poi_hotel", "poi_museum", "poi_supermarket", "poi_p", "place_star"]) {
+      assert.match(serialized, new RegExp(id), `${theme} is missing Americana's ${id}`);
+    }
+    assert.deepEqual(sprite, americanaSprite, `${theme} must publish only the Americana browser/raster atlas`);
+    assert.deepEqual(spritePng, americanaPng, `${theme} must publish the Americana browser/raster pixels`);
+  }
+});

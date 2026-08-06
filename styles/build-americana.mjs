@@ -102,6 +102,13 @@ export async function loadAmericanaShieldLayer({ id = "highway-shield" } = {}) {
   };
 }
 
+export async function copyAmericanaSpriteAtlas(outputDirectory) {
+  await mkdir(outputDirectory, { recursive: true });
+  for (const file of ["sprite.json", "sprite.png", "sprite@2x.json", "sprite@2x.png"]) {
+    await copyFile(join(upstreamDirectory, "sprites", file), join(outputDirectory, file));
+  }
+}
+
 export async function buildAmericanaDaylight() {
   const source = JSON.parse(await readFile(join(upstreamDirectory, "style.json"), "utf8"));
   const outputDirectory = join(here, "daylight");
@@ -140,9 +147,7 @@ export async function buildAmericanaDaylight() {
 
   await mkdir(outputDirectory, { recursive: true });
   await writeFile(join(outputDirectory, "style.json"), `${JSON.stringify(style)}\n`);
-  for (const file of ["sprite.json", "sprite.png", "sprite@2x.json", "sprite@2x.png"]) {
-    await copyFile(join(upstreamDirectory, "sprites", file), join(outputDirectory, file));
-  }
+  await copyAmericanaSpriteAtlas(outputDirectory);
   await copyFile(join(upstreamDirectory, "sprites", "sprite.json"), join(outputDirectory, "atak-sprite.json"));
   await copyFile(join(upstreamDirectory, "sprites", "sprite.png"), join(outputDirectory, "atak-sprite.png"));
 
@@ -156,7 +161,5 @@ export async function buildAmericanaDaylight() {
   rasterStyle.layers = rasterStyle.layers.map((layer) => layer.id === "highway-shield" ? rasterShieldLayer(layer) : layer);
   await mkdir(rasterDirectory, { recursive: true });
   await writeFile(join(rasterDirectory, "style.json"), `${JSON.stringify(rasterStyle)}\n`);
-  for (const file of ["sprite.json", "sprite.png", "sprite@2x.json", "sprite@2x.png"]) {
-    await copyFile(join(upstreamDirectory, "sprites", file), join(rasterDirectory, file));
-  }
+  await copyAmericanaSpriteAtlas(rasterDirectory);
 }

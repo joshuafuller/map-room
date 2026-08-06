@@ -1,4 +1,4 @@
-export const VECTOR_ASSET_VERSION = "americana-all-themes-v2";
+export const VECTOR_ASSET_VERSION = "americana-iconography-v3";
 
 const versionedResourceTypes = new Set(["Style", "SpriteImage", "SpriteJSON"]);
 
