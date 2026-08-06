@@ -163,19 +163,12 @@ test("builds local game-inspired shields and truthful POI categories", async () 
   assert.deepEqual(evaluateStyleExpression(textOffset, { route_1_network: "US:I", network: "us-interstate" }), [0, 0.18],
     "Interstate route numbers must sit below the red crown and white separator");
   assert.deepEqual(evaluateStyleExpression(textOffset, { route_1_network: "US:US", network: "us-highway" }), [0, 0]);
-  const standardRouteTextSize = [
-    "interpolate", ["linear"], ["zoom"],
-    6, ["step", routeLength, 13, 3, 12, 5, 11],
-    10, ["step", routeLength, 15, 3, 14, 5, 12.5],
-    14, ["step", routeLength, 17, 3, 15, 5, 13.5]];
-  const countyRouteTextSize = [
-    "interpolate", ["linear"], ["zoom"],
-    6, ["step", routeLength, 12, 3, 10, 4, 8],
-    10, ["step", routeLength, 14, 3, 11, 4, 9],
-    14, ["step", routeLength, 16, 3, 12, 4, 10]];
+  const routeKind = layers["road-shields"].layout["icon-image"][1];
   assert.deepEqual(layers["road-shields"].layout["text-size"], [
-    "match", layers["road-shields"].layout["icon-image"][1],
-    "county", countyRouteTextSize, standardRouteTextSize
+    "interpolate", ["linear"], ["zoom"],
+    6, ["match", routeKind, "county", ["step", routeLength, 12, 3, 10, 4, 8], ["step", routeLength, 13, 3, 12, 5, 11]],
+    10, ["match", routeKind, "county", ["step", routeLength, 14, 3, 11, 4, 9], ["step", routeLength, 15, 3, 14, 5, 12.5]],
+    14, ["match", routeKind, "county", ["step", routeLength, 16, 3, 12, 4, 10], ["step", routeLength, 17, 3, 15, 5, 13.5]]
   ]);
   assert.equal(evaluateStyleExpression(layers["road-shields"].layout["text-size"], {
     route_1_network: "US:FL:CR", route_1_ref: "184A", network: "road", $zoom: 10
