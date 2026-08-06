@@ -18,6 +18,27 @@ async function countPixels(image, predicate) {
   return count;
 }
 
+function evaluateStyleExpression(expression, properties) {
+  if (!Array.isArray(expression)) return expression;
+  const [operator, ...operands] = expression;
+  const evaluate = (value) => evaluateStyleExpression(value, properties);
+  if (operator === "get") return properties[operands[0]];
+  if (operator === "coalesce") return operands.map(evaluate).find((value) => value !== null && value !== undefined);
+  if (operator === "to-string") return String(evaluate(operands[0]));
+  if (operator === "length") return evaluate(operands[0]).length;
+  if (operator === ">=") return evaluate(operands[0]) >= evaluate(operands[1]);
+  if (operator === "case") return evaluate(operands[0]) ? evaluate(operands[1]) : evaluate(operands[2]);
+  if (operator === "match") {
+    const input = evaluate(operands[0]);
+    for (let index = 1; index < operands.length - 1; index += 2) {
+      const labels = Array.isArray(operands[index]) ? operands[index] : [operands[index]];
+      if (labels.includes(input)) return evaluate(operands[index + 1]);
+    }
+    return evaluate(operands.at(-1));
+  }
+  throw new Error(`Unsupported test expression: ${operator}`);
+}
+
 test("renders unmistakable high-contrast browser road shields", async () => {
   await execute(process.execPath, ["styles/build-styles.mjs"]);
   const style = JSON.parse(await readFile("styles/daylight/style.json", "utf8"));
@@ -63,9 +84,23 @@ test("builds local game-inspired shields and truthful POI categories", async () 
     "interpolate", ["linear"], ["zoom"], 6, 1, 9, 1.08, 13, 1.2
   ]);
   assert.equal(layers["road-shields"].layout["symbol-spacing"], 340);
-  assert.equal(layers["road-shields"].layout["icon-text-fit"], "both");
-  assert.deepEqual(layers["road-shields"].layout["icon-text-fit-padding"], [3, 3, 3, 3]);
+  assert.equal(layers["road-shields"].layout["icon-text-fit"], undefined,
+    "browser shields must never warp their standard silhouette around the route number");
+  assert.equal(layers["road-shields"].layout["icon-text-fit-padding"], undefined);
   const routeLength = ["length", ["to-string", ["coalesce", ["get", "route_1_ref"], ["get", "ref"], ""]]];
+  const iconImage = JSON.stringify(layers["road-shields"].layout["icon-image"]);
+  for (const id of ["shield-interstate-wide", "shield-us-wide", "shield-state-wide"]) {
+    assert.match(iconImage, new RegExp(id), `${id} must be selected for three-digit references`);
+  }
+  assert.match(iconImage, /route_1_ref/, "shield proportions must be selected from the normalized route reference");
+  const selectShield = (route_1_network, route_1_ref) => evaluateStyleExpression(
+    layers["road-shields"].layout["icon-image"], { route_1_network, route_1_ref });
+  assert.equal(selectShield("US:I", "10"), "shield-interstate");
+  assert.equal(selectShield("US:I", "35E"), "shield-interstate-wide",
+    "alphanumeric Interstate references such as I-35E must use the fixed wide marker");
+  assert.equal(selectShield("us-interstate", "110"), "shield-interstate-wide");
+  assert.equal(selectShield("US:US", "98"), "shield-us");
+  assert.equal(selectShield("US:US", "290"), "shield-us-wide");
   assert.deepEqual(layers["road-shields"].layout["text-size"], [
     "interpolate", ["linear"], ["zoom"],
     6, ["step", routeLength, 13, 3, 12, 5, 11],
@@ -106,7 +141,8 @@ test("builds local game-inspired shields and truthful POI categories", async () 
   assert.match(JSON.stringify(layers["poi-explore"]), /lodging/);
 
   const requiredSprites = [
-    "shield-interstate", "shield-us", "shield-state", "shield-county",
+    "shield-interstate", "shield-interstate-wide", "shield-us", "shield-us-wide",
+    "shield-state", "shield-state-wide", "shield-county",
     "poi-medical", "poi-fire", "poi-police", "poi-fuel", "poi-airport", "poi-port",
     "poi-food", "poi-lodging", "poi-attraction", "poi-shopping", "poi-parking"
   ];
@@ -127,8 +163,15 @@ test("builds local game-inspired shields and truthful POI categories", async () 
   assert.equal(sprite["poi-fuel"].height, 128);
   assert.equal(sprite["poi-fuel"].pixelRatio, 4);
   for (const shieldId of ["shield-interstate", "shield-us", "shield-state", "shield-county"]) {
-    assert.ok(Array.isArray(sprite[shieldId].content), `${shieldId} must publish a browser text-content box`);
-    assert.ok(Array.isArray(sprite[shieldId].stretchX), `${shieldId} must publish a browser horizontal stretch region`);
+    assert.equal(sprite[shieldId].width, sprite[shieldId].height, `${shieldId} must use a fixed square marker`);
+    assert.equal(sprite[shieldId].content, undefined, `${shieldId} must not publish an elastic browser text-content box`);
+    assert.equal(sprite[shieldId].stretchX, undefined, `${shieldId} must not publish a browser stretch region`);
+  }
+  for (const shieldId of ["shield-interstate-wide", "shield-us-wide", "shield-state-wide"]) {
+    assert.equal(sprite[shieldId].width / sprite[shieldId].height, 30 / 24,
+      `${shieldId} must use the MUTCD three-digit 30:24 proportion`);
+    assert.equal(sprite[shieldId].content, undefined);
+    assert.equal(sprite[shieldId].stretchX, undefined);
   }
   const shieldAlphaDigests = new Set();
   for (let index = 0; index < 4; index += 1) {
@@ -139,6 +182,8 @@ test("builds local game-inspired shields and truthful POI categories", async () 
   assert.equal(atakSprite["shield-interstate"].width, 32);
   assert.equal(atakSprite["shield-interstate"].height, 32);
   assert.equal(atakSprite["shield-interstate"].pixelRatio, 1);
+  assert.equal(atakSprite["shield-interstate-wide"], undefined,
+    "browser-only fixed variants must not change ATAK sprite compatibility");
   const shieldContent = new Set();
   for (const id of ["shield-interstate", "shield-us", "shield-state", "shield-county"]) {
     assert.equal(atakSprite[id].pixelRatio, 1);

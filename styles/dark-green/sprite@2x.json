@@ -1,79 +1,31 @@
 {
   "shield-interstate": {
-    "width": 128,
-    "height": 128,
-    "x": 0,
-    "y": 0,
-    "pixelRatio": 4,
-    "content": [
-      12,
-      28,
-      116,
-      100
-    ],
-    "stretchX": [
-      [
-        56,
-        72
-      ]
-    ]
+    "width": 96,
+    "height": 96,
+    "x": 16,
+    "y": 16,
+    "pixelRatio": 3
   },
   "shield-us": {
-    "width": 128,
-    "height": 128,
-    "x": 128,
-    "y": 0,
-    "pixelRatio": 4,
-    "content": [
-      16,
-      24,
-      112,
-      100
-    ],
-    "stretchX": [
-      [
-        56,
-        72
-      ]
-    ]
+    "width": 96,
+    "height": 96,
+    "x": 144,
+    "y": 16,
+    "pixelRatio": 3
   },
   "shield-state": {
-    "width": 128,
-    "height": 128,
-    "x": 256,
-    "y": 0,
-    "pixelRatio": 4,
-    "content": [
-      12,
-      28,
-      116,
-      104
-    ],
-    "stretchX": [
-      [
-        56,
-        72
-      ]
-    ]
+    "width": 96,
+    "height": 96,
+    "x": 272,
+    "y": 16,
+    "pixelRatio": 3
   },
   "shield-county": {
-    "width": 128,
-    "height": 128,
-    "x": 384,
-    "y": 0,
-    "pixelRatio": 4,
-    "content": [
-      12,
-      32,
-      116,
-      100
-    ],
-    "stretchX": [
-      [
-        56,
-        72
-      ]
-    ]
+    "width": 96,
+    "height": 96,
+    "x": 400,
+    "y": 16,
+    "pixelRatio": 3
   },
   "poi-medical": {
     "width": 128,
@@ -151,5 +103,26 @@
     "x": 256,
     "y": 384,
     "pixelRatio": 4
+  },
+  "shield-interstate-wide": {
+    "width": 120,
+    "height": 96,
+    "x": 388,
+    "y": 400,
+    "pixelRatio": 3
+  },
+  "shield-us-wide": {
+    "width": 120,
+    "height": 96,
+    "x": 4,
+    "y": 528,
+    "pixelRatio": 3
+  },
+  "shield-state-wide": {
+    "width": 120,
+    "height": 96,
+    "x": 132,
+    "y": 528,
+    "pixelRatio": 3
   }
 }
