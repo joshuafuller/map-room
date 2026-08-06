@@ -198,6 +198,7 @@ test("compiles the complete authored Cyberpunk theme without unsupported express
     sourceStyle: completeStyle
   });
   const ids = new Set(style.layers.map(({ id }) => id));
+  assert.equal(style.sprite, "http://maps.example.test:8088/styles/cyberpunk/atak-sprite");
   assert.equal([...ids].some((id) => id.endsWith("-hud")), false);
 
   for (const required of [
@@ -207,6 +208,20 @@ test("compiles the complete authored Cyberpunk theme without unsupported express
     "poi-essential-medical", "poi-essential-fire", "poi-essential-police", "poi-essential-fuel", "poi-essential-port",
     "poi-explore-food", "poi-explore-lodging", "poi-explore-attraction", "poi-explore-shopping", "poi-parking-lot"
   ]) assert.equal(ids.has(required), true, `missing ${required}`);
+
+  const shieldExpectations = {
+    "road-shields-interstate": 17,
+    "road-shields-us": 16,
+    "road-shields-state": 16,
+    "road-shields-county": 14.5
+  };
+  for (const [id, textSize] of Object.entries(shieldExpectations)) {
+    const shield = style.layers.find((layer) => layer.id === id);
+    assert.equal(shield.layout["text-size"], textSize, `${id} must keep route references legible in ATAK`);
+    assert.equal(shield.layout["icon-size"], 1, `${id} must use the ATAK-normalized 32 px shield atlas`);
+    assert.equal(shield.layout["text-font"][0], "Open Sans Semibold");
+    assert.ok(shield.paint["text-halo-width"] <= 1, `${id} halo must not consume the route reference`);
+  }
 
   assert.equal(style.layers.find(({ id }) => id === "poi-airports")["source-layer"], "aerodrome_label");
   const buildings3d = style.layers.find(({ id }) => id === "buildings-3d");
