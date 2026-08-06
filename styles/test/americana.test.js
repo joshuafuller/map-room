@@ -58,6 +58,11 @@ test("replaces Daylight with the credited, self-hosted upstream Americana style"
   assert.match(JSON.stringify(rasterShields.layout["icon-image"]), /shield_us_interstate_2/);
   assert.match(JSON.stringify(rasterShields.layout["icon-image"]), /shield_badge_3/);
   assert.match(JSON.stringify(rasterShields.layout["text-field"]), /route_1_ref/);
+  const poiFilter = JSON.stringify(layers.poi.filter);
+  assert.match(poiFilter, /"bus_stop"\],17/,
+    "dense transit stops must wait until explore zooms");
+  assert.match(poiFilter, /"parking"\],18/,
+    "parking must wait until the highest detail zooms");
 
   assert.doesNotMatch(html, /data-theme="americana"/);
   assert.match(html, /data-theme="daylight"[\s\S]*OpenStreetMap Americana · CC0/);
@@ -70,5 +75,5 @@ test("replaces Daylight with the credited, self-hosted upstream Americana style"
   const xml = buildAtakXml({ theme: "daylight", baseUrl: "http://maps.example.test:8088" });
   assert.match(xml, /<name>Map Room - Daylight<\/name>/);
   assert.match(xml, /<backgroundColor>#f4f1ea<\/backgroundColor>/);
-  assert.match(xml, /\/styles\/all-daylight\/\{\$z\}\/\{\$x\}\/\{\$y\}@2x\.png/);
+  assert.match(xml, /\/styles\/all-daylight-raster\/\{\$z\}\/\{\$x\}\/\{\$y\}@2x\.png/);
 });
