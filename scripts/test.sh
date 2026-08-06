@@ -74,6 +74,9 @@ for theme in $themes; do
 	check_status "/styles/$theme/sprite.png" image/png
 	check_status "/styles/$theme/sprite@2x.json" application/json
 	check_status "/styles/$theme/sprite@2x.png" image/png
+	check_status "/styles/$theme/atak-sprite.json" application/json
+	check_status "/styles/$theme/atak-sprite.png" image/png
+	check_png_dimensions "/styles/$theme/atak-sprite.png" 128x128
 done
 for theme in $themes; do
 	check_status "/styles/$theme/$tile.png" image/png

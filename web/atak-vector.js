@@ -132,20 +132,22 @@ function expandPoiLayer(layer) {
 
 function expandRoadShields(layer) {
   const groups = [
-    { id: "interstate", networks: ["US:I", "us-interstate"], icon: "shield-interstate" },
-    { id: "us", networks: ["US:US", "us-highway"], icon: "shield-us" },
-    { id: "state", networks: ["US:FL", "us-state"], icon: "shield-state" },
-    { id: "county", networks: ["US:FL:CR"], icon: "shield-county" }
+    { id: "interstate", networks: ["US:I", "us-interstate"], icon: "shield-interstate", textSize: 17 },
+    { id: "us", networks: ["US:US", "us-highway"], icon: "shield-us", textSize: 16 },
+    { id: "state", networks: ["US:FL", "us-state"], icon: "shield-state", textSize: 16 },
+    { id: "county", networks: ["US:FL:CR"], icon: "shield-county", textSize: 14.5 }
   ];
   return groups.map((group) => {
     const shield = structuredClone(layer);
     shield.id = `${layer.id}-${group.id}`;
     shield.filter = ["any", ["in", "network", ...group.networks], ["in", "route_1_network", ...group.networks]];
     shield.layout["icon-image"] = group.icon;
+    shield.layout["icon-size"] = 1;
     shield.layout["text-field"] = "{ref}";
+    shield.layout["text-size"] = group.textSize;
     shield.paint["text-color"] = group.id === "us" ? "#080912" : "#f4f7ff";
     shield.paint["text-halo-color"] = group.id === "us" ? "#f4f7ff" : "#060711";
-    shield.paint["text-halo-width"] = group.id === "us" ? 0.65 : 1.8;
+    shield.paint["text-halo-width"] = group.id === "us" ? 0.4 : 0.8;
     return legacyLayer(shield);
   });
 }
@@ -201,7 +203,7 @@ export function buildAtakVectorStyle({ theme, baseUrl, sourceId = "florida", sou
   }
   const layerSuffix = `--${authoredSource}`;
   style.name = `Map Room - ${themeName} - ATAK Vector`;
-  style.sprite = `${base}/styles/${theme}/sprite`;
+  style.sprite = `${base}/styles/${theme}/atak-sprite`;
   style.glyphs = `${base}/fonts/{fontstack}/{range}.pbf`;
   style.sources = { osm: { type: "vector", url: `${base}/data/${sourceId}.json` } };
   style.layers = style.layers

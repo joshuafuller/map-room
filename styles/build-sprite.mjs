@@ -9,6 +9,7 @@ const iconDirectory = join(here, "..", "node_modules", "lucide-static", "icons")
 const size = 128;
 const pixelRatio = 4;
 const columns = 4;
+const atakScale = 4;
 
 async function writeFileAtomic(path, data) {
   const temporaryPath = `${path}.${process.pid}.${randomUUID()}.tmp`;
@@ -81,10 +82,23 @@ export async function buildSpriteAtlas(outputDirectory, palette) {
     .composite(composites)
     .png()
     .toBuffer();
+  const atakMetadata = Object.fromEntries(Object.entries(metadata).map(([id, symbol]) => [id, {
+    width: symbol.width / atakScale,
+    height: symbol.height / atakScale,
+    x: symbol.x / atakScale,
+    y: symbol.y / atakScale,
+    pixelRatio: 1
+  }]));
+  const atakAtlas = await sharp(atlas)
+    .resize(width / atakScale, height / atakScale)
+    .png()
+    .toBuffer();
   const metadataJson = `${JSON.stringify(metadata, null, 2)}\n`;
   await writeFileAtomic(join(outputDirectory, "sprite.json"), metadataJson);
   await writeFileAtomic(join(outputDirectory, "sprite@2x.json"), metadataJson);
   await writeFileAtomic(join(outputDirectory, "sprite-design.json"), `${JSON.stringify(designs, null, 2)}\n`);
   await writeFileAtomic(join(outputDirectory, "sprite.png"), atlas);
   await writeFileAtomic(join(outputDirectory, "sprite@2x.png"), atlas);
+  await writeFileAtomic(join(outputDirectory, "atak-sprite.json"), `${JSON.stringify(atakMetadata, null, 2)}\n`);
+  await writeFileAtomic(join(outputDirectory, "atak-sprite.png"), atakAtlas);
 }

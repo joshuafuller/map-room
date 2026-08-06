@@ -243,7 +243,7 @@ if (downloadedVectorStyle.suggestedFilename() !== "map-room-cyberpunk-tactical-a
     vectorStyle.name !== "Map Room - Cyberpunk Tactical - ATAK Vector" ||
     Object.keys(vectorStyle.sources).length !== 1 ||
     vectorStyle.sources.osm.url !== `${baseUrl}/data/${vectorTestRegion.id}.json` ||
-    vectorStyle.sprite !== `${baseUrl}/styles/cyberpunk-tactical/sprite` ||
+    vectorStyle.sprite !== `${baseUrl}/styles/cyberpunk-tactical/atak-sprite` ||
     vectorStyle.glyphs !== `${baseUrl}/fonts/{fontstack}/{range}.pbf` ||
     vectorStyle.layers.length < 50 ||
     !vectorStyle.layers.some((layer) => layer.id === "roads-motorway") ||
