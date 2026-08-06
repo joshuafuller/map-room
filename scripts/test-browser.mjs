@@ -47,13 +47,15 @@ const shieldAssets = await page.evaluate(async () => {
     fetch(`${style.sprite}.png`)
   ]);
   return {
+    spriteUrl: style.sprite,
     hasShieldLayer: style.layers.some(({ id }) => id.startsWith("road-shields--")),
     spriteJsonStatus: spriteJson.status,
     spritePngStatus: spritePng.status,
     hasInterstateShield: spriteJson.ok && Boolean((await spriteJson.json())["shield-interstate"])
   };
 });
-if (!shieldAssets.hasShieldLayer || !shieldAssets.hasInterstateShield ||
+if (!shieldAssets.spriteUrl.endsWith("/browser-sprite-v2") ||
+    !shieldAssets.hasShieldLayer || !shieldAssets.hasInterstateShield ||
     shieldAssets.spriteJsonStatus !== 200 || shieldAssets.spritePngStatus !== 200) {
   failures.push(`road shields were unavailable (${JSON.stringify(shieldAssets)})`);
 }

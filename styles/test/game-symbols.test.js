@@ -48,6 +48,7 @@ test("builds local game-inspired shields and truthful POI categories", async () 
   const sprite = JSON.parse(await readFile("styles/cyberpunk-tactical/sprite.json", "utf8"));
   const designs = JSON.parse(await readFile("styles/cyberpunk-tactical/sprite-design.json", "utf8"));
   const png = await readFile("styles/cyberpunk-tactical/sprite.png");
+  const versionedPng = await readFile("styles/cyberpunk-tactical/browser-sprite-v2.png");
   const retinaSprite = JSON.parse(await readFile("styles/cyberpunk-tactical/sprite@2x.json", "utf8"));
   const retinaPng = await readFile("styles/cyberpunk-tactical/sprite@2x.png");
   const atakSprite = JSON.parse(await readFile("styles/cyberpunk-tactical/atak-sprite.json", "utf8"));
@@ -56,7 +57,8 @@ test("builds local game-inspired shields and truthful POI categories", async () 
   const packageJson = JSON.parse(await readFile("package.json", "utf8"));
   const notices = await readFile("THIRD_PARTY_NOTICES.md", "utf8");
 
-  assert.equal(style.sprite, "{styleJsonFolder}/sprite");
+  assert.equal(style.sprite, "{styleJsonFolder}/browser-sprite-v2");
+  assert.deepEqual(versionedPng, png, "the versioned browser atlas must match the compatibility asset");
   const layers = Object.fromEntries(style.layers.map((layer) => [layer.id, layer]));
   assert.equal(layers["road-shields"].type, "symbol");
   assert.deepEqual(layers["road-shields"].layout["icon-size"], [
@@ -174,7 +176,7 @@ test("builds the same information contract with distinct sprites for every theme
     const atakPng = await readFile(`styles/${id}/atak-sprite.png`);
     const retinaPng = await readFile(`styles/${id}/sprite@2x.png`);
 
-    assert.equal(style.sprite, "{styleJsonFolder}/sprite");
+    assert.equal(style.sprite, "{styleJsonFolder}/browser-sprite-v2");
     assert.equal(atakSprite["shield-interstate"].pixelRatio, 1, `${id} must publish ATAK-normalized shields`);
     assert.equal(atakPng.readUInt32BE(16), 128, `${id} must publish a 128 px ATAK atlas`);
     for (const layerId of ["road-shields", "poi-essential", "poi-explore", "poi-parking", "poi-airports", "airports", "runways", "taxiways"]) {
