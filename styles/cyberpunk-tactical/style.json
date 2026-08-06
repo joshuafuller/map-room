@@ -1154,131 +1154,131 @@
           "Open Sans Semibold"
         ],
         "text-size": [
-          "match",
+          "interpolate",
           [
-            "case",
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          6,
+          [
+            "match",
             [
-              "any",
+              "case",
               [
-                "==",
+                "any",
                 [
-                  "coalesce",
-                  [
-                    "get",
-                    "network"
-                  ],
-                  ""
-                ],
-                "us-interstate"
-              ],
-              [
-                "==",
-                [
-                  "slice",
+                  "==",
                   [
                     "coalesce",
-                    [
-                      "get",
-                      "route_1_network"
-                    ],
                     [
                       "get",
                       "network"
                     ],
                     ""
                   ],
-                  0,
-                  4
+                  "us-interstate"
                 ],
-                "US:I"
-              ]
-            ],
-            "interstate",
-            [
-              "any",
-              [
-                "==",
                 [
-                  "coalesce",
+                  "==",
                   [
-                    "get",
-                    "network"
+                    "slice",
+                    [
+                      "coalesce",
+                      [
+                        "get",
+                        "route_1_network"
+                      ],
+                      [
+                        "get",
+                        "network"
+                      ],
+                      ""
+                    ],
+                    0,
+                    4
                   ],
-                  ""
-                ],
-                "us-highway"
+                  "US:I"
+                ]
               ],
+              "interstate",
               [
-                "==",
+                "any",
                 [
-                  "slice",
+                  "==",
                   [
                     "coalesce",
-                    [
-                      "get",
-                      "route_1_network"
-                    ],
                     [
                       "get",
                       "network"
                     ],
                     ""
                   ],
-                  0,
-                  5
+                  "us-highway"
                 ],
-                "US:US"
-              ]
-            ],
-            "us",
-            [
-              "any",
-              [
-                "==",
                 [
-                  "coalesce",
+                  "==",
                   [
-                    "get",
-                    "network"
+                    "slice",
+                    [
+                      "coalesce",
+                      [
+                        "get",
+                        "route_1_network"
+                      ],
+                      [
+                        "get",
+                        "network"
+                      ],
+                      ""
+                    ],
+                    0,
+                    5
                   ],
-                  ""
-                ],
-                "us-county"
+                  "US:US"
+                ]
               ],
+              "us",
               [
-                ">=",
+                "any",
                 [
-                  "index-of",
-                  ":CR",
+                  "==",
                   [
                     "coalesce",
-                    [
-                      "get",
-                      "route_1_network"
-                    ],
                     [
                       "get",
                       "network"
                     ],
                     ""
-                  ]
+                  ],
+                  "us-county"
                 ],
-                0
-              ]
+                [
+                  ">=",
+                  [
+                    "index-of",
+                    ":CR",
+                    [
+                      "coalesce",
+                      [
+                        "get",
+                        "route_1_network"
+                      ],
+                      [
+                        "get",
+                        "network"
+                      ],
+                      ""
+                    ]
+                  ],
+                  0
+                ]
+              ],
+              "county",
+              "state"
             ],
             "county",
-            "state"
-          ],
-          "county",
-          [
-            "interpolate",
-            [
-              "linear"
-            ],
-            [
-              "zoom"
-            ],
-            6,
             [
               "step",
               [
@@ -1305,7 +1305,151 @@
               4,
               8
             ],
-            10,
+            [
+              "step",
+              [
+                "length",
+                [
+                  "to-string",
+                  [
+                    "coalesce",
+                    [
+                      "get",
+                      "route_1_ref"
+                    ],
+                    [
+                      "get",
+                      "ref"
+                    ],
+                    ""
+                  ]
+                ]
+              ],
+              13,
+              3,
+              12,
+              5,
+              11
+            ]
+          ],
+          10,
+          [
+            "match",
+            [
+              "case",
+              [
+                "any",
+                [
+                  "==",
+                  [
+                    "coalesce",
+                    [
+                      "get",
+                      "network"
+                    ],
+                    ""
+                  ],
+                  "us-interstate"
+                ],
+                [
+                  "==",
+                  [
+                    "slice",
+                    [
+                      "coalesce",
+                      [
+                        "get",
+                        "route_1_network"
+                      ],
+                      [
+                        "get",
+                        "network"
+                      ],
+                      ""
+                    ],
+                    0,
+                    4
+                  ],
+                  "US:I"
+                ]
+              ],
+              "interstate",
+              [
+                "any",
+                [
+                  "==",
+                  [
+                    "coalesce",
+                    [
+                      "get",
+                      "network"
+                    ],
+                    ""
+                  ],
+                  "us-highway"
+                ],
+                [
+                  "==",
+                  [
+                    "slice",
+                    [
+                      "coalesce",
+                      [
+                        "get",
+                        "route_1_network"
+                      ],
+                      [
+                        "get",
+                        "network"
+                      ],
+                      ""
+                    ],
+                    0,
+                    5
+                  ],
+                  "US:US"
+                ]
+              ],
+              "us",
+              [
+                "any",
+                [
+                  "==",
+                  [
+                    "coalesce",
+                    [
+                      "get",
+                      "network"
+                    ],
+                    ""
+                  ],
+                  "us-county"
+                ],
+                [
+                  ">=",
+                  [
+                    "index-of",
+                    ":CR",
+                    [
+                      "coalesce",
+                      [
+                        "get",
+                        "route_1_network"
+                      ],
+                      [
+                        "get",
+                        "network"
+                      ],
+                      ""
+                    ]
+                  ],
+                  0
+                ]
+              ],
+              "county",
+              "state"
+            ],
+            "county",
             [
               "step",
               [
@@ -1332,70 +1476,6 @@
               4,
               9
             ],
-            14,
-            [
-              "step",
-              [
-                "length",
-                [
-                  "to-string",
-                  [
-                    "coalesce",
-                    [
-                      "get",
-                      "route_1_ref"
-                    ],
-                    [
-                      "get",
-                      "ref"
-                    ],
-                    ""
-                  ]
-                ]
-              ],
-              16,
-              3,
-              12,
-              4,
-              10
-            ]
-          ],
-          [
-            "interpolate",
-            [
-              "linear"
-            ],
-            [
-              "zoom"
-            ],
-            6,
-            [
-              "step",
-              [
-                "length",
-                [
-                  "to-string",
-                  [
-                    "coalesce",
-                    [
-                      "get",
-                      "route_1_ref"
-                    ],
-                    [
-                      "get",
-                      "ref"
-                    ],
-                    ""
-                  ]
-                ]
-              ],
-              13,
-              3,
-              12,
-              5,
-              11
-            ],
-            10,
             [
               "step",
               [
@@ -1421,8 +1501,152 @@
               14,
               5,
               12.5
+            ]
+          ],
+          14,
+          [
+            "match",
+            [
+              "case",
+              [
+                "any",
+                [
+                  "==",
+                  [
+                    "coalesce",
+                    [
+                      "get",
+                      "network"
+                    ],
+                    ""
+                  ],
+                  "us-interstate"
+                ],
+                [
+                  "==",
+                  [
+                    "slice",
+                    [
+                      "coalesce",
+                      [
+                        "get",
+                        "route_1_network"
+                      ],
+                      [
+                        "get",
+                        "network"
+                      ],
+                      ""
+                    ],
+                    0,
+                    4
+                  ],
+                  "US:I"
+                ]
+              ],
+              "interstate",
+              [
+                "any",
+                [
+                  "==",
+                  [
+                    "coalesce",
+                    [
+                      "get",
+                      "network"
+                    ],
+                    ""
+                  ],
+                  "us-highway"
+                ],
+                [
+                  "==",
+                  [
+                    "slice",
+                    [
+                      "coalesce",
+                      [
+                        "get",
+                        "route_1_network"
+                      ],
+                      [
+                        "get",
+                        "network"
+                      ],
+                      ""
+                    ],
+                    0,
+                    5
+                  ],
+                  "US:US"
+                ]
+              ],
+              "us",
+              [
+                "any",
+                [
+                  "==",
+                  [
+                    "coalesce",
+                    [
+                      "get",
+                      "network"
+                    ],
+                    ""
+                  ],
+                  "us-county"
+                ],
+                [
+                  ">=",
+                  [
+                    "index-of",
+                    ":CR",
+                    [
+                      "coalesce",
+                      [
+                        "get",
+                        "route_1_network"
+                      ],
+                      [
+                        "get",
+                        "network"
+                      ],
+                      ""
+                    ]
+                  ],
+                  0
+                ]
+              ],
+              "county",
+              "state"
             ],
-            14,
+            "county",
+            [
+              "step",
+              [
+                "length",
+                [
+                  "to-string",
+                  [
+                    "coalesce",
+                    [
+                      "get",
+                      "route_1_ref"
+                    ],
+                    [
+                      "get",
+                      "ref"
+                    ],
+                    ""
+                  ]
+                ]
+              ],
+              16,
+              3,
+              12,
+              4,
+              10
+            ],
             [
               "step",
               [

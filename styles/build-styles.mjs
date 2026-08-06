@@ -279,14 +279,16 @@ function makeStyle(id, theme) {
     ["any", ["==", routeClass, "us-highway"], ["==", ["slice", routeNetwork, 0, 5], "US:US"]], "us",
     ["any", ["==", routeClass, "us-county"], [">=", ["index-of", ":CR", routeNetwork], 0]], "county",
     "state"];
-  const standardRouteTextSize = ["interpolate", ["linear"], ["zoom"],
-    6, ["step", routeLength, 13, 3, 12, 5, 11],
-    10, ["step", routeLength, 15, 3, 14, 5, 12.5],
-    14, ["step", routeLength, 17, 3, 15, 5, 13.5]];
-  const countyRouteTextSize = ["interpolate", ["linear"], ["zoom"],
-    6, ["step", routeLength, 12, 3, 10, 4, 8],
-    10, ["step", routeLength, 14, 3, 11, 4, 9],
-    14, ["step", routeLength, 16, 3, 12, 4, 10]];
+  const standardRouteTextSize = {
+    6: ["step", routeLength, 13, 3, 12, 5, 11],
+    10: ["step", routeLength, 15, 3, 14, 5, 12.5],
+    14: ["step", routeLength, 17, 3, 15, 5, 13.5]
+  };
+  const countyRouteTextSize = {
+    6: ["step", routeLength, 12, 3, 10, 4, 8],
+    10: ["step", routeLength, 14, 3, 11, 4, 9],
+    14: ["step", routeLength, 16, 3, 12, 4, 10]
+  };
 
   const selectedRoadWidth = theme.tactical ? tacticalRoadWidth : roadWidth;
   const selectedRoadCasingWidth = theme.tactical ? tacticalRoadCasingWidth : roadCasingWidth;
@@ -386,7 +388,10 @@ function makeStyle(id, theme) {
           "icon-rotation-alignment": "viewport",
           "text-field": ["coalesce", ["get", "route_1_ref"], ["get", "ref"]],
           "text-font": ["Open Sans Semibold"],
-          "text-size": ["match", routeKind, "county", countyRouteTextSize, standardRouteTextSize],
+          "text-size": ["interpolate", ["linear"], ["zoom"],
+            6, ["match", routeKind, "county", countyRouteTextSize[6], standardRouteTextSize[6]],
+            10, ["match", routeKind, "county", countyRouteTextSize[10], standardRouteTextSize[10]],
+            14, ["match", routeKind, "county", countyRouteTextSize[14], standardRouteTextSize[14]]],
           "text-offset": ["match", routeKind, "interstate", ["literal", [0, 0.18]], ["literal", [0, 0]]],
           "text-rotation-alignment": "viewport", "text-allow-overlap": false
         },
