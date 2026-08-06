@@ -13,6 +13,7 @@ test("replaces Daylight with the credited, self-hosted upstream Americana style"
   await execute(process.execPath, ["styles/build-styles.mjs"]);
 
   const style = JSON.parse(await readFile("styles/daylight/style.json", "utf8"));
+  const rasterStyle = JSON.parse(await readFile("styles/daylight-raster/style.json", "utf8"));
   const sprite = JSON.parse(await readFile("styles/daylight/sprite.json", "utf8"));
   const config = JSON.parse(await readFile("config.json", "utf8"));
   const html = await readFile("web/index.html", "utf8");
@@ -32,6 +33,10 @@ test("replaces Daylight with the credited, self-hosted upstream Americana style"
     style: "daylight/style.json",
     tilejson: { type: "baselayer" }
   });
+  assert.deepEqual(config.styles["daylight-raster"], {
+    style: "daylight-raster/style.json",
+    tilejson: { type: "baselayer" }
+  });
 
   const layers = Object.fromEntries(style.layers.map((layer) => [layer.id, layer]));
   assert.ok(style.layers.length >= 350, "Map Room must use the real upstream layer hierarchy, not a lookalike palette");
@@ -41,10 +46,18 @@ test("replaces Daylight with the credited, self-hosted upstream Americana style"
   assert.ok(style.layers.some((layer) => /place_star/.test(JSON.stringify(layer.layout?.["icon-image"]))),
     "the upstream capital-star treatment must remain intact");
   assert.equal(layers["buildings-3d"].type, "fill-extrusion");
+  assert.equal(layers["buildings-3d"].layout.visibility, "visible");
   assert.ok(Object.keys(sprite).length >= 280, "the complete upstream sprite atlas must be packaged locally");
   for (const id of ["place_star", "place_star_in_circle", "poi_hospital", "poi_fire_station", "poi_police_shield", "poi_fuel", "poi_plane", "poi_restaurant", "poi_hotel", "poi_museum", "poi_supermarket", "poi_p"]) {
     assert.ok(sprite[id], `${id} must come from the locally packaged upstream atlas`);
   }
+  const rasterShields = rasterStyle.layers.find(({ id }) => id === "highway-shield");
+  assert.equal(rasterStyle.metadata["map-room:renderer"], "tileserver-gl");
+  assert.doesNotMatch(JSON.stringify(rasterShields), /\["image"/,
+    "server-rendered shields cannot depend on MapLibre's styleimagemissing hook");
+  assert.match(JSON.stringify(rasterShields.layout["icon-image"]), /shield_us_interstate_2/);
+  assert.match(JSON.stringify(rasterShields.layout["icon-image"]), /shield_badge_3/);
+  assert.match(JSON.stringify(rasterShields.layout["text-field"]), /route_1_ref/);
 
   assert.doesNotMatch(html, /data-theme="americana"/);
   assert.match(html, /data-theme="daylight"[\s\S]*OpenStreetMap Americana · CC0/);
