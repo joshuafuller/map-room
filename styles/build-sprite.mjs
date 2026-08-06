@@ -11,12 +11,24 @@ const pixelRatio = 4;
 const columns = 4;
 const atakScale = 4;
 const shieldFit = {
+  "shield-interstate": { content: [3, 7, 29, 25], stretchX: [[14, 18]] },
+  "shield-us": { content: [4, 6, 28, 25], stretchX: [[14, 18]] },
+  "shield-state": { content: [3, 7, 29, 26], stretchX: [[14, 18]] },
+  "shield-county": { content: [3, 8, 29, 25], stretchX: [[14, 18]] }
+};
+const atakShieldFit = {
   "shield-interstate": { content: [5, 5, 27, 24], stretchX: [[14, 18]] },
   "shield-us": { content: [7, 5, 25, 24], stretchX: [[14, 18]] },
   "shield-state": { content: [5, 6, 27, 26], stretchX: [[14, 18]] },
   "shield-county": { content: [4, 7, 28, 25], stretchX: [[14, 18]] }
 };
 const shieldPaths = {
+  "shield-interstate": "M7 26h114v42c0 19-21 32-57 42C28 100 7 87 7 68Z",
+  "shield-us": "M17 22c16 7 31 1 47-7 16 8 31 14 47 7l7 31c-3 27-21 46-54 59-33-13-51-32-54-59Z",
+  "shield-state": "M17 25h94q10 0 10 10v58q0 10-10 10H17Q7 103 7 93V35q0-10 10-10Z",
+  "shield-county": "M17 24h94l10 12v56l-10 12H17L7 92V36Z"
+};
+const atakShieldPaths = {
   "shield-interstate": "M18 18h92v52c0 23-18 35-46 44C36 105 18 93 18 70Z",
   "shield-us": "M28 14C40 20 52 14 64 9c12 5 24 11 36 5l8 40c-3 29-19 50-44 62C39 104 23 83 20 54Z",
   "shield-state": "M32 16h64q12 0 12 12v68q0 12-12 12H32q-12 0-12-12V28q0-12 12-12Z",
@@ -49,15 +61,27 @@ const symbols = [
 
 function shieldSvg({ id, accent, fill }, palette) {
   const path = shieldPaths[id];
+  if (id === "shield-interstate") return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 128 128">
+  <defs><clipPath id="interstate-field"><path d="${path}"/></clipPath></defs>
+  <path d="${path}" fill="#174a7e" stroke="#111827" stroke-width="12" stroke-linejoin="round"/>
+  <path d="${path}" fill="#174a7e"/>
+  <path d="M0 18h128v36H0z" fill="#c8323e" clip-path="url(#interstate-field)"/>
+  <path d="${path}" fill="none" stroke="#ffffff" stroke-width="6" stroke-linejoin="round"/>
+  <path d="${path}" fill="none" stroke="#111827" stroke-width="2" stroke-linejoin="round"/>
+  </svg>`;
+  const colors = {
+    "shield-us": { field: "#ffffff", border: "#111827" },
+    "shield-state": { field: "#ffffff", border: "#087b91" },
+    "shield-county": { field: "#fff1c2", border: "#6b4f1d" }
+  }[id];
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 128 128">
-  <path d="${path}" fill="${palette.shadow}" stroke="${palette.shadow}" stroke-width="12" stroke-linejoin="round"/>
-  <path d="${path}" fill="${palette[fill]}" stroke="${palette.frame}" stroke-width="7" stroke-linejoin="round"/>
-  <path d="${path}" fill="none" stroke="${palette[accent]}" stroke-width="4" stroke-linejoin="round"/>
+  <path d="${path}" fill="${colors.field}" stroke="#111827" stroke-width="12" stroke-linejoin="round"/>
+  <path d="${path}" fill="${colors.field}" stroke="${colors.border}" stroke-width="7" stroke-linejoin="round"/>
   </svg>`;
 }
 
 function atakShieldSvg({ id, accent, fill }, palette) {
-  const path = shieldPaths[id];
+  const path = atakShieldPaths[id];
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 128 128">
   <path d="${path}" fill="${palette.shadow}" stroke="${palette.shadow}" stroke-width="12" stroke-linejoin="round"/>
   <path d="${path}" fill="${palette[fill]}" stroke="${palette.frame}" stroke-width="7" stroke-linejoin="round"/>
@@ -124,7 +148,7 @@ export async function buildSpriteAtlas(outputDirectory, palette) {
     x: symbol.x / atakScale,
     y: symbol.y / atakScale,
     pixelRatio: 1,
-    ...(shieldFit[id] ?? {})
+    ...(atakShieldFit[id] ?? {})
   }]));
   const atakAtlas = await sharp({
     create: {

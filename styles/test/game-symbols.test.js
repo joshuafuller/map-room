@@ -60,11 +60,11 @@ test("builds local game-inspired shields and truthful POI categories", async () 
   const layers = Object.fromEntries(style.layers.map((layer) => [layer.id, layer]));
   assert.equal(layers["road-shields"].type, "symbol");
   assert.deepEqual(layers["road-shields"].layout["icon-size"], [
-    "interpolate", ["linear"], ["zoom"], 6, 0.86, 9, 0.94, 13, 1.06
+    "interpolate", ["linear"], ["zoom"], 6, 1, 9, 1.08, 13, 1.2
   ]);
   assert.equal(layers["road-shields"].layout["symbol-spacing"], 340);
-  assert.equal(layers["road-shields"].layout["icon-text-fit"], "width");
-  assert.deepEqual(layers["road-shields"].layout["icon-text-fit-padding"], [0, 3, 0, 3]);
+  assert.equal(layers["road-shields"].layout["icon-text-fit"], "both");
+  assert.deepEqual(layers["road-shields"].layout["icon-text-fit-padding"], [3, 3, 3, 3]);
   const routeLength = ["length", ["to-string", ["coalesce", ["get", "route_1_ref"], ["get", "ref"], ""]]];
   assert.deepEqual(layers["road-shields"].layout["text-size"], [
     "interpolate", ["linear"], ["zoom"],
@@ -73,10 +73,10 @@ test("builds local game-inspired shields and truthful POI categories", async () 
     14, ["step", routeLength, 17, 3, 15, 5, 13.5]
   ]);
   assert.ok(Array.isArray(layers["road-shields"].paint["text-halo-color"]));
-  assert.match(JSON.stringify(layers["road-shields"].paint["text-halo-color"]), /#f6f8ff/);
-  assert.match(JSON.stringify(layers["road-shields"].paint["text-halo-color"]), /#03040b/);
+  assert.match(JSON.stringify(layers["road-shields"].paint["text-halo-color"]), /#174a7e/);
+  assert.match(JSON.stringify(layers["road-shields"].paint["text-halo-color"]), /#ffffff/);
   assert.ok(Array.isArray(layers["road-shields"].paint["text-halo-width"]));
-  assert.deepEqual(layers["road-shields"].paint["text-halo-width"].slice(-2), [0.4, 1.25]);
+  assert.deepEqual(layers["road-shields"].paint["text-halo-width"].slice(-2), [0.45, 0.35]);
   assert.match(JSON.stringify(layers["road-shields"]), /route_1_ref/);
   assert.match(JSON.stringify(layers["road-shields"]), /US:FL:CR/);
   assert.equal(layers["poi-essential"].layout.visibility, "visible");
