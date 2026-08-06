@@ -110,11 +110,15 @@ test("builds the same information contract with distinct sprites for every theme
     const style = JSON.parse(await readFile(`styles/${id}/style.json`, "utf8"));
     const layers = Object.fromEntries(style.layers.map((layer) => [layer.id, layer]));
     const sprite = JSON.parse(await readFile(`styles/${id}/sprite.json`, "utf8"));
+    const atakSprite = JSON.parse(await readFile(`styles/${id}/atak-sprite.json`, "utf8"));
     const retinaSprite = JSON.parse(await readFile(`styles/${id}/sprite@2x.json`, "utf8"));
     const png = await readFile(`styles/${id}/sprite.png`);
+    const atakPng = await readFile(`styles/${id}/atak-sprite.png`);
     const retinaPng = await readFile(`styles/${id}/sprite@2x.png`);
 
     assert.equal(style.sprite, "{styleJsonFolder}/sprite");
+    assert.equal(atakSprite["shield-interstate"].pixelRatio, 1, `${id} must publish ATAK-normalized shields`);
+    assert.equal(atakPng.readUInt32BE(16), 128, `${id} must publish a 128 px ATAK atlas`);
     for (const layerId of ["road-shields", "poi-essential", "poi-explore", "poi-parking", "poi-airports", "airports", "runways", "taxiways"]) {
       assert.ok(layers[layerId], `${id} is missing ${layerId}`);
     }

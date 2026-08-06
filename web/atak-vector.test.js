@@ -33,7 +33,7 @@ test("builds a one-source ATAK style with Map Room symbology and reachable asset
   assert.deepEqual(style.sources, {
     osm: { type: "vector", url: "https://maps.example.test/map-room/data/florida.json" }
   });
-  assert.equal(style.sprite, "https://maps.example.test/map-room/styles/cyberpunk-tactical/sprite");
+  assert.equal(style.sprite, "https://maps.example.test/map-room/styles/cyberpunk-tactical/atak-sprite");
   assert.equal(style.glyphs, "https://maps.example.test/map-room/fonts/{fontstack}/{range}.pbf");
   assert.deepEqual(style.layers.map(({ id }) => id), [
     "background",
