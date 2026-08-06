@@ -91,6 +91,17 @@ function rasterShieldLayer(layer) {
   };
 }
 
+export async function loadAmericanaShieldLayer({ id = "highway-shield" } = {}) {
+  const source = JSON.parse(await readFile(join(upstreamDirectory, "style.json"), "utf8"));
+  const shield = source.layers.find((layer) => layer.id === "highway-shield");
+  if (!shield) throw new Error("Pinned Americana style does not contain its highway shield layer");
+  return {
+    ...localize(structuredClone(shield)),
+    id,
+    source: "osm"
+  };
+}
+
 export async function buildAmericanaDaylight() {
   const source = JSON.parse(await readFile(join(upstreamDirectory, "style.json"), "utf8"));
   const outputDirectory = join(here, "daylight");
@@ -134,6 +145,9 @@ export async function buildAmericanaDaylight() {
   }
   await copyFile(join(upstreamDirectory, "sprites", "sprite.json"), join(outputDirectory, "atak-sprite.json"));
   await copyFile(join(upstreamDirectory, "sprites", "sprite.png"), join(outputDirectory, "atak-sprite.png"));
+
+  const browserShieldLayer = await loadAmericanaShieldLayer({ id: "road-shields" });
+  await writeFile(join(here, "..", "web", "vendor", "americana-shield-layer.json"), `${JSON.stringify(browserShieldLayer)}\n`);
 
   const rasterDirectory = join(here, "daylight-raster");
   const rasterStyle = staticPoiImages(structuredClone(style));

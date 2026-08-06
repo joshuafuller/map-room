@@ -1,4 +1,4 @@
-export const VECTOR_ASSET_VERSION = "americana-daylight-v1";
+export const VECTOR_ASSET_VERSION = "americana-all-themes-v2";
 
 const versionedResourceTypes = new Set(["Style", "SpriteImage", "SpriteJSON"]);
 
@@ -29,4 +29,20 @@ export async function loadMapStyle(url, {
   const response = await fetcher(request.url, { cache: "no-store" });
   if (!response.ok) throw new Error(`Map style request failed (${response.status})`);
   return normalizeMapStyleAssets(await response.json(), baseUrl);
+}
+
+export function createCachedMapStyleLoader(options = {}) {
+  const styles = new Map();
+
+  return async (url) => {
+    if (!styles.has(url)) {
+      const pendingStyle = loadMapStyle(url, options).catch((error) => {
+        styles.delete(url);
+        throw error;
+      });
+      styles.set(url, pendingStyle);
+    }
+
+    return structuredClone(await styles.get(url));
+  };
 }

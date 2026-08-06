@@ -4,6 +4,7 @@ import { execFile } from "node:child_process";
 import { readFile } from "node:fs/promises";
 import { promisify } from "node:util";
 import { buildAtakXml } from "../../web/atak.js";
+import { applyAmericanaShields } from "../../web/americana-style.js";
 
 const execute = promisify(execFile);
 const upstream = "https://github.com/osm-americana/openstreetmap-americana";
@@ -76,4 +77,21 @@ test("replaces Daylight with the credited, self-hosted upstream Americana style"
   assert.match(xml, /<name>Map Room - Daylight<\/name>/);
   assert.match(xml, /<backgroundColor>#f4f1ea<\/backgroundColor>/);
   assert.match(xml, /\/styles\/all-daylight-raster\/\{\$z\}\/\{\$x\}\/\{\$y\}@2x\.png/);
+});
+
+test("uses Americana dynamic shields in every browser theme", async () => {
+  await execute(process.execPath, ["styles/build-styles.mjs"]);
+  const template = JSON.parse(await readFile("web/vendor/americana-shield-layer.json", "utf8"));
+
+  for (const theme of ["daylight", "midnight", "dark-blue", "dark-red", "dark-green", "cyberpunk", "cyberpunk-tactical"]) {
+    const authoredStyle = JSON.parse(await readFile(`styles/${theme}/style.json`, "utf8"));
+    const style = await applyAmericanaShields(authoredStyle, { template });
+    const shield = style.layers.find(({ id }) => id === "highway-shield" || id === "road-shields");
+    const serialized = JSON.stringify(shield);
+    assert.equal(shield?.type, "symbol", `${theme} must publish a shield layer`);
+    assert.match(serialized, /"shield","\\n"/, `${theme} must request Americana runtime shields`);
+    assert.match(serialized, /route_8_network/, `${theme} must support concurrent route shields`);
+    assert.doesNotMatch(serialized, /shield-(?:interstate|us|state|county)/,
+      `${theme} must not use Map Room's retired fixed shield sprites`);
+  }
 });

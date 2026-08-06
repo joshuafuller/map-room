@@ -26,11 +26,9 @@ test("supports a single-publication POI style and an unavailable style", () => {
   assert.deepEqual(poiLayerIds(null, "poi-essential"), []);
 });
 
-test("swaps base POIs for the complete HUD layer in 3D mode", () => {
-  assert.equal(poiLayerVisibility({ enabled: true, buildings3dEnabled: false, hud: false }), "visible");
-  assert.equal(poiLayerVisibility({ enabled: true, buildings3dEnabled: true, hud: false }), "none");
-  assert.equal(poiLayerVisibility({ enabled: false, buildings3dEnabled: true, hud: false }), "none");
-  assert.equal(poiLayerVisibility({ enabled: true, buildings3dEnabled: true, hud: true }), "visible");
-  assert.equal(poiLayerVisibility({ enabled: true, buildings3dEnabled: false, hud: true }), "none");
-  assert.equal(poiLayerVisibility({ enabled: false, buildings3dEnabled: true, hud: true }), "none");
+test("uses HUD POIs because 3D buildings are always enabled", () => {
+  assert.equal(poiLayerVisibility({ enabled: true, hud: false }), "none");
+  assert.equal(poiLayerVisibility({ enabled: false, hud: false }), "none");
+  assert.equal(poiLayerVisibility({ enabled: true, hud: true }), "visible");
+  assert.equal(poiLayerVisibility({ enabled: false, hud: true }), "none");
 });

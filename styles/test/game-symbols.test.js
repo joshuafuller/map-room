@@ -5,6 +5,7 @@ import { execFile } from "node:child_process";
 import { readFile } from "node:fs/promises";
 import { promisify } from "node:util";
 import sharp from "sharp";
+import { applyAmericanaShields } from "../../web/americana-style.js";
 
 const execute = promisify(execFile);
 const themeIds = ["daylight", "midnight", "dark-blue", "dark-red", "dark-green", "cyberpunk", "cyberpunk-tactical"];
@@ -16,61 +17,6 @@ async function countPixels(image, predicate) {
     if (predicate(data[offset], data[offset + 1], data[offset + 2], data[offset + 3])) count += 1;
   }
   return count;
-}
-
-function evaluateStyleExpression(expression, properties) {
-  if (!Array.isArray(expression)) return expression;
-  const [operator, ...operands] = expression;
-  const evaluate = (value) => evaluateStyleExpression(value, properties);
-  if (operator === "literal") return operands[0];
-  if (operator === "zoom") return properties.$zoom;
-  if (operator === "get") return properties[operands[0]];
-  if (operator === "coalesce") return operands.map(evaluate).find((value) => value !== null && value !== undefined);
-  if (operator === "to-string") return String(evaluate(operands[0]));
-  if (operator === "length") return evaluate(operands[0]).length;
-  if (operator === "slice") return evaluate(operands[0]).slice(evaluate(operands[1]), operands[2] === undefined ? undefined : evaluate(operands[2]));
-  if (operator === "index-of") return evaluate(operands[1]).indexOf(evaluate(operands[0]));
-  if (operator === "==") return evaluate(operands[0]) === evaluate(operands[1]);
-  if (operator === ">=") return evaluate(operands[0]) >= evaluate(operands[1]);
-  if (operator === "any") return operands.some(evaluate);
-  if (operator === "case") {
-    for (let index = 0; index < operands.length - 1; index += 2) {
-      if (evaluate(operands[index])) return evaluate(operands[index + 1]);
-    }
-    return evaluate(operands.at(-1));
-  }
-  if (operator === "match") {
-    const input = evaluate(operands[0]);
-    for (let index = 1; index < operands.length - 1; index += 2) {
-      const labels = Array.isArray(operands[index]) ? operands[index] : [operands[index]];
-      if (labels.includes(input)) return evaluate(operands[index + 1]);
-    }
-    return evaluate(operands.at(-1));
-  }
-  if (operator === "step") {
-    const input = evaluate(operands[0]);
-    let output = evaluate(operands[1]);
-    for (let index = 2; index < operands.length; index += 2) {
-      if (input < evaluate(operands[index])) break;
-      output = evaluate(operands[index + 1]);
-    }
-    return output;
-  }
-  if (operator === "interpolate") {
-    const input = evaluate(operands[1]);
-    for (let index = 2; index < operands.length - 2; index += 2) {
-      const lowerStop = evaluate(operands[index]);
-      const upperStop = evaluate(operands[index + 2]);
-      if (input <= lowerStop) return evaluate(operands[index + 1]);
-      if (input <= upperStop) {
-        const lower = evaluate(operands[index + 1]);
-        const upper = evaluate(operands[index + 3]);
-        return lower + (upper - lower) * (input - lowerStop) / (upperStop - lowerStop);
-      }
-    }
-    return evaluate(operands.at(-1));
-  }
-  throw new Error(`Unsupported test expression: ${operator}`);
 }
 
 test("uses Americana's dynamic nationwide shield system for Daylight", async () => {
@@ -86,9 +32,11 @@ test("uses Americana's dynamic nationwide shield system for Daylight", async () 
     "the packaged Americana renderer must include nationwide network definitions");
 });
 
-test("builds local game-inspired shields and truthful POI categories", async () => {
+test("uses Americana browser shields with truthful colored-theme POI categories", async () => {
   await execute(process.execPath, ["styles/build-styles.mjs"]);
-  const style = JSON.parse(await readFile("styles/cyberpunk-tactical/style.json", "utf8"));
+  const authoredStyle = JSON.parse(await readFile("styles/cyberpunk-tactical/style.json", "utf8"));
+  const template = JSON.parse(await readFile("web/vendor/americana-shield-layer.json", "utf8"));
+  const style = await applyAmericanaShields(authoredStyle, { template });
   const sprite = JSON.parse(await readFile("styles/cyberpunk-tactical/sprite.json", "utf8"));
   const designs = JSON.parse(await readFile("styles/cyberpunk-tactical/sprite-design.json", "utf8"));
   const png = await readFile("styles/cyberpunk-tactical/sprite.png");
@@ -103,58 +51,10 @@ test("builds local game-inspired shields and truthful POI categories", async () 
   assert.equal(style.sprite, "{styleJsonFolder}/sprite");
   const layers = Object.fromEntries(style.layers.map((layer) => [layer.id, layer]));
   assert.equal(layers["road-shields"].type, "symbol");
-  assert.deepEqual(layers["road-shields"].layout["icon-size"], [
-    "interpolate", ["linear"], ["zoom"], 6, 1, 9, 1.08, 13, 1.2
-  ]);
-  assert.equal(layers["road-shields"].layout["symbol-spacing"], 340);
-  assert.equal(layers["road-shields"].layout["icon-text-fit"], undefined,
-    "browser shields must never warp their standard silhouette around the route number");
-  assert.equal(layers["road-shields"].layout["icon-text-fit-padding"], undefined);
-  const routeLength = ["length", ["to-string", ["coalesce", ["get", "route_1_ref"], ["get", "ref"], ""]]];
-  const iconImage = JSON.stringify(layers["road-shields"].layout["icon-image"]);
-  for (const id of ["shield-interstate-wide", "shield-us-wide", "shield-state-wide"]) {
-    assert.match(iconImage, new RegExp(id), `${id} must be selected for three-digit references`);
-  }
-  assert.match(iconImage, /route_1_ref/, "shield proportions must be selected from the normalized route reference");
-  const selectShield = (route_1_network, route_1_ref, network) => evaluateStyleExpression(
-    layers["road-shields"].layout["icon-image"], { route_1_network, route_1_ref, network });
-  assert.equal(selectShield("US:I", "10", "us-interstate"), "shield-interstate");
-  assert.equal(selectShield("US:I", "35E", "us-interstate"), "shield-interstate-wide",
-    "alphanumeric Interstate references such as I-35E must use the fixed wide marker");
-  assert.equal(selectShield("US:I:Express", "25", "road"), "shield-interstate");
-  assert.equal(selectShield("US:US", "98", "us-highway"), "shield-us");
-  assert.equal(selectShield("US:US:Alternate", "90", "road"), "shield-us");
-  assert.equal(selectShield("US:US", "290", "us-highway"), "shield-us-wide");
-  assert.equal(selectShield("US:TX", "71", "us-state"), "shield-state");
-  assert.equal(selectShield("US:CO", "83", "us-state"), "shield-state");
-  assert.equal(selectShield("US:CA", "1", "us-state"), "shield-state");
-  assert.equal(selectShield("US:TX:Loop", "360", "road"), "shield-state-wide");
-  assert.equal(selectShield("US:FL:CR", "12", "road"), "shield-county");
-  assert.equal(selectShield("US:WA:CR", "507", "us-county"), "shield-county-wide");
-  assert.equal(selectShield("US:FL:CR", "184A", "road"), "shield-county-wide",
-    "long county references must widen the pentagon instead of distorting or overrunning it");
-  const textOffset = layers["road-shields"].layout["text-offset"];
-  assert.deepEqual(evaluateStyleExpression(textOffset, { route_1_network: "US:I", network: "us-interstate" }), [0, 0.18],
-    "Interstate route numbers must sit below the red crown and white separator");
-  assert.deepEqual(evaluateStyleExpression(textOffset, { route_1_network: "US:US", network: "us-highway" }), [0, 0]);
-  const routeKind = layers["road-shields"].layout["icon-image"][1];
-  assert.deepEqual(layers["road-shields"].layout["text-size"], [
-    "interpolate", ["linear"], ["zoom"],
-    6, ["match", routeKind, "county", ["step", routeLength, 12, 3, 10, 4, 8], ["step", routeLength, 13, 3, 12, 5, 11]],
-    10, ["match", routeKind, "county", ["step", routeLength, 14, 3, 11, 4, 9], ["step", routeLength, 15, 3, 14, 5, 12.5]],
-    14, ["match", routeKind, "county", ["step", routeLength, 16, 3, 12, 4, 10], ["step", routeLength, 17, 3, 15, 5, 13.5]]
-  ]);
-  assert.equal(evaluateStyleExpression(layers["road-shields"].layout["text-size"], {
-    route_1_network: "US:FL:CR", route_1_ref: "184A", network: "road", $zoom: 10
-  }), 9, "four-character county references must fit inside the fixed M1-6 pentagon");
-  assert.ok(Array.isArray(layers["road-shields"].paint["text-halo-color"]));
-  assert.match(JSON.stringify(layers["road-shields"].paint["text-halo-color"]), /#1f5fa5/);
-  assert.match(JSON.stringify(layers["road-shields"].paint["text-halo-color"]), /#ffffff/);
-  assert.ok(Array.isArray(layers["road-shields"].paint["text-halo-width"]));
-  assert.deepEqual(layers["road-shields"].paint["text-halo-width"].slice(-2), [0.55, 0.35]);
-  assert.match(JSON.stringify(layers["road-shields"]), /route_1_ref/);
-  assert.doesNotMatch(JSON.stringify(layers["road-shields"]), /US:FL/,
-    "browser route classification must not depend on one state-specific network");
+  const shieldLayer = JSON.stringify(layers["road-shields"]);
+  assert.match(shieldLayer, /"shield","\\n"/);
+  assert.match(shieldLayer, /route_8_network/);
+  assert.doesNotMatch(shieldLayer, /shield-(?:interstate|us|state|county)/);
   assert.equal(layers["poi-essential"].layout.visibility, "visible");
   assert.equal(layers["poi-essential"].minzoom, 14);
   assert.ok(layers["poi-essential"].layout["icon-size"] >= 1.05);
@@ -263,13 +163,15 @@ test("builds local game-inspired shields and truthful POI categories", async () 
   assert.match(html, /detail appears automatically/i);
 });
 
-test("uses Americana for Daylight while colored-theme migration remains separate", async () => {
+test("uses Americana shields across Daylight and every colored theme", async () => {
   await execute(process.execPath, ["styles/build-styles.mjs"]);
   const spriteDigests = new Set();
   let canonicalSemantics;
+  const template = JSON.parse(await readFile("web/vendor/americana-shield-layer.json", "utf8"));
 
   for (const id of themeIds) {
-    const style = JSON.parse(await readFile(`styles/${id}/style.json`, "utf8"));
+    const authoredStyle = JSON.parse(await readFile(`styles/${id}/style.json`, "utf8"));
+    const style = await applyAmericanaShields(authoredStyle, { template });
     const layers = Object.fromEntries(style.layers.map((layer) => [layer.id, layer]));
     const sprite = JSON.parse(await readFile(`styles/${id}/sprite.json`, "utf8"));
     const atakSprite = JSON.parse(await readFile(`styles/${id}/atak-sprite.json`, "utf8"));
@@ -293,7 +195,8 @@ test("uses Americana for Daylight while colored-theme migration remains separate
     for (const layerId of ["road-shields", "poi-essential", "poi-explore", "poi-parking", "poi-airports", "airports", "runways", "taxiways"]) {
       assert.ok(layers[layerId], `${id} is missing ${layerId}`);
     }
-    assert.equal(layers["road-shields"].minzoom, 6, `${id} must show the available major route shields in browser overviews`);
+    assert.match(JSON.stringify(layers["road-shields"]), /"shield","\\n"/,
+      `${id} must use Americana runtime shields`);
     assert.equal(layers["buildings-3d"].type, "fill-extrusion", `${id} must support 3D buildings`);
     assert.equal(layers["buildings-3d"].layout.visibility, "visible");
     for (const layerId of ["poi-essential-hud", "poi-explore-hud", "poi-parking-hud", "poi-airports-hud"]) {

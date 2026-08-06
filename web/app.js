@@ -5,9 +5,10 @@ import { buildAtakVectorStyle } from "/atak-vector.js";
 import { buildingLayerIds } from "/buildings.js";
 import { poiLayerIds, poiLayerVisibility } from "/poi-visibility.js";
 import { setupMapManager } from "/map-manager.js";
-import { loadMapStyle, versionMapAssetRequest } from "/map-assets.js";
+import { createCachedMapStyleLoader, VECTOR_ASSET_VERSION, versionMapAssetRequest } from "/map-assets.js";
 import { renderQrSvg } from "/qr-code.js";
 import { setupAmericana } from "/americana.js";
+import { applyAmericanaShields } from "/americana-style.js";
 
 const themes = {
   daylight: { name: "Daylight", color: "#f4f1ea" },
@@ -22,11 +23,14 @@ const themes = {
 let activeTheme = "daylight";
 let activeMode = "vector";
 let activeView = "all";
-let buildings3dEnabled = true;
 const regionCatalog = new Map();
 let manifest = null;
 let map = null;
 let hasMaps = false;
+const loadCachedMapStyle = createCachedMapStyleLoader();
+const loadBrowserMapStyle = async (url) => applyAmericanaShields(await loadCachedMapStyle(url), {
+  templateUrl: `/vendor/americana-shield-layer.json?map-room-version=${VECTOR_ASSET_VERSION}`
+});
 const allViewPadding = () => window.innerWidth <= 680
   ? { top: 80, right: 40, bottom: 190, left: 40 }
   : { top: 90, right: 340, bottom: 70, left: 70 };
@@ -155,7 +159,7 @@ try {
 }
 
 const initialMapStyle = hasMaps
-  ? await loadMapStyle(`/styles/${styleId("daylight")}/style.json`)
+  ? await loadBrowserMapStyle(`/styles/${styleId("daylight")}/style.json`)
   : emptyStyle;
 
 map = new maplibregl.Map({
@@ -218,17 +222,10 @@ function rasterStyle(id) {
   };
 }
 
-function updateBuildingControl() {
-  const button = document.querySelector("#buildings-toggle");
-  button.hidden = activeMode !== "vector";
-  button.setAttribute("aria-pressed", String(buildings3dEnabled));
-  document.querySelector("#rotate-hint").hidden = activeMode !== "vector";
-}
-
 function updateBuildingLayers() {
   for (const layerId of buildingLayerIds(map.getStyle())) {
     if (map.getLayer(layerId)) {
-      map.setLayoutProperty(layerId, "visibility", buildings3dEnabled ? "visible" : "none");
+      map.setLayoutProperty(layerId, "visibility", "visible");
     }
   }
 }
@@ -238,14 +235,14 @@ function updatePoiLayers() {
   for (const layer of ["poi-essential", "poi-explore", "poi-parking"]) {
     const hudLayer = `${layer}-hud`;
     for (const layerId of poiLayerIds(map.getStyle(), layer)) {
-      map.setLayoutProperty(layerId, "visibility", poiLayerVisibility({ enabled: true, buildings3dEnabled, hud: false }));
+      map.setLayoutProperty(layerId, "visibility", poiLayerVisibility({ enabled: true, hud: false }));
     }
     for (const layerId of poiLayerIds(map.getStyle(), hudLayer)) {
-      map.setLayoutProperty(layerId, "visibility", poiLayerVisibility({ enabled: true, buildings3dEnabled, hud: true }));
+      map.setLayoutProperty(layerId, "visibility", poiLayerVisibility({ enabled: true, hud: true }));
     }
   }
   for (const layerId of poiLayerIds(map.getStyle(), "poi-airports-hud")) {
-    map.setLayoutProperty(layerId, "visibility", buildings3dEnabled ? "visible" : "none");
+    map.setLayoutProperty(layerId, "visibility", "visible");
   }
 }
 
@@ -255,7 +252,7 @@ async function applyMapStyle() {
   const requestId = ++styleRequestId;
   const requestedTheme = activeTheme;
   const style = !hasMaps ? emptyStyle : activeMode === "vector"
-    ? await loadMapStyle(`/styles/${styleId()}/style.json`)
+    ? await loadBrowserMapStyle(`/styles/${styleId()}/style.json`)
     : rasterStyle(activeTheme);
   if (requestId !== styleRequestId) return;
   map.once("style.load", () => {
@@ -267,7 +264,7 @@ async function applyMapStyle() {
   document.documentElement.style.colorScheme = activeTheme === "daylight" ? "light" : "dark";
   document.querySelector('meta[name="theme-color"]').content = themes[activeTheme].color;
   document.documentElement.dataset.mapTheme = activeTheme;
-  updateBuildingControl();
+  document.querySelector("#rotate-hint").hidden = activeMode !== "vector";
   document.querySelector("#detail-hint").hidden = activeMode !== "vector";
 }
 
@@ -492,21 +489,6 @@ document.querySelector("#copy-raster").addEventListener("click", async () => {
   toast("Raster tile URL copied");
 });
 
-document.querySelector("#buildings-toggle").addEventListener("click", () => {
-  buildings3dEnabled = !buildings3dEnabled;
-  updateBuildingControl();
-  updateBuildingLayers();
-  updatePoiLayers();
-  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  map.easeTo({
-    zoom: buildings3dEnabled ? Math.max(map.getZoom(), 15) : map.getZoom(),
-    pitch: buildings3dEnabled ? 58 : 0,
-    bearing: buildings3dEnabled ? -18 : 0,
-    duration: reduceMotion ? 0 : 650
-  });
-  toast(`3D buildings ${buildings3dEnabled ? "enabled" : "disabled"}`);
-});
-
-updateBuildingControl();
+document.querySelector("#rotate-hint").hidden = activeMode !== "vector";
 document.querySelector("#detail-hint").hidden = activeMode !== "vector";
 setupMapManager({ onLibraryChanged: () => loadRegionCatalog({ refreshMap: true }) });

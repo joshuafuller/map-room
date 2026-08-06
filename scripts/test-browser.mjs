@@ -9,6 +9,17 @@ const baseUrl = process.env.BASE_URL ?? "http://localhost:8088";
 const outputDir = new URL("../data/browser-test/", import.meta.url);
 await mkdir(outputDir, { recursive: true });
 
+let ready = false;
+for (let attempt = 0; attempt < 60 && !ready; attempt += 1) {
+  try {
+    ready = (await fetch(new URL("/styles/all-daylight/style.json", baseUrl))).ok;
+  } catch {
+    // The development watcher may be between tile-server processes.
+  }
+  if (!ready) await new Promise((resolve) => setTimeout(resolve, 500));
+}
+if (!ready) throw new Error(`Map Room style endpoint did not become ready at ${baseUrl}`);
+
 const browserEngines = { chromium, firefox, webkit };
 const browserEngine = browserEngines[process.env.MAP_ROOM_BROWSER_ENGINE] ?? chromium;
 const browserName = browserEngine === firefox ? "Firefox" : browserEngine === webkit ? "WebKit" : "Chromium";
@@ -17,7 +28,7 @@ const page = await browser.newPage({
   viewport: { width: 1440, height: 900 },
   deviceScaleFactor: Number(process.env.MAP_ROOM_DEVICE_SCALE ?? 1)
 });
-page.setDefaultTimeout(15000);
+page.setDefaultTimeout(30000);
 const failures = [];
 const requestedUrls = [];
 let verifiedAtakDefinitionUrl = null;
@@ -369,9 +380,7 @@ if (await page.evaluate(() => window.location.hash) === rotationHashBefore) {
 }
 await page.evaluate((hash) => { window.location.hash = hash; }, mapHash(12));
 await page.waitForTimeout(500);
-if (await page.locator("#buildings-toggle").getAttribute("hidden") !== null) {
-  failures.push("Cyberpunk Tactical did not expose the 3D building control");
-}
+if (await page.locator("#buildings-toggle").count() !== 0) failures.push("redundant 3D building control is still present");
 if (await page.locator("#rotate-hint").getAttribute("hidden") !== null ||
     !(await page.locator("#rotate-hint").textContent()).includes("right-drag")) {
   failures.push("vector view did not explain mouse camera rotation");
@@ -379,50 +388,37 @@ if (await page.locator("#rotate-hint").getAttribute("hidden") !== null ||
 await page.locator('[data-theme="daylight"]').click();
 await page.locator('[data-theme="daylight"][aria-checked="true"]').waitFor();
 await waitForTheme("daylight");
-if (await page.locator("#buildings-toggle").getAttribute("hidden") !== null) {
-  failures.push("Daylight did not expose the 3D building control");
+const daylightStyleLoads = requestedUrls.filter((url) => {
+  const requestUrl = new URL(url);
+  return requestUrl.pathname === "/styles/all-daylight/style.json"
+    && requestUrl.searchParams.get("map-room-version") === VECTOR_ASSET_VERSION;
+});
+if (daylightStyleLoads.length !== 1) {
+  failures.push(`returning to Daylight fetched its large style ${daylightStyleLoads.length} times instead of using the in-memory cache`);
 }
 await page.evaluate((hash) => { window.location.hash = hash; }, mapHash(16, "/-18/58"));
-if (await page.locator("#buildings-toggle").getAttribute("aria-pressed") !== "true") {
-  failures.push("3D buildings were not enabled by default");
-}
 await page.waitForTimeout(2200);
 await page.screenshot({
   path: new URL("daylight-buildings.png", outputDir).pathname
 });
-await page.locator("#buildings-toggle").click();
 await page.locator('[data-theme="cyberpunk-tactical"]').click();
 await page.locator('[data-theme="cyberpunk-tactical"][aria-checked="true"]').waitFor();
 await waitForTheme("cyberpunk-tactical");
 await page.waitForTimeout(700);
-await page.locator("#buildings-toggle").click();
-if (await page.locator("#buildings-toggle").getAttribute("aria-pressed") !== "true") {
-  failures.push("Cyberpunk 3D buildings could not be enabled");
-}
 await page.waitForTimeout(1100);
-const buildingZoom = Number((await page.evaluate(() => window.location.hash)).slice(1).split("/")[0]);
-if (buildingZoom < 15) {
-  failures.push(`Cyberpunk 3D buildings remained below a legible zoom (${buildingZoom})`);
-}
 const buildingLayerCounts = await page.evaluate(async () => {
   const themeIds = ["daylight", "midnight", "dark-blue", "dark-red", "dark-green", "cyberpunk", "cyberpunk-tactical"];
   return Promise.all(themeIds.map(async (theme) => {
     const style = await fetch(`/styles/all-${theme}/style.json`).then((response) => response.json());
-    return [theme, style.layers.filter(({ id }) => id.startsWith("buildings-3d--")).length];
+    const buildings = style.layers.filter(({ id }) => id.startsWith("buildings-3d--"));
+    return [theme, buildings.length, buildings.every(({ layout }) => layout?.visibility === "visible")];
   }));
 });
-if (buildingLayerCounts.some(([, count]) => count !== catalog.regions.length)) {
-  failures.push("every composed theme did not publish one 3D building layer per installed region");
+if (buildingLayerCounts.some(([, count, visible]) => count !== catalog.regions.length || !visible)) {
+  failures.push("every composed theme did not publish visible 3D buildings for every installed region");
 }
-await page.locator("#buildings-toggle").click();
 await page.evaluate((hash) => { window.location.hash = hash; }, mapHash(16, "/-18/58"));
 await page.waitForTimeout(1600);
-const buildingsOffPath = new URL("cyberpunk-tactical-buildings-off.png", outputDir);
-const buildingsOnPath = new URL("cyberpunk-tactical-buildings-on.png", outputDir);
-await page.locator(".maplibregl-canvas").screenshot({ path: buildingsOffPath.pathname });
-await page.locator("#buildings-toggle").click();
-await page.waitForTimeout(1600);
-await page.locator(".maplibregl-canvas").screenshot({ path: buildingsOnPath.pathname });
 const tacticalMiamiPath = new URL("cyberpunk-tactical-miami.png", outputDir);
 await page.screenshot({ path: tacticalMiamiPath.pathname });
 
@@ -434,24 +430,6 @@ const tacticalDigest = await digest(tacticalPath);
 const tacticalMiamiDigest = await digest(tacticalMiamiPath);
 const tacticalRasterMiamiDigest = await digest(tacticalRasterMiamiPath);
 const practicalThemeDigests = await Promise.all([...practicalThemePaths.values()].map(digest));
-
-const buildingsOff = await sharp(buildingsOffPath.pathname).raw().toBuffer({ resolveWithObject: true });
-const buildingsOn = await sharp(buildingsOnPath.pathname).raw().toBuffer();
-let changedBuildingPixels = 0;
-let buildingColorDelta = 0;
-for (let index = 0; index < buildingsOff.data.length; index += 4) {
-  const delta = Math.abs(buildingsOff.data[index] - buildingsOn[index])
-    + Math.abs(buildingsOff.data[index + 1] - buildingsOn[index + 1])
-    + Math.abs(buildingsOff.data[index + 2] - buildingsOn[index + 2]);
-  if (delta > 30) changedBuildingPixels += 1;
-  buildingColorDelta += delta;
-}
-const buildingPixelCount = buildingsOff.info.width * buildingsOff.info.height;
-const changedBuildingRatio = changedBuildingPixels / buildingPixelCount;
-const averageBuildingDelta = buildingColorDelta / buildingPixelCount;
-if (changedBuildingRatio < 0.01 || averageBuildingDelta < 2) {
-  failures.push(`3D building toggle did not visibly change the map (${changedBuildingPixels} pixels)`);
-}
 
 if (daylightDigest === midnightDigest) failures.push("theme screenshots are identical");
 if (new Set(practicalThemeDigests).size !== practicalThemeDigests.length) failures.push("Dark blue, red, and green screenshots are not visually distinct");
@@ -476,7 +454,7 @@ console.log("PASS ATAK Raster mode requested the rendered PNG tile endpoint");
 console.log("PASS Daylight and Midnight produced distinct browser screenshots");
 console.log("PASS Dark Blue, Dark Red, and Dark Green produced distinct browser screenshots");
 console.log("PASS Cyberpunk produced a distinct vector screenshot");
-console.log("PASS every vector theme exposes 3D buildings and right-drag rotates the camera");
+console.log("PASS every vector theme keeps 3D buildings visible without a redundant control and right-drag rotates the camera");
 console.log("PASS Cyberpunk Tactical rendered distinctly with a real preview tile and ATAK raster request");
 console.log("PASS localhost onboarding verified its Map Room address and decoded the exact TAK URI without QR-service requests");
 console.log(`Screenshots: ${outputDir.pathname}`);
