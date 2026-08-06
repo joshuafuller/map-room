@@ -12,7 +12,7 @@ await mkdir(outputDir, { recursive: true });
 let ready = false;
 for (let attempt = 0; attempt < 60 && !ready; attempt += 1) {
   try {
-    ready = (await fetch(new URL("/styles/all-daylight/style.json", baseUrl))).ok;
+    ready = (await fetch(new URL("/browser-styles/all-daylight/style.json", baseUrl))).ok;
   } catch {
     // The development watcher may be between tile-server processes.
   }
@@ -61,7 +61,7 @@ const waitForTheme = (theme) => page.waitForFunction((expected) =>
   document.documentElement.dataset.loadedMapTheme === expected, theme);
 await waitForTheme("daylight");
 const shieldAssets = await page.evaluate(async () => {
-  const styleResponse = await fetch("/styles/all-daylight/style.json");
+  const styleResponse = await fetch("/browser-styles/all-daylight/style.json");
   const style = await styleResponse.json();
   const [spriteJson, spritePng] = await Promise.all([
     fetch(`${style.sprite}.json`),
@@ -322,7 +322,7 @@ if (!downloadedXml.includes('<?xml version="1.0" encoding="UTF-8" standalone="ye
 }
 
 const progressiveDetail = await page.evaluate(async () => {
-  const style = await fetch("/styles/all-cyberpunk-tactical/style.json").then((response) => response.json());
+  const style = await fetch("/browser-styles/all-cyberpunk-tactical/style.json").then((response) => response.json());
   const first = (prefix) => style.layers.find(({ id }) => id.startsWith(prefix));
   return {
     essential: first("poi-essential--")?.minzoom,
@@ -390,7 +390,7 @@ await page.locator('[data-theme="daylight"][aria-checked="true"]').waitFor();
 await waitForTheme("daylight");
 const daylightStyleLoads = requestedUrls.filter((url) => {
   const requestUrl = new URL(url);
-  return requestUrl.pathname === "/styles/all-daylight/style.json"
+  return requestUrl.pathname === "/browser-styles/all-daylight/style.json"
     && requestUrl.searchParams.get("map-room-version") === VECTOR_ASSET_VERSION;
 });
 if (daylightStyleLoads.length !== 1) {
@@ -409,7 +409,7 @@ await page.waitForTimeout(1100);
 const buildingLayerCounts = await page.evaluate(async () => {
   const themeIds = ["daylight", "midnight", "dark-blue", "dark-red", "dark-green", "cyberpunk", "cyberpunk-tactical"];
   return Promise.all(themeIds.map(async (theme) => {
-    const style = await fetch(`/styles/all-${theme}/style.json`).then((response) => response.json());
+    const style = await fetch(`/browser-styles/all-${theme}/style.json`).then((response) => response.json());
     const buildings = style.layers.filter(({ id }) => id.startsWith("buildings-3d--"));
     return [theme, buildings.length, buildings.every(({ layout }) => layout?.visibility === "visible")];
   }));

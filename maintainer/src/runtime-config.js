@@ -1,4 +1,10 @@
 const REGION_ID = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+const runtimeOptions = {
+  paths: { fonts: "/data/fonts", sprites: "/data/styles", styles: "/data/styles" },
+  maxScaleFactor: 2,
+  minRendererPoolSizes: [1, 1],
+  maxRendererPoolSizes: [4, 2]
+};
 
 function validateRegistry(registry) {
   if (!registry || !Array.isArray(registry.regions)) {
@@ -37,7 +43,7 @@ export function buildRuntimeArtifacts({ registry, themes }) {
 
   if (regions.length === 0) {
     return {
-      config: { options: { paths: { fonts: "/data/fonts", sprites: "/data/styles", styles: "/data/styles" } }, styles: {}, data: {} },
+      config: { options: structuredClone(runtimeOptions), styles: {}, data: {} },
       styles: {},
       catalog: {
         defaultView: "all", defaultRegion: null, name: "No maps installed", bounds: null,
@@ -75,6 +81,18 @@ export function buildRuntimeArtifacts({ registry, themes }) {
       ? regions.map(({ id }) => ({ ...structuredClone(layer), id: `${layer.id}--${id}`, source: id }))
       : [layer]);
     generatedStyleEntries.push([stylePath, style]);
+    const browserStyle = structuredClone(style);
+    browserStyle.metadata = { ...browserStyle.metadata, "map-room:browser-ready": true };
+    browserStyle.sprite = `/styles/${themeId}/sprite`;
+    if (browserStyle.glyphs) browserStyle.glyphs = "/fonts/{fontstack}/{range}.pbf";
+    browserStyle.sources = {
+      ...staticSources,
+      ...Object.fromEntries(regions.map(({ id }) => [id, {
+        ...structuredClone(canonicalSource),
+        url: `/data/${id}.json`
+      }]))
+    };
+    generatedStyleEntries.push([`collections/browser/${themeId}.json`, browserStyle]);
     const configEntry = { style: stylePath, tilejson: { type: "baselayer" } };
     styleConfigEntries.push([`all-${themeId}`, configEntry], [themeId, structuredClone(configEntry)]);
   }
@@ -90,7 +108,7 @@ export function buildRuntimeArtifacts({ registry, themes }) {
 
   return {
     config: {
-      options: { paths: { fonts: "/data/fonts", sprites: "/data/styles", styles: "/data/styles" } },
+      options: structuredClone(runtimeOptions),
       styles: sortedObject(styleConfigEntries),
       data: sortedObject(dataEntries)
     },

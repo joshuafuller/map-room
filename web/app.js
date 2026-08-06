@@ -52,6 +52,10 @@ function styleId(theme = activeTheme) {
   return `all-${theme}`;
 }
 
+function browserStyleUrl(theme = activeTheme) {
+  return `/browser-styles/${styleId(theme)}/style.json`;
+}
+
 function rasterStyleId(theme = activeTheme) {
   return styleId(theme === "daylight" ? "daylight-raster" : theme);
 }
@@ -160,7 +164,7 @@ try {
 }
 
 const initialMapStyle = hasMaps
-  ? await loadBrowserMapStyle(`/styles/${styleId("daylight")}/style.json`)
+  ? await loadBrowserMapStyle(browserStyleUrl("daylight"))
   : emptyStyle;
 
 map = new maplibregl.Map({
@@ -253,7 +257,7 @@ async function applyMapStyle() {
   const requestId = ++styleRequestId;
   const requestedTheme = activeTheme;
   const style = !hasMaps ? emptyStyle : activeMode === "vector"
-    ? await loadBrowserMapStyle(`/styles/${styleId()}/style.json`)
+    ? await loadBrowserMapStyle(browserStyleUrl())
     : rasterStyle(activeTheme);
   if (requestId !== styleRequestId) return;
   map.once("style.load", () => {
