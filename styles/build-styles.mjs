@@ -3,6 +3,7 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { buildSpriteAtlas } from "./build-sprite.mjs";
 import { buildAmericanaDaylight, copyAmericanaSpriteAtlas } from "./build-americana.mjs";
+import { withRealBuildingExtrusion } from "./building-extrusion.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 
@@ -611,13 +612,10 @@ function makeStyle(id, theme) {
       {
         id: "buildings-3d", type: "fill-extrusion", source: "osm", "source-layer": "building", minzoom: 13,
         layout: { visibility: "visible" },
-        paint: {
+        paint: withRealBuildingExtrusion({
           "fill-extrusion-color": extrusionColor(extrusion),
-          "fill-extrusion-height": ["coalesce", ["get", "render_height"], 3],
-          "fill-extrusion-base": ["coalesce", ["get", "render_min_height"], 0],
-          "fill-extrusion-opacity": 0.82,
-          "fill-extrusion-vertical-gradient": true
-        }
+          "fill-extrusion-opacity": 0.82
+        })
       },
       houseNumberLayer,
       {

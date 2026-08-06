@@ -14,7 +14,7 @@ async function loadTemplate({ fetcher = globalThis.fetch, templateUrl = defaultT
 
 export async function applyAmericanaShields(style, options = {}) {
   const fixedLayers = style?.layers?.filter(({ id }) => id === "road-shields" || id.startsWith("road-shields--")) ?? [];
-  if (fixedLayers.length === 0) return structuredClone(style);
+  if (fixedLayers.length === 0) return style;
   const template = options.template ?? await loadTemplate(options);
   const adapted = structuredClone(style);
   adapted.layers = adapted.layers.map((layer) => {

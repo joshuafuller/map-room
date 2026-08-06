@@ -1,4 +1,4 @@
-export const VECTOR_ASSET_VERSION = "americana-iconography-v3";
+export const VECTOR_ASSET_VERSION = "uniform-buildings-v4";
 
 const versionedResourceTypes = new Set(["Style", "SpriteImage", "SpriteJSON"]);
 
@@ -33,10 +33,11 @@ export async function loadMapStyle(url, {
 
 export function createCachedMapStyleLoader(options = {}) {
   const styles = new Map();
+  const { transform = async (style) => style, ...loadOptions } = options;
 
   return async (url) => {
     if (!styles.has(url)) {
-      const pendingStyle = loadMapStyle(url, options).catch((error) => {
+      const pendingStyle = loadMapStyle(url, loadOptions).then(transform).catch((error) => {
         styles.delete(url);
         throw error;
       });

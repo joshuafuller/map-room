@@ -2253,6 +2253,7 @@
           220,
           "#c5b66c"
         ],
+        "fill-extrusion-opacity": 0.82,
         "fill-extrusion-height": [
           "coalesce",
           [
@@ -2269,7 +2270,6 @@
           ],
           0
         ],
-        "fill-extrusion-opacity": 0.82,
         "fill-extrusion-vertical-gradient": true
       }
     },
