@@ -22,6 +22,7 @@ function evaluateStyleExpression(expression, properties) {
   if (!Array.isArray(expression)) return expression;
   const [operator, ...operands] = expression;
   const evaluate = (value) => evaluateStyleExpression(value, properties);
+  if (operator === "literal") return operands[0];
   if (operator === "get") return properties[operands[0]];
   if (operator === "coalesce") return operands.map(evaluate).find((value) => value !== null && value !== undefined);
   if (operator === "to-string") return String(evaluate(operands[0]));
@@ -31,7 +32,12 @@ function evaluateStyleExpression(expression, properties) {
   if (operator === "==") return evaluate(operands[0]) === evaluate(operands[1]);
   if (operator === ">=") return evaluate(operands[0]) >= evaluate(operands[1]);
   if (operator === "any") return operands.some(evaluate);
-  if (operator === "case") return evaluate(operands[0]) ? evaluate(operands[1]) : evaluate(operands[2]);
+  if (operator === "case") {
+    for (let index = 0; index < operands.length - 1; index += 2) {
+      if (evaluate(operands[index])) return evaluate(operands[index + 1]);
+    }
+    return evaluate(operands.at(-1));
+  }
   if (operator === "match") {
     const input = evaluate(operands[0]);
     for (let index = 1; index < operands.length - 1; index += 2) {
@@ -112,6 +118,10 @@ test("builds local game-inspired shields and truthful POI categories", async () 
   assert.equal(selectShield("US:TX:Loop", "360", "road"), "shield-state-wide");
   assert.equal(selectShield("US:FL:CR", "12", "road"), "shield-county");
   assert.equal(selectShield("US:WA:CR", "507", "us-county"), "shield-county");
+  const textOffset = layers["road-shields"].layout["text-offset"];
+  assert.deepEqual(evaluateStyleExpression(textOffset, { route_1_network: "US:I", network: "us-interstate" }), [0, 0.18],
+    "Interstate route numbers must sit below the red crown and white separator");
+  assert.deepEqual(evaluateStyleExpression(textOffset, { route_1_network: "US:US", network: "us-highway" }), [0, 0]);
   assert.deepEqual(layers["road-shields"].layout["text-size"], [
     "interpolate", ["linear"], ["zoom"],
     6, ["step", routeLength, 13, 3, 12, 5, 11],
@@ -119,12 +129,13 @@ test("builds local game-inspired shields and truthful POI categories", async () 
     14, ["step", routeLength, 17, 3, 15, 5, 13.5]
   ]);
   assert.ok(Array.isArray(layers["road-shields"].paint["text-halo-color"]));
-  assert.match(JSON.stringify(layers["road-shields"].paint["text-halo-color"]), /#174a7e/);
+  assert.match(JSON.stringify(layers["road-shields"].paint["text-halo-color"]), /#1f5fa5/);
   assert.match(JSON.stringify(layers["road-shields"].paint["text-halo-color"]), /#ffffff/);
   assert.ok(Array.isArray(layers["road-shields"].paint["text-halo-width"]));
-  assert.deepEqual(layers["road-shields"].paint["text-halo-width"].slice(-2), [0.45, 0.35]);
+  assert.deepEqual(layers["road-shields"].paint["text-halo-width"].slice(-2), [0.55, 0.35]);
   assert.match(JSON.stringify(layers["road-shields"]), /route_1_ref/);
-  assert.match(JSON.stringify(layers["road-shields"]), /us-state/);
+  assert.doesNotMatch(JSON.stringify(layers["road-shields"]), /US:FL/,
+    "browser route classification must not depend on one state-specific network");
   assert.equal(layers["poi-essential"].layout.visibility, "visible");
   assert.equal(layers["poi-essential"].minzoom, 14);
   assert.ok(layers["poi-essential"].layout["icon-size"] >= 1.05);
