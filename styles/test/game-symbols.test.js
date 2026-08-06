@@ -4,6 +4,7 @@ import { createHash } from "node:crypto";
 import { execFile } from "node:child_process";
 import { readFile } from "node:fs/promises";
 import { promisify } from "node:util";
+import sharp from "sharp";
 
 const execute = promisify(execFile);
 const themeIds = ["daylight", "midnight", "dark-blue", "dark-red", "dark-green", "cyberpunk", "cyberpunk-tactical"];
@@ -25,7 +26,9 @@ test("builds local game-inspired shields and truthful POI categories", async () 
   assert.equal(style.sprite, "{styleJsonFolder}/sprite");
   const layers = Object.fromEntries(style.layers.map((layer) => [layer.id, layer]));
   assert.equal(layers["road-shields"].type, "symbol");
-  assert.ok(layers["road-shields"].layout["icon-size"] >= 0.8);
+  assert.ok(layers["road-shields"].layout["icon-size"] >= 1.05);
+  assert.equal(layers["road-shields"].layout["icon-text-fit"], "width");
+  assert.deepEqual(layers["road-shields"].layout["icon-text-fit-padding"], [0, 3, 0, 3]);
   assert.deepEqual(layers["road-shields"].layout["text-size"], [
     "step",
     ["length", ["to-string", ["coalesce", ["get", "route_1_ref"], ["get", "ref"], ""]]],
@@ -87,6 +90,16 @@ test("builds local game-inspired shields and truthful POI categories", async () 
   assert.equal(sprite["poi-fuel"].width, 128);
   assert.equal(sprite["poi-fuel"].height, 128);
   assert.equal(sprite["poi-fuel"].pixelRatio, 4);
+  for (const shieldId of ["shield-interstate", "shield-us", "shield-state", "shield-county"]) {
+    assert.ok(Array.isArray(sprite[shieldId].content), `${shieldId} must publish a browser text-content box`);
+    assert.ok(Array.isArray(sprite[shieldId].stretchX), `${shieldId} must publish a browser horizontal stretch region`);
+  }
+  const shieldAlphaDigests = new Set();
+  for (let index = 0; index < 4; index += 1) {
+    const alpha = await sharp(png).extract({ left: index * 128, top: 0, width: 128, height: 128 }).ensureAlpha().extractChannel("alpha").raw().toBuffer();
+    shieldAlphaDigests.add(createHash("sha256").update(alpha).digest("hex"));
+  }
+  assert.equal(shieldAlphaDigests.size, 4, "browser road classes must use four distinct shield silhouettes");
   assert.equal(atakSprite["shield-interstate"].width, 32);
   assert.equal(atakSprite["shield-interstate"].height, 32);
   assert.equal(atakSprite["shield-interstate"].pixelRatio, 1);
