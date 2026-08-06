@@ -1,4 +1,20 @@
 {
+  "shield-interstate": {
+    "standard": "FHWA M1-1",
+    "source": "https://mutcd.fhwa.dot.gov/kno-shs_2024-release-status/pdf/2024_SHS_Release_5-Guide_Signs.pdf"
+  },
+  "shield-us": {
+    "standard": "FHWA M1-4 guide-sign use",
+    "source": "https://mutcd.fhwa.dot.gov/kno-shs_2024-release-status/pdf/2024_SHS_Release_5-Guide_Signs.pdf"
+  },
+  "shield-state": {
+    "standard": "FHWA M1-5 guide-sign use",
+    "source": "https://mutcd.fhwa.dot.gov/kno-shs_2024-release-status/pdf/2024_SHS_Release_5-Guide_Signs.pdf"
+  },
+  "shield-county": {
+    "standard": "FHWA M1-6",
+    "source": "https://mutcd.fhwa.dot.gov/kno-shs_2024-release-status/pdf/2024_SHS_Release_5-Guide_Signs.pdf"
+  },
   "poi-medical": {
     "label": "Medical",
     "silhouette": [
@@ -101,5 +117,21 @@
     ],
     "accent": "#b58a9a",
     "rendering": "lucide-svg"
+  },
+  "shield-interstate-wide": {
+    "standard": "FHWA M1-1",
+    "source": "https://mutcd.fhwa.dot.gov/kno-shs_2024-release-status/pdf/2024_SHS_Release_5-Guide_Signs.pdf"
+  },
+  "shield-us-wide": {
+    "standard": "FHWA M1-4 guide-sign use",
+    "source": "https://mutcd.fhwa.dot.gov/kno-shs_2024-release-status/pdf/2024_SHS_Release_5-Guide_Signs.pdf"
+  },
+  "shield-state-wide": {
+    "standard": "FHWA M1-5 guide-sign use",
+    "source": "https://mutcd.fhwa.dot.gov/kno-shs_2024-release-status/pdf/2024_SHS_Release_5-Guide_Signs.pdf"
+  },
+  "shield-county-wide": {
+    "standard": "FHWA M1-6",
+    "source": "https://mutcd.fhwa.dot.gov/kno-shs_2024-release-status/pdf/2024_SHS_Release_5-Guide_Signs.pdf"
   }
 }

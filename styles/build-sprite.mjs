@@ -10,6 +10,7 @@ const size = 128;
 const pixelRatio = 4;
 const columns = 4;
 const atakScale = 4;
+const fhwaGuideSignSource = "https://mutcd.fhwa.dot.gov/kno-shs_2024-release-status/pdf/2024_SHS_Release_5-Guide_Signs.pdf";
 const atakShieldFit = {
   "shield-interstate": { content: [5, 5, 27, 24], stretchX: [[14, 18]] },
   "shield-us": { content: [7, 5, 25, 24], stretchX: [[14, 18]] },
@@ -17,13 +18,12 @@ const atakShieldFit = {
   "shield-county": { content: [4, 7, 28, 25], stretchX: [[14, 18]] }
 };
 const shieldPaths = {
-  "shield-interstate": "M7 26h114v42c0 19-21 32-57 42C28 100 7 87 7 68Z",
-  "shield-interstate-wide": "M7 26h146v42c0 19-26 32-73 42C33 100 7 87 7 68Z",
-  "shield-us": "M17 22c16 7 31 1 47-7 16 8 31 14 47 7l7 31c-3 27-21 46-54 59-33-13-51-32-54-59Z",
-  "shield-us-wide": "M21 22c20 7 39 1 59-7 20 8 39 14 59 7l9 31c-4 27-26 46-68 59-42-13-64-32-68-59Z",
-  "shield-state": "M17 25h94q10 0 10 10v58q0 10-10 10H17Q7 103 7 93V35q0-10 10-10Z",
-  "shield-state-wide": "M17 25h126q10 0 10 10v58q0 10-10 10H17Q7 103 7 93V35q0-10 10-10Z",
-  "shield-county": "M17 24h94l10 12v56l-10 12H17L7 92V36Z"
+  "shield-interstate": "M8 22C27 28 45 28 64 20c19 8 37 8 56 2l6 42c0 27-24 47-62 60C26 111 2 91 2 64Z",
+  "shield-interstate-wide": "M8 22c24 6 48 6 72-2 24 8 48 8 72 2l6 42c0 27-30 47-78 60C32 111 2 91 2 64Z",
+  "shield-us": "M64 8C54 14 43 13 31 5L5 30c13 13 14 23 3 36-5 17 11 39 37 46 9 0 15 4 19 11 4-7 10-11 19-11 26-7 42-29 37-46-11-13-10-23 3-36L97 5C85 13 74 14 64 8Z",
+  "shield-us-wide": "M80 8C68 14 54 13 39 5L5 30c15 13 16 23 3 36-5 17 16 39 48 46 11 0 19 4 24 11 5-7 13-11 24-11 32-7 53-29 48-46-13-13-12-23 3-36L121 5C106 13 92 14 80 8Z",
+  "shield-county": "M64 3 123 38 103 124H25L5 38Z",
+  "shield-county-wide": "M80 3 155 38 129 124H31L5 38Z"
 };
 const atakShieldPaths = {
   "shield-interstate": "M18 18h92v52c0 23-18 35-46 44C36 105 18 93 18 70Z",
@@ -39,10 +39,10 @@ async function writeFileAtomic(path, data) {
 }
 
 const symbols = [
-  { id: "shield-interstate", type: "shield", accent: "emergency", fill: "shieldFill" },
-  { id: "shield-us", type: "shield", accent: "frame", fill: "lightFill" },
-  { id: "shield-state", type: "shield", accent: "service", fill: "shieldFill" },
-  { id: "shield-county", type: "shield", accent: "leisure", fill: "shieldFill" },
+  { id: "shield-interstate", type: "shield", standard: "FHWA M1-1", accent: "emergency", fill: "shieldFill" },
+  { id: "shield-us", type: "shield", standard: "FHWA M1-4 guide-sign use", accent: "frame", fill: "lightFill" },
+  { id: "shield-state", type: "shield", standard: "FHWA M1-5 guide-sign use", accent: "service", fill: "shieldFill" },
+  { id: "shield-county", type: "shield", standard: "FHWA M1-6", accent: "leisure", fill: "shieldFill" },
   { id: "poi-medical", icon: "hospital.svg", label: "Medical", accent: "emergency", silhouette: ["building", "medical-cross"] },
   { id: "poi-fire", icon: "flame.svg", label: "Fire", accent: "emergency", silhouette: ["outer-flame", "inner-flame"] },
   { id: "poi-police", icon: "shield.svg", label: "Police", accent: "service", silhouette: ["service-shield", "inner-field"] },
@@ -54,9 +54,10 @@ const symbols = [
   { id: "poi-attraction", icon: "star.svg", label: "Attraction", accent: "utility", silhouette: ["five-point-star", "center-field"] },
   { id: "poi-shopping", icon: "shopping-bag.svg", label: "Shopping", accent: "emergency", silhouette: ["bag", "handles"] },
   { id: "poi-parking", icon: "circle-parking.svg", label: "Parking", accent: "leisure", silhouette: ["parking-ring", "letter-p"] },
-  { id: "shield-interstate-wide", type: "shield", accent: "emergency", fill: "shieldFill", browserOnly: true, wide: true },
-  { id: "shield-us-wide", type: "shield", accent: "frame", fill: "lightFill", browserOnly: true, wide: true },
-  { id: "shield-state-wide", type: "shield", accent: "service", fill: "shieldFill", browserOnly: true, wide: true }
+  { id: "shield-interstate-wide", type: "shield", standard: "FHWA M1-1", accent: "emergency", fill: "shieldFill", browserOnly: true, wide: true },
+  { id: "shield-us-wide", type: "shield", standard: "FHWA M1-4 guide-sign use", accent: "frame", fill: "lightFill", browserOnly: true, wide: true },
+  { id: "shield-state-wide", type: "shield", standard: "FHWA M1-5 guide-sign use", accent: "service", fill: "shieldFill", browserOnly: true, wide: true },
+  { id: "shield-county-wide", type: "shield", standard: "FHWA M1-6", accent: "leisure", fill: "shieldFill", browserOnly: true, wide: true }
 ];
 
 function shieldSvg({ id, accent, fill }, palette) {
@@ -65,20 +66,23 @@ function shieldSvg({ id, accent, fill }, palette) {
   const viewBoxWidth = id.endsWith("-wide") ? 160 : 128;
   if (baseId === "shield-interstate") return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${viewBoxWidth} 128">
   <defs><clipPath id="interstate-field"><path d="${path}"/></clipPath></defs>
-  <path d="${path}" fill="#174a7e" stroke="#111827" stroke-width="12" stroke-linejoin="round"/>
-  <path d="${path}" fill="#174a7e"/>
-  <path d="M0 18h${viewBoxWidth}v36H0z" fill="#c8323e" clip-path="url(#interstate-field)"/>
-  <path d="${path}" fill="none" stroke="#ffffff" stroke-width="6" stroke-linejoin="round"/>
+  <path d="${path}" fill="#1f5fa5" stroke="#111827" stroke-width="10" stroke-linejoin="round"/>
+  <path d="${path}" fill="#1f5fa5" stroke="#ffffff" stroke-width="5" stroke-linejoin="round"/>
+  <path d="M0 12h${viewBoxWidth}v39H0z" fill="#cf2a22" clip-path="url(#interstate-field)"/>
+  <path d="M0 49h${viewBoxWidth}v5H0z" fill="#ffffff" clip-path="url(#interstate-field)"/>
+  <text x="${viewBoxWidth / 2}" y="43" text-anchor="middle" fill="#ffffff" font-family="sans-serif" font-size="17" font-weight="700" letter-spacing=".2">INTERSTATE</text>
+  <path d="${path}" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round"/>
   <path d="${path}" fill="none" stroke="#111827" stroke-width="2" stroke-linejoin="round"/>
   </svg>`;
-  const colors = {
-    "shield-us": { field: "#ffffff", border: "#111827" },
-    "shield-state": { field: "#ffffff", border: "#087b91" },
-    "shield-county": { field: "#fff1c2", border: "#6b4f1d" }
-  }[baseId];
+  if (baseId === "shield-state") return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${viewBoxWidth} 128">
+  <ellipse cx="${viewBoxWidth / 2}" cy="64" rx="${viewBoxWidth / 2 - 4}" ry="60" fill="#ffffff" stroke="#111827" stroke-width="5"/>
+  </svg>`;
+  if (baseId === "shield-county") return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${viewBoxWidth} 128">
+  <path d="${path}" fill="#1f5fa5" stroke="#111827" stroke-width="9" stroke-linejoin="round"/>
+  <path d="${path}" fill="#1f5fa5" stroke="#ffcc32" stroke-width="6" stroke-linejoin="round"/>
+  </svg>`;
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${viewBoxWidth} 128">
-  <path d="${path}" fill="${colors.field}" stroke="#111827" stroke-width="12" stroke-linejoin="round"/>
-  <path d="${path}" fill="${colors.field}" stroke="${colors.border}" stroke-width="7" stroke-linejoin="round"/>
+  <path d="${path}" fill="#ffffff" stroke="#111827" stroke-width="5" stroke-linejoin="round"/>
   </svg>`;
 }
 
@@ -132,7 +136,9 @@ export async function buildSpriteAtlas(outputDirectory, palette) {
       width: spriteWidth, height: spriteHeight, x: left, y: top,
       pixelRatio: symbol.type === "shield" ? 3 : pixelRatio
     };
-    if (symbol.icon) {
+    if (symbol.standard) {
+      designs[symbol.id] = { standard: symbol.standard, source: fhwaGuideSignSource };
+    } else if (symbol.icon) {
       designs[symbol.id] = {
         label: symbol.label,
         silhouette: symbol.silhouette,

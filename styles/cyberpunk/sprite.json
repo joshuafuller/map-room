@@ -124,5 +124,12 @@
     "x": 132,
     "y": 528,
     "pixelRatio": 3
+  },
+  "shield-county-wide": {
+    "width": 120,
+    "height": 96,
+    "x": 260,
+    "y": 528,
+    "pixelRatio": 3
   }
 }
