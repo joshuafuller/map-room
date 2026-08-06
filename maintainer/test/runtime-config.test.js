@@ -37,6 +37,9 @@ test("builds deterministic TileServer data and style entries for every region an
 
   assert.deepEqual(Object.keys(config.data), ["california", "florida"]);
   assert.equal(config.options.paths.sprites, "/data/styles");
+  assert.equal(config.options.maxScaleFactor, 2);
+  assert.deepEqual(config.options.minRendererPoolSizes, [1, 1]);
+  assert.deepEqual(config.options.maxRendererPoolSizes, [4, 2]);
   assert.equal(config.data.california.mbtiles, "/data/archive/california.mbtiles");
   assert.equal(config.data.florida.mbtiles, "/data/archive/florida.mbtiles");
   assert.deepEqual(Object.keys(config.styles), [
