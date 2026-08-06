@@ -90,6 +90,15 @@ test("builds local game-inspired shields and truthful POI categories", async () 
   assert.equal(atakSprite["shield-interstate"].width, 32);
   assert.equal(atakSprite["shield-interstate"].height, 32);
   assert.equal(atakSprite["shield-interstate"].pixelRatio, 1);
+  const shieldContent = new Set();
+  for (const id of ["shield-interstate", "shield-us", "shield-state", "shield-county"]) {
+    assert.equal(atakSprite[id].pixelRatio, 1);
+    assert.equal(atakSprite[id].content.length, 4, `${id} must define its safe text area`);
+    assert.ok(atakSprite[id].stretchX.length > 0, `${id} must stretch around long route references`);
+    assert.ok(atakSprite[id].content[0] < atakSprite[id].content[2]);
+    shieldContent.add(JSON.stringify(atakSprite[id].content));
+  }
+  assert.equal(shieldContent.size, 4, "each shield shape must define its own safe text area");
   assert.equal(atakPng.readUInt32BE(16), 128);
   assert.equal(atakPng.readUInt32BE(20), 128);
   assert.equal(packageJson.devDependencies["lucide-static"], "1.28.0");
