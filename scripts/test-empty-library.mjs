@@ -13,6 +13,9 @@ try {
   await page.locator("#manage-maps").click();
   await page.locator("#map-manager").waitFor({ state: "visible" });
   await page.getByText("No maps installed. Add the first one above.").waitFor();
+  if (await page.locator("#map-create-form").isVisible()) throw new Error("empty library exposed the full creation form before Add map was chosen");
+  await page.locator("#manager-add-map").click();
+  await page.locator("#map-create-form").waitFor({ state: "visible" });
 
   await page.locator("#map-source-type").selectOption("upload");
   await page.locator("#map-upload").setInputFiles(smokePbf);

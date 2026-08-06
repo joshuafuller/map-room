@@ -29,6 +29,7 @@ try {
   await page.goto(baseUrl, { waitUntil: "domcontentloaded" });
   await page.locator("#manage-maps").click();
   await page.locator("#map-manager").waitFor({ state: "visible" });
+  await page.locator("#manager-add-map").click();
 
   await page.locator("#catalog-search").fill("Rhode Island");
   await page.locator('#catalog-results [role="option"][data-region-id="us/rhode-island"]').click();

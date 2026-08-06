@@ -66,6 +66,7 @@ await page.route("**/api/maps", (route) => route.fulfill({
 }));
 await page.locator("#manage-maps").click();
 await page.locator("#map-manager").waitFor({ state: "visible" });
+await page.locator("#manager-add-map").click();
 await page.locator("#catalog-search").fill("florida");
 await page.locator('#catalog-results [role="option"][data-region-id="us/florida"]').click();
 await capture("map-management.jpg");

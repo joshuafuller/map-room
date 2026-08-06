@@ -15,6 +15,15 @@ try {
   await page.locator("#manage-maps").click();
   await page.locator("#map-manager").waitFor({ state: "visible" });
   if (!await page.locator(".manager-warning").getByText("Trusted local network only").isVisible()) failures.push("manager did not disclose the unauthenticated trusted-network boundary");
+  if (!await page.locator("#manager-library-view").isVisible() || await page.locator("#manager-create-view").isVisible()) failures.push("manager did not open on the map library");
+  await page.locator("#manager-add-map").click();
+  if (!await page.locator("#manager-create-view").isVisible() || await page.locator("#manager-library-view").isVisible()) failures.push("Add map did not open a dedicated creation view");
+  await page.keyboard.press("Escape");
+  if (!await page.locator("#map-manager").isVisible() || !await page.locator("#manager-library-view").isVisible()) failures.push("Escape did not return from creation to the library");
+  await page.locator("#manager-add-map").click();
+  await page.locator("#manager-back").click();
+  if (!await page.locator("#manager-add-map").isFocused()) failures.push("Back to library did not restore focus to Add map");
+  await page.locator("#manager-add-map").click();
   const mapState = await page.evaluate(() => fetch("/api/maps").then((response) => response.json()));
   initialMaps = mapState.maps;
   if (await page.locator(".map-row").count() !== mapState.maps.length) failures.push("manager did not list every installed map");
