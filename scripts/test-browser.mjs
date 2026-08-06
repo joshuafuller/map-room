@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { mkdir, readFile } from "node:fs/promises";
-import { chromium, webkit } from "playwright";
+import { chromium, firefox, webkit } from "playwright";
 import jsQR from "jsqr";
 import sharp from "sharp";
 
@@ -8,8 +8,9 @@ const baseUrl = process.env.BASE_URL ?? "http://localhost:8088";
 const outputDir = new URL("../data/browser-test/", import.meta.url);
 await mkdir(outputDir, { recursive: true });
 
-const browserEngine = process.env.MAP_ROOM_BROWSER_ENGINE === "webkit" ? webkit : chromium;
-const browserName = browserEngine === webkit ? "WebKit" : "Chromium";
+const browserEngines = { chromium, firefox, webkit };
+const browserEngine = browserEngines[process.env.MAP_ROOM_BROWSER_ENGINE] ?? chromium;
+const browserName = browserEngine === firefox ? "Firefox" : browserEngine === webkit ? "WebKit" : "Chromium";
 const browser = await browserEngine.launch({ headless: true });
 const page = await browser.newPage({
   viewport: { width: 1440, height: 900 },
@@ -23,7 +24,7 @@ let verifiedAtakDefinitionUrl = null;
 page.on("pageerror", (error) => failures.push(`page error: ${error.message}`));
 page.on("requestfailed", (request) => {
   const error = request.failure()?.errorText;
-  if (error !== "net::ERR_ABORTED" && !/cancelled/i.test(error ?? "")) {
+  if (error !== "net::ERR_ABORTED" && !/cancelled|NS_BINDING_ABORTED/i.test(error ?? "")) {
     failures.push(`request failed: ${request.url()} (${error})`);
   }
 });
