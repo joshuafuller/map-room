@@ -88,6 +88,14 @@ export function createApi({ library, queue, catalog, saveUpload, loadTileJson, a
         const job = queue.enqueue({ type: "create", regionId: identity.id, name: identity.name, source: mapSource });
         return json(response, 202, { job });
       }
+      const retry = url.pathname.match(/^\/api\/jobs\/([a-z0-9-]+)\/retry$/);
+      if (retry && request.method === "POST") {
+        const { buildMemory = null } = await readJson(request);
+        if (buildMemory !== null && !["4g", "8g", "12g", "16g"].includes(buildMemory)) {
+          throw new Error("Build memory must be 4g, 8g, 12g, or 16g");
+        }
+        return json(response, 202, { job: queue.retry(retry[1], { buildMemory }) });
+      }
       if (request.method === "POST" && url.pathname === "/api/maps/import") {
         const identity = validateMapIdentity(url.searchParams.get("id"), url.searchParams.get("name"));
         const file = await saveUpload(request, identity);

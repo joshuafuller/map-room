@@ -209,6 +209,7 @@ button { font: inherit; }
 .job-step.failed .job-step-dot { border-color: #b8564d; background: #b8564d; }
 @keyframes job-step-pulse { 0% { box-shadow: 0 0 0 3px white, 0 0 0 3px rgba(82,124,112,.35); } 70%, 100% { box-shadow: 0 0 0 3px white, 0 0 0 9px rgba(82,124,112,0); } }
 .job-error { margin: 8px 0 0; color: #8a342d; font-size: 10px; }
+.job-actions { display: flex; justify-content: flex-end; margin-top: 8px; }
 .manager-status { min-height: 20px; margin: 0 22px 20px; color: #315e54; font-size: 11px; }
 .maplibregl-ctrl-bottom-right { right: 82px; }
 html[data-controls-expanded="true"] .maplibregl-ctrl-bottom-right { right: 300px; }

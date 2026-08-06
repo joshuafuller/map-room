@@ -12,7 +12,7 @@ async function serve(api, run) {
 
 function fixture(overrides = {}) {
   const calls = [];
-  const jobs = [];
+  const jobs = overrides.jobs ?? [];
   const library = {
     list: async () => [{ id: "florida", name: "Florida" }],
     update: async (id, input) => (calls.push(["update", id, input]), { id, name: input.name }),
@@ -21,7 +21,8 @@ function fixture(overrides = {}) {
   };
   const queue = {
     snapshot: () => jobs,
-    enqueue: (input) => (calls.push(["enqueue", input]), { id: "job-1", ...input, status: "queued" })
+    enqueue: (input) => (calls.push(["enqueue", input]), { id: "job-1", ...input, status: "queued" }),
+    retry: (id, options) => (calls.push(["retry", id, options]), { id: "job-retry", status: "queued", buildMemory: options.buildMemory })
   };
   const catalog = overrides.catalog ?? (async () => [{ id: "us/florida", name: "Florida", searchText: "florida us-fl", pbfUrl: "https://download.geofabrik.de/florida.osm.pbf" }]);
   const saveUpload = async (request, identity) => {
@@ -77,6 +78,18 @@ test("queues catalog, allow-listed URL, upload, and rebuild jobs", async () => {
   });
   assert.equal(calls.filter(([name]) => name === "enqueue").length, 4);
   assert.deepEqual(calls.find(([name]) => name === "upload"), ["upload", { id: "local", name: "Local" }]);
+});
+
+test("retries a failed job with a bounded per-job memory choice", async () => {
+  const { api, calls } = fixture({ jobs: [{ id: "failed-job", status: "failed", type: "create", regionId: "us-south" }] });
+  await serve(api, async (base) => {
+    const retried = await fetch(`${base}/api/jobs/failed-job/retry`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ buildMemory: "4g" }) });
+    assert.equal(retried.status, 202);
+    assert.equal((await retried.json()).job.buildMemory, "4g");
+    const rejected = await fetch(`${base}/api/jobs/failed-job/retry`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ buildMemory: "999g" }) });
+    assert.equal(rejected.status, 400);
+  });
+  assert.deepEqual(calls.find(([name]) => name === "retry"), ["retry", "failed-job", { buildMemory: "4g" }]);
 });
 
 test("updates and deletes one validated map", async () => {
