@@ -17,7 +17,6 @@ try {
   await page.locator("#map-source-type").selectOption("upload");
   await page.locator("#map-upload").setInputFiles(smokePbf);
   await page.locator("#map-name").fill("First Map");
-  await page.locator("#map-id").fill("first-map");
   await page.locator("#map-create-form button[type=submit]").click();
   const job = page.locator(".job-row").filter({ hasText: "First Map" }).first();
   const deadline = Date.now() + 10 * 60 * 1000;
