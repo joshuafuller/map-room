@@ -57,6 +57,14 @@ test("builds deterministic TileServer data and style entries for every region an
     { id: "roads--california", source: "california" },
     { id: "roads--florida", source: "florida" }
   ]);
+  assert.deepEqual(styles["collections/browser/daylight.json"].sources, {
+    california: { type: "vector", url: "/data/california.json" },
+    florida: { type: "vector", url: "/data/florida.json" }
+  });
+  assert.equal(styles["collections/browser/daylight.json"].sprite, "/styles/daylight/sprite");
+  assert.deepEqual(styles["collections/browser/daylight.json"].layers,
+    styles["collections/all/daylight.json"].layers,
+    "browser and TileServer styles must share one composed layer hierarchy");
   assert.deepEqual(styles["collections/all/cyberpunk-tactical.json"].layers.map(({ id }) => id), [
     "buildings-3d--california",
     "buildings-3d--florida"
