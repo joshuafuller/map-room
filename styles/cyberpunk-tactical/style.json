@@ -937,18 +937,18 @@
             "zoom"
           ],
           6,
-          0.86,
+          1,
           9,
-          0.94,
+          1.08,
           13,
-          1.06
+          1.2
         ],
         "icon-rotation-alignment": "viewport",
-        "icon-text-fit": "width",
+        "icon-text-fit": "both",
         "icon-text-fit-padding": [
-          0,
           3,
-          0,
+          3,
+          3,
           3
         ],
         "text-field": [
@@ -1074,11 +1074,23 @@
             ""
           ],
           [
+            "US:I",
+            "us-interstate"
+          ],
+          "#ffffff",
+          [
             "US:US",
             "us-highway"
           ],
-          "#03040b",
-          "#f6f8ff"
+          "#111827",
+          [
+            "US:FL",
+            "us-state"
+          ],
+          "#102a33",
+          "US:FL:CR",
+          "#35270f",
+          "#111827"
         ],
         "text-halo-color": [
           "match",
@@ -1095,11 +1107,11 @@
             ""
           ],
           [
-            "US:US",
-            "us-highway"
+            "US:I",
+            "us-interstate"
           ],
-          "#f6f8ff",
-          "#03040b"
+          "#174a7e",
+          "#ffffff"
         ],
         "text-halo-width": [
           "match",
@@ -1116,11 +1128,11 @@
             ""
           ],
           [
-            "US:US",
-            "us-highway"
+            "US:I",
+            "us-interstate"
           ],
-          0.4,
-          1.25
+          0.45,
+          0.35
         ]
       }
     },

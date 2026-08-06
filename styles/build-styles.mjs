@@ -272,6 +272,7 @@ function makeStyle(id, theme) {
     "text-max-width": 9
   };
   const routeLength = ["length", ["to-string", ["coalesce", ["get", "route_1_ref"], ["get", "ref"], ""]]];
+  const routeNetwork = ["coalesce", ["get", "route_1_network"], ["get", "network"], ""];
 
   const selectedRoadWidth = theme.tactical ? tacticalRoadWidth : roadWidth;
   const selectedRoadCasingWidth = theme.tactical ? tacticalRoadCasingWidth : roadCasingWidth;
@@ -365,9 +366,9 @@ function makeStyle(id, theme) {
           "icon-image": ["match", ["coalesce", ["get", "route_1_network"], ["get", "network"], ""],
             ["US:I", "us-interstate"], "shield-interstate", ["US:US", "us-highway"], "shield-us",
             ["US:FL", "us-state"], "shield-state", "US:FL:CR", "shield-county", "shield-state"],
-          "icon-size": ["interpolate", ["linear"], ["zoom"], 6, 0.86, 9, 0.94, 13, 1.06],
+          "icon-size": ["interpolate", ["linear"], ["zoom"], 6, 1, 9, 1.08, 13, 1.2],
           "icon-rotation-alignment": "viewport",
-          "icon-text-fit": "width", "icon-text-fit-padding": [0, 3, 0, 3],
+          "icon-text-fit": "both", "icon-text-fit-padding": [3, 3, 3, 3],
           "text-field": ["coalesce", ["get", "route_1_ref"], ["get", "ref"]],
           "text-font": ["Open Sans Semibold"],
           "text-size": ["interpolate", ["linear"], ["zoom"],
@@ -377,9 +378,9 @@ function makeStyle(id, theme) {
           "text-rotation-alignment": "viewport", "text-allow-overlap": false
         },
         paint: {
-          "text-color": ["match", ["coalesce", ["get", "route_1_network"], ["get", "network"], ""], ["US:US", "us-highway"], theme.symbols.onLight, theme.symbols.onMarker],
-          "text-halo-color": ["match", ["coalesce", ["get", "route_1_network"], ["get", "network"], ""], ["US:US", "us-highway"], theme.symbols.lightFill, theme.symbols.shieldFill],
-          "text-halo-width": ["match", ["coalesce", ["get", "route_1_network"], ["get", "network"], ""], ["US:US", "us-highway"], 0.4, 1.25]
+          "text-color": ["match", routeNetwork, ["US:I", "us-interstate"], "#ffffff", ["US:US", "us-highway"], "#111827", ["US:FL", "us-state"], "#102a33", "US:FL:CR", "#35270f", "#111827"],
+          "text-halo-color": ["match", routeNetwork, ["US:I", "us-interstate"], "#174a7e", "#ffffff"],
+          "text-halo-width": ["match", routeNetwork, ["US:I", "us-interstate"], 0.45, 0.35]
         }
       },
       {

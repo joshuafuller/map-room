@@ -9,6 +9,39 @@ import sharp from "sharp";
 const execute = promisify(execFile);
 const themeIds = ["daylight", "midnight", "dark-blue", "dark-red", "dark-green", "cyberpunk", "cyberpunk-tactical"];
 
+async function countPixels(image, predicate) {
+  const { data } = await image.ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+  let count = 0;
+  for (let offset = 0; offset < data.length; offset += 4) {
+    if (predicate(data[offset], data[offset + 1], data[offset + 2], data[offset + 3])) count += 1;
+  }
+  return count;
+}
+
+test("renders unmistakable high-contrast browser road shields", async () => {
+  await execute(process.execPath, ["styles/build-styles.mjs"]);
+  const style = JSON.parse(await readFile("styles/daylight/style.json", "utf8"));
+  const sprite = await sharp(await readFile("styles/daylight/sprite.png"));
+  const interstate = sprite.clone().extract({ left: 0, top: 0, width: 128, height: 128 });
+  const usRoute = sprite.clone().extract({ left: 128, top: 0, width: 128, height: 128 });
+
+  assert.ok(await countPixels(interstate.clone(), (r, g, b, a) => a > 220 && b > 80 && b > r * 1.25 && b > g * 1.1) > 1800,
+    "Interstate shields need a substantial blue field, not a hairline outline");
+  assert.ok(await countPixels(interstate.clone(), (r, g, b, a) => a > 220 && r > 145 && r > g * 1.45 && r > b * 1.25) > 400,
+    "Interstate shields need a visible red crown");
+  assert.ok(await countPixels(usRoute.clone(), (r, g, b, a) => a > 220 && r > 230 && g > 230 && b > 230) > 2500,
+    "US route shields need a substantial white field");
+  assert.ok(await countPixels(usRoute.clone(), (r, g, b, a) => a > 220 && r < 55 && g < 55 && b < 65) > 550,
+    "US route shields need a substantial dark border");
+
+  const shield = style.layers.find(({ id }) => id === "road-shields");
+  assert.deepEqual(shield.layout["icon-size"], [
+    "interpolate", ["linear"], ["zoom"], 6, 1, 9, 1.08, 13, 1.2
+  ]);
+  assert.match(JSON.stringify(shield.paint["text-color"]), /#ffffff/,
+    "Interstate route numbers need white text on the blue field");
+});
+
 test("builds local game-inspired shields and truthful POI categories", async () => {
   await execute(process.execPath, ["styles/build-styles.mjs"]);
   const style = JSON.parse(await readFile("styles/cyberpunk-tactical/style.json", "utf8"));
@@ -27,11 +60,11 @@ test("builds local game-inspired shields and truthful POI categories", async () 
   const layers = Object.fromEntries(style.layers.map((layer) => [layer.id, layer]));
   assert.equal(layers["road-shields"].type, "symbol");
   assert.deepEqual(layers["road-shields"].layout["icon-size"], [
-    "interpolate", ["linear"], ["zoom"], 6, 0.86, 9, 0.94, 13, 1.06
+    "interpolate", ["linear"], ["zoom"], 6, 1, 9, 1.08, 13, 1.2
   ]);
   assert.equal(layers["road-shields"].layout["symbol-spacing"], 340);
-  assert.equal(layers["road-shields"].layout["icon-text-fit"], "width");
-  assert.deepEqual(layers["road-shields"].layout["icon-text-fit-padding"], [0, 3, 0, 3]);
+  assert.equal(layers["road-shields"].layout["icon-text-fit"], "both");
+  assert.deepEqual(layers["road-shields"].layout["icon-text-fit-padding"], [3, 3, 3, 3]);
   const routeLength = ["length", ["to-string", ["coalesce", ["get", "route_1_ref"], ["get", "ref"], ""]]];
   assert.deepEqual(layers["road-shields"].layout["text-size"], [
     "interpolate", ["linear"], ["zoom"],
@@ -40,10 +73,10 @@ test("builds local game-inspired shields and truthful POI categories", async () 
     14, ["step", routeLength, 17, 3, 15, 5, 13.5]
   ]);
   assert.ok(Array.isArray(layers["road-shields"].paint["text-halo-color"]));
-  assert.match(JSON.stringify(layers["road-shields"].paint["text-halo-color"]), /#f6f8ff/);
-  assert.match(JSON.stringify(layers["road-shields"].paint["text-halo-color"]), /#03040b/);
+  assert.match(JSON.stringify(layers["road-shields"].paint["text-halo-color"]), /#174a7e/);
+  assert.match(JSON.stringify(layers["road-shields"].paint["text-halo-color"]), /#ffffff/);
   assert.ok(Array.isArray(layers["road-shields"].paint["text-halo-width"]));
-  assert.deepEqual(layers["road-shields"].paint["text-halo-width"].slice(-2), [0.4, 1.25]);
+  assert.deepEqual(layers["road-shields"].paint["text-halo-width"].slice(-2), [0.45, 0.35]);
   assert.match(JSON.stringify(layers["road-shields"]), /route_1_ref/);
   assert.match(JSON.stringify(layers["road-shields"]), /US:FL:CR/);
   assert.equal(layers["poi-essential"].layout.visibility, "visible");
