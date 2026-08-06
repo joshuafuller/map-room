@@ -8,3 +8,25 @@ export function versionMapAssetRequest(url, resourceType) {
   versioned.searchParams.set("map-room-version", VECTOR_ASSET_VERSION);
   return { url: versioned.href };
 }
+
+export function normalizeMapStyleAssets(style, baseUrl) {
+  const normalized = structuredClone(style);
+  for (const field of ["sprite", "glyphs"]) {
+    if (typeof normalized[field] === "string") {
+      normalized[field] = new URL(normalized[field], baseUrl).href
+        .replaceAll("%7B", "{")
+        .replaceAll("%7D", "}");
+    }
+  }
+  return normalized;
+}
+
+export async function loadMapStyle(url, {
+  baseUrl = globalThis.location?.href ?? "http://localhost/",
+  fetcher = globalThis.fetch
+} = {}) {
+  const request = versionMapAssetRequest(new URL(url, baseUrl).href, "Style");
+  const response = await fetcher(request.url, { cache: "no-store" });
+  if (!response.ok) throw new Error(`Map style request failed (${response.status})`);
+  return normalizeMapStyleAssets(await response.json(), baseUrl);
+}

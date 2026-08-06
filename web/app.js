@@ -5,7 +5,7 @@ import { buildAtakVectorStyle } from "/atak-vector.js";
 import { buildingLayerIds } from "/buildings.js";
 import { poiLayerIds, poiLayerVisibility } from "/poi-visibility.js";
 import { setupMapManager } from "/map-manager.js";
-import { versionMapAssetRequest } from "/map-assets.js";
+import { loadMapStyle, versionMapAssetRequest } from "/map-assets.js";
 import { renderQrSvg } from "/qr-code.js";
 
 const themes = {
@@ -149,9 +149,13 @@ try {
   document.querySelector(".status-dot").style.background = "#c78d42";
 }
 
+const initialMapStyle = hasMaps
+  ? await loadMapStyle(`/styles/${styleId("daylight")}/style.json`)
+  : emptyStyle;
+
 map = new maplibregl.Map({
   container: "map",
-  style: hasMaps ? `/styles/${styleId("daylight")}/style.json` : emptyStyle,
+  style: initialMapStyle,
   center: manifest?.displayCenter ?? manifest?.center?.slice(0, 2) ?? [0, 0],
   zoom: manifest?.displayZoom ?? manifest?.center?.[2] ?? 2,
   bounds: manifest?.id === "all" ? manifest.bounds : undefined,
@@ -233,10 +237,14 @@ function updatePoiLayers() {
   }
 }
 
-function applyMapStyle() {
+let styleRequestId = 0;
+
+async function applyMapStyle() {
+  const requestId = ++styleRequestId;
   const style = !hasMaps ? emptyStyle : activeMode === "vector"
-    ? `/styles/${styleId()}/style.json`
+    ? await loadMapStyle(`/styles/${styleId()}/style.json`)
     : rasterStyle(activeTheme);
+  if (requestId !== styleRequestId) return;
   map.setStyle(style);
   map.once("style.load", () => {
     updateBuildingLayers();
