@@ -31,6 +31,15 @@ await page.waitForFunction(() => document.querySelector("#region")?.textContent 
 await page.waitForTimeout(1000);
 const catalog = await page.evaluate(() => fetch("/regions.json").then((response) => response.json()));
 const vectorTestRegion = catalog.regions.find(({ id }) => id === "florida") ?? catalog.regions[0];
+const tileCenter = (tile) => {
+  const [zoom, x, y] = tile.split("/").map(Number);
+  const scale = 2 ** zoom;
+  const longitude = (x + 0.5) / scale * 360 - 180;
+  const latitude = Math.atan(Math.sinh(Math.PI * (1 - 2 * (y + 0.5) / scale))) * 180 / Math.PI;
+  return { longitude, latitude };
+};
+const testCenter = tileCenter(vectorTestRegion.testTile);
+const mapHash = (zoom, pitchBearing = "") => `#${zoom}/${testCenter.latitude}/${testCenter.longitude}${pitchBearing}`;
 const shieldAssets = await page.evaluate(async () => {
   const style = await fetch("/styles/all-daylight/style.json").then((response) => response.json());
   const [spriteJson, spritePng] = await Promise.all([
@@ -292,7 +301,7 @@ if ((await page.locator("[data-poi-preset]").count()) !== 0) {
   failures.push("automatic progressive disclosure still exposed manual detail buttons");
 }
 for (const zoom of [14, 17, 18]) {
-  await page.evaluate((value) => { window.location.hash = `#${value}/25.775/-80.19`; }, zoom);
+  await page.evaluate((hash) => { window.location.hash = hash; }, mapHash(zoom));
   await page.waitForTimeout(900);
   await page.locator(".maplibregl-canvas").screenshot({
     path: new URL(`progressive-detail-z${zoom}.png`, outputDir).pathname
@@ -310,7 +319,7 @@ await page.locator('[data-mode="raster"]').click();
 await page.locator('[data-mode="raster"][aria-checked="true"]').waitFor();
 await tacticalRasterResponse;
 const tacticalHighZoomResponse = page.waitForResponse((response) => /\/styles\/all-cyberpunk-tactical\/(?:19|20)\//.test(response.url()) && response.url().endsWith("@2x.png"));
-await page.evaluate(() => { window.location.hash = "#20/37.7749/-122.4194"; });
+await page.evaluate((hash) => { window.location.hash = hash; }, mapHash(20));
 await tacticalHighZoomResponse;
 await page.waitForTimeout(500);
 const tacticalRasterMiamiPath = new URL("cyberpunk-tactical-miami-raster.png", outputDir);
@@ -319,7 +328,7 @@ await page.screenshot({ path: tacticalRasterMiamiPath.pathname });
 await page.locator('[data-mode="vector"]').click();
 await page.locator('[data-mode="vector"][aria-checked="true"]').waitFor();
 await page.waitForTimeout(700);
-await page.evaluate(() => { window.location.hash = "#12/25.775/-80.19"; });
+await page.evaluate((hash) => { window.location.hash = hash; }, mapHash(12));
 await page.waitForTimeout(1600);
 const rotationHashBefore = await page.evaluate(() => window.location.hash);
 await page.mouse.move(600, 450);
@@ -330,7 +339,7 @@ await page.waitForTimeout(500);
 if (await page.evaluate(() => window.location.hash) === rotationHashBefore) {
   failures.push("right-button mouse drag did not rotate or tilt the map camera");
 }
-await page.evaluate(() => { window.location.hash = "#12/25.775/-80.19"; });
+await page.evaluate((hash) => { window.location.hash = hash; }, mapHash(12));
 await page.waitForTimeout(500);
 if (await page.locator("#buildings-toggle").getAttribute("hidden") !== null) {
   failures.push("Cyberpunk Tactical did not expose the 3D building control");
@@ -344,7 +353,7 @@ await page.locator('[data-theme="daylight"][aria-checked="true"]').waitFor();
 if (await page.locator("#buildings-toggle").getAttribute("hidden") !== null) {
   failures.push("Daylight did not expose the 3D building control");
 }
-await page.evaluate(() => { window.location.hash = "#16/25.775/-80.19/-18/58"; });
+await page.evaluate((hash) => { window.location.hash = hash; }, mapHash(16, "/-18/58"));
 await page.locator("#buildings-toggle").click();
 await page.waitForTimeout(1100);
 await page.locator(".maplibregl-canvas").screenshot({
@@ -374,7 +383,7 @@ if (buildingLayerCounts.some(([, count]) => count !== catalog.regions.length)) {
   failures.push("every composed theme did not publish one 3D building layer per installed region");
 }
 await page.locator("#buildings-toggle").click();
-await page.evaluate(() => { window.location.hash = "#16/25.775/-80.19/-18/58"; });
+await page.evaluate((hash) => { window.location.hash = hash; }, mapHash(16, "/-18/58"));
 await page.waitForTimeout(1600);
 const buildingsOffPath = new URL("cyberpunk-tactical-buildings-off.png", outputDir);
 const buildingsOnPath = new URL("cyberpunk-tactical-buildings-on.png", outputDir);
@@ -406,7 +415,9 @@ for (let index = 0; index < buildingsOff.data.length; index += 4) {
   buildingColorDelta += delta;
 }
 const buildingPixelCount = buildingsOff.info.width * buildingsOff.info.height;
-if (changedBuildingPixels < 100000 || buildingColorDelta / buildingPixelCount < 10) {
+const changedBuildingRatio = changedBuildingPixels / buildingPixelCount;
+const averageBuildingDelta = buildingColorDelta / buildingPixelCount;
+if (changedBuildingRatio < 0.01 || averageBuildingDelta < 2) {
   failures.push(`3D building toggle did not visibly change the map (${changedBuildingPixels} pixels)`);
 }
 

@@ -204,7 +204,10 @@ test("compiles the complete authored Cyberpunk theme without unsupported express
   for (const required of [
     "roads-motorway", "roads-primary", "roads-secondary", "roads-tertiary", "roads-minor", "roads-path",
     "runway-glow", "runways", "taxiways", "poi-airports",
-    "road-shields-interstate", "road-shields-us", "road-shields-state", "road-shields-county",
+    "road-shields-interstate", "road-shields-interstate-ref-fallback",
+    "road-shields-us", "road-shields-us-ref-fallback",
+    "road-shields-state", "road-shields-state-ref-fallback",
+    "road-shields-county", "road-shields-county-ref-fallback",
     "poi-essential-medical", "poi-essential-fire", "poi-essential-police", "poi-essential-fuel", "poi-essential-port",
     "poi-explore-food", "poi-explore-lodging", "poi-explore-attraction", "poi-explore-shopping", "poi-parking-lot"
   ]) assert.equal(ids.has(required), true, `missing ${required}`);
@@ -217,9 +220,19 @@ test("compiles the complete authored Cyberpunk theme without unsupported express
   };
   for (const [id, textSize] of Object.entries(shieldExpectations)) {
     const shield = style.layers.find((layer) => layer.id === id);
+    const fallback = style.layers.find((layer) => layer.id === `${id}-ref-fallback`);
     assert.equal(shield.layout["text-size"], textSize, `${id} must keep route references legible in ATAK`);
     assert.equal(shield.layout["icon-size"], 1, `${id} must use the ATAK-normalized 32 px shield atlas`);
     assert.equal(shield.layout["text-font"][0], "Open Sans Semibold");
+    assert.equal(shield.layout["text-field"], "{route_1_ref}", `${id} must prefer the normalized route reference`);
+    assert.equal(fallback.layout["text-field"], "{ref}", `${id} must retain a source-reference fallback`);
+    assert.deepEqual(shield.layout["icon-text-fit-padding"], [0, 3, 0, 3]);
+    assert.equal(shield.layout["icon-text-fit"], "width");
+    assert.equal(shield.layout["text-anchor"], "center");
+    assert.equal(shield.layout["text-transform"], "uppercase");
+    assert.equal(shield.layout["text-allow-overlap"], false);
+    assert.match(JSON.stringify(shield.filter), /route_1_ref/);
+    assert.match(JSON.stringify(fallback.filter), /!has.*route_1_ref/);
     assert.ok(shield.paint["text-halo-width"] <= 1, `${id} halo must not consume the route reference`);
   }
 

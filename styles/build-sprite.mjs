@@ -10,6 +10,12 @@ const size = 128;
 const pixelRatio = 4;
 const columns = 4;
 const atakScale = 4;
+const shieldFit = {
+  "shield-interstate": { content: [5, 5, 27, 24], stretchX: [[14, 18]] },
+  "shield-us": { content: [7, 5, 25, 24], stretchX: [[14, 18]] },
+  "shield-state": { content: [5, 6, 27, 26], stretchX: [[14, 18]] },
+  "shield-county": { content: [4, 7, 28, 25], stretchX: [[14, 18]] }
+};
 
 async function writeFileAtomic(path, data) {
   const temporaryPath = `${path}.${process.pid}.${randomUUID()}.tmp`;
@@ -36,10 +42,26 @@ const symbols = [
 ];
 
 function shieldSvg({ accent, fill }, palette) {
+  const path = "M18 18h92v52c0 23-18 35-46 44C36 105 18 93 18 70Z";
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 128 128">
-  <path d="M18 18h92v52c0 23-18 35-46 44C36 105 18 93 18 70Z" fill="${palette.shadow}" stroke="${palette.shadow}" stroke-width="12" stroke-linejoin="round"/>
-  <path d="M18 18h92v52c0 23-18 35-46 44C36 105 18 93 18 70Z" fill="${palette[fill]}" stroke="${palette.frame}" stroke-width="7" stroke-linejoin="round"/>
-  <path d="M18 18h92v52c0 23-18 35-46 44C36 105 18 93 18 70Z" fill="none" stroke="${palette[accent]}" stroke-width="4" stroke-linejoin="round"/>
+  <path d="${path}" fill="${palette.shadow}" stroke="${palette.shadow}" stroke-width="12" stroke-linejoin="round"/>
+  <path d="${path}" fill="${palette[fill]}" stroke="${palette.frame}" stroke-width="7" stroke-linejoin="round"/>
+  <path d="${path}" fill="none" stroke="${palette[accent]}" stroke-width="4" stroke-linejoin="round"/>
+  </svg>`;
+}
+
+function atakShieldSvg({ id, accent, fill }, palette) {
+  const paths = {
+    "shield-interstate": "M18 18h92v52c0 23-18 35-46 44C36 105 18 93 18 70Z",
+    "shield-us": "M28 14C40 20 52 14 64 9c12 5 24 11 36 5l8 40c-3 29-19 50-44 62C39 104 23 83 20 54Z",
+    "shield-state": "M32 16h64q12 0 12 12v68q0 12-12 12H32q-12 0-12-12V28q0-12 12-12Z",
+    "shield-county": "M24 18h80l10 14v64l-10 14H24L14 96V32Z"
+  };
+  const path = paths[id];
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 128 128">
+  <path d="${path}" fill="${palette.shadow}" stroke="${palette.shadow}" stroke-width="12" stroke-linejoin="round"/>
+  <path d="${path}" fill="${palette[fill]}" stroke="${palette.frame}" stroke-width="7" stroke-linejoin="round"/>
+  <path d="${path}" fill="none" stroke="${palette[accent]}" stroke-width="4" stroke-linejoin="round"/>
   </svg>`;
 }
 
@@ -59,6 +81,7 @@ export async function buildSpriteAtlas(outputDirectory, palette) {
   const width = columns * size;
   const height = Math.ceil(symbols.length / columns) * size;
   const composites = [];
+  const atakComposites = [];
   const metadata = {};
   const designs = {};
 
@@ -67,6 +90,12 @@ export async function buildSpriteAtlas(outputDirectory, palette) {
     const top = Math.floor(index / columns) * size;
     const svg = symbol.type === "shield" ? shieldSvg(symbol, palette) : await markerSvg(symbol, palette);
     composites.push({ input: await sharp(Buffer.from(svg)).png().toBuffer(), left, top });
+    const atakSvg = symbol.type === "shield" ? atakShieldSvg(symbol, palette) : svg;
+    atakComposites.push({
+      input: await sharp(Buffer.from(atakSvg)).resize(size / atakScale, size / atakScale).png().toBuffer(),
+      left: left / atakScale,
+      top: top / atakScale
+    });
     metadata[symbol.id] = { width: size, height: size, x: left, y: top, pixelRatio };
     if (symbol.icon) {
       designs[symbol.id] = {
@@ -87,10 +116,18 @@ export async function buildSpriteAtlas(outputDirectory, palette) {
     height: symbol.height / atakScale,
     x: symbol.x / atakScale,
     y: symbol.y / atakScale,
-    pixelRatio: 1
+    pixelRatio: 1,
+    ...(shieldFit[id] ?? {})
   }]));
-  const atakAtlas = await sharp(atlas)
-    .resize(width / atakScale, height / atakScale)
+  const atakAtlas = await sharp({
+    create: {
+      width: width / atakScale,
+      height: height / atakScale,
+      channels: 4,
+      background: { r: 0, g: 0, b: 0, alpha: 0 }
+    }
+  })
+    .composite(atakComposites)
     .png()
     .toBuffer();
   const metadataJson = `${JSON.stringify(metadata, null, 2)}\n`;
