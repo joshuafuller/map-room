@@ -137,18 +137,29 @@ function expandRoadShields(layer) {
     { id: "state", networks: ["US:FL", "us-state"], icon: "shield-state", textSize: 16 },
     { id: "county", networks: ["US:FL:CR"], icon: "shield-county", textSize: 14.5 }
   ];
-  return groups.map((group) => {
+  return groups.flatMap((group) => {
     const shield = structuredClone(layer);
     shield.id = `${layer.id}-${group.id}`;
-    shield.filter = ["any", ["in", "network", ...group.networks], ["in", "route_1_network", ...group.networks]];
+    const networkFilter = ["any", ["in", "network", ...group.networks], ["in", "route_1_network", ...group.networks]];
+    shield.filter = ["all", networkFilter, ["has", "route_1_ref"]];
     shield.layout["icon-image"] = group.icon;
     shield.layout["icon-size"] = 1;
-    shield.layout["text-field"] = "{ref}";
+    shield.layout["icon-text-fit"] = "width";
+    shield.layout["icon-text-fit-padding"] = [0, 3, 0, 3];
+    shield.layout["text-field"] = "{route_1_ref}";
     shield.layout["text-size"] = group.textSize;
+    shield.layout["text-anchor"] = "center";
+    shield.layout["text-transform"] = "uppercase";
+    shield.layout["text-allow-overlap"] = false;
+    shield.layout["icon-allow-overlap"] = false;
     shield.paint["text-color"] = group.id === "us" ? "#080912" : "#f4f7ff";
     shield.paint["text-halo-color"] = group.id === "us" ? "#f4f7ff" : "#060711";
     shield.paint["text-halo-width"] = group.id === "us" ? 0.4 : 0.8;
-    return legacyLayer(shield);
+    const fallback = structuredClone(shield);
+    fallback.id = `${shield.id}-ref-fallback`;
+    fallback.filter = ["all", networkFilter, ["!has", "route_1_ref"], ["has", "ref"]];
+    fallback.layout["text-field"] = "{ref}";
+    return [legacyLayer(shield), legacyLayer(fallback)];
   });
 }
 
