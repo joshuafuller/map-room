@@ -189,9 +189,10 @@ button { font: inherit; }
 .map-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 9px; }
 .small-action { padding: 7px 9px; border: 1px solid var(--line); border-radius: 8px; color: var(--ink); background: #fafafa; cursor: pointer; font-size: 10px; font-weight: 750; }
 .small-action.danger { color: #8a342d; border-color: rgba(157,55,45,.25); }
-.delete-confirm { display: flex; gap: 6px; margin-top: 9px; }
+.delete-confirm { display: grid; gap: 9px; margin-top: 9px; padding: 10px; border: 1px solid rgba(157,55,45,.2); border-radius: 9px; background: #fff7f5; }
 .delete-confirm[hidden] { display: none; }
-.delete-confirm input { min-height: 34px; }
+.delete-question { margin: 0; color: #6e302b; font-size: 11px; font-weight: 700; line-height: 1.4; }
+.delete-confirm-actions { display: flex; justify-content: flex-end; gap: 6px; }
 .job-state { padding: 3px 6px; border-radius: 999px; color: #315e54; background: #e7f3ef; font-size: 9px; font-weight: 800; text-transform: uppercase; }
 .job-state.failed { color: #8a342d; background: #faeae8; }
 .job-progress { width: 100%; height: 6px; margin-top: 9px; accent-color: #527c70; }
