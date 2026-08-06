@@ -1,6 +1,18 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { describeSource, escapeHtml, formatBytes, groupCatalogRegions, jobPhaseSteps, jobPresentation, retryAction, slug } from "./map-manager.js";
+import {
+  catalogResultGroups,
+  catalogShortcutRegions,
+  describeSource,
+  escapeHtml,
+  formatBytes,
+  groupCatalogRegions,
+  jobPhaseSteps,
+  jobPresentation,
+  moveCatalogFocus,
+  retryAction,
+  slug
+} from "./map-manager.js";
 
 test("formats map sizes for the management UI", () => {
   assert.equal(formatBytes(null), "Size unavailable");
@@ -60,6 +72,43 @@ test("groups worldwide catalog results without changing provider identities", ()
     ["Europe", ["europe/france", "europe/germany"]],
     ["North America / US", ["north-america/us/florida"]]
   ]);
+});
+
+test("keeps search results grouped and bounded without hiding the result count", () => {
+  const regions = Array.from({ length: 75 }, (_, index) => ({
+    id: `us/region-${index}`,
+    name: `Region ${index}`,
+    group: index < 50 ? "North America / US" : "Europe"
+  }));
+  const result = catalogResultGroups(regions, 40);
+
+  assert.equal(result.total, 75);
+  assert.equal(result.visible, 40);
+  assert.equal(result.truncated, true);
+  assert.equal(result.groups.reduce((count, group) => count + group.regions.length, 0), 40);
+});
+
+test("puts installed and recent regions first without duplicate provider IDs", () => {
+  const shortcuts = catalogShortcutRegions([
+    { name: "Florida Ops", source: { catalogId: "us/florida" } },
+    { name: "Uploaded", source: { type: "upload" } }
+  ], [
+    { id: "us/florida", name: "Florida", group: "North America / US" },
+    { id: "europe/germany", name: "Germany", group: "Europe" }
+  ]);
+
+  assert.deepEqual(shortcuts, [
+    { id: "us/florida", name: "Florida Ops", group: "Installed maps", installed: true },
+    { id: "europe/germany", name: "Germany", group: "Recent regions" }
+  ]);
+});
+
+test("moves keyboard focus through search results without escaping the list", () => {
+  assert.equal(moveCatalogFocus(-1, 1, 3), 0);
+  assert.equal(moveCatalogFocus(0, 1, 3), 1);
+  assert.equal(moveCatalogFocus(2, 1, 3), 0);
+  assert.equal(moveCatalogFocus(0, -1, 3), 2);
+  assert.equal(moveCatalogFocus(0, 1, 0), -1);
 });
 
 test("turns Planetiler heap failures into actionable guidance", () => {
