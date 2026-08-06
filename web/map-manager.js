@@ -129,19 +129,26 @@ export function setupMapManager({ onLibraryChanged = async () => {} } = {}) {
       const row = document.createElement("article");
       row.className = "map-row";
       const generated = map.generatedAt ? new Date(map.generatedAt).toLocaleDateString() : "Unknown build date";
-      row.innerHTML = `<div class="map-row-head"><div><strong></strong><span class="map-meta"></span></div></div><div class="map-actions"><button class="small-action rename" type="button">Rename</button><button class="small-action rebuild" type="button" ${map.canRebuild ? "" : "disabled"}>Rebuild</button><button class="small-action danger delete" type="button">Delete</button></div><div class="delete-confirm" hidden><input aria-label="Type map ID to confirm deletion" placeholder="Type ${map.id}" /><button class="small-action danger confirm-delete" type="button">Delete permanently</button></div>`;
+      row.innerHTML = `<div class="map-row-head"><div><strong></strong><span class="map-meta"></span></div></div><div class="map-actions"><button class="small-action rename" type="button">Rename</button><button class="small-action rebuild" type="button" ${map.canRebuild ? "" : "disabled"}>Rebuild</button><button class="small-action danger delete" type="button">Delete</button></div><div class="delete-confirm" role="group" hidden><p class="delete-question"></p><div class="delete-confirm-actions"><button class="small-action cancel-delete" type="button">Cancel</button><button class="small-action danger confirm-delete" type="button">Delete map</button></div></div>`;
       row.querySelector("strong").textContent = map.name;
       row.querySelector(".map-meta").textContent = `${map.id} · ${formatBytes(map.archiveBytes)} · ${describeSource(map.source)} · built ${generated}`;
+      row.querySelector(".delete-question").textContent = `Are you sure you want to delete ${map.name}?`;
       row.querySelector(".rename").addEventListener("click", async () => {
         const next = window.prompt("Map name", map.name);
         if (!next || next === map.name) return;
         await action(() => request(`/api/maps/${map.id}`, { method: "PATCH", body: JSON.stringify({ name: next }) }), "Map renamed", true);
       });
       row.querySelector(".rebuild").addEventListener("click", () => action(() => request(`/api/maps/${map.id}/rebuild`, { method: "POST" }), "Rebuild queued"));
-      row.querySelector(".delete").addEventListener("click", () => { row.querySelector(".delete-confirm").hidden = false; row.querySelector(".delete-confirm input").focus(); });
+      row.querySelector(".delete").addEventListener("click", () => {
+        row.querySelector(".delete-confirm").hidden = false;
+        row.querySelector(".cancel-delete").focus();
+      });
+      row.querySelector(".cancel-delete").addEventListener("click", () => {
+        row.querySelector(".delete-confirm").hidden = true;
+        row.querySelector(".delete").focus();
+      });
       row.querySelector(".confirm-delete").addEventListener("click", async () => {
-        const confirmation = row.querySelector(".delete-confirm input").value;
-        await action(() => request(`/api/maps/${map.id}?confirm=${encodeURIComponent(confirmation)}`, { method: "DELETE" }), "Map deleted", true);
+        await action(() => request(`/api/maps/${map.id}?confirm=${encodeURIComponent(map.id)}`, { method: "DELETE" }), "Map deleted", true);
       });
       return row;
     }));
