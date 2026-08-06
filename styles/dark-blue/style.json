@@ -4,7 +4,10 @@
   "metadata": {
     "map-room:theme": "dark-blue",
     "map-room:tileset-schema": "openmaptiles-3.16",
-    "map-room:style-version": "1.0.0"
+    "map-room:style-version": "1.0.0",
+    "map-room:iconography": "OpenStreetMap Americana",
+    "map-room:iconography-upstream": "osm-americana/openstreetmap-americana@6098606aae8119de34a5de08e7bedc1ffdd712a8",
+    "map-room:iconography-license": "CC0-1.0"
   },
   "sources": {
     "osm": {
@@ -737,8 +740,8 @@
               ],
               3
             ],
-            "shield-interstate-wide",
-            "shield-interstate"
+            "shield_us_interstate_3",
+            "shield_us_interstate_2"
           ],
           "us",
           [
@@ -765,8 +768,8 @@
               ],
               3
             ],
-            "shield-us-wide",
-            "shield-us"
+            "shield_badge_3",
+            "shield_badge_2"
           ],
           "county",
           [
@@ -793,8 +796,8 @@
               ],
               3
             ],
-            "shield-county-wide",
-            "shield-county"
+            "shield_badge_3",
+            "shield_badge_2"
           ],
           [
             "case",
@@ -820,8 +823,8 @@
               ],
               3
             ],
-            "shield-state-wide",
-            "shield-state"
+            "shield_badge_3",
+            "shield_badge_2"
           ]
         ],
         "icon-size": [
@@ -1947,14 +1950,14 @@
             "hospital",
             "clinic"
           ],
-          "poi-medical",
+          "poi_hospital",
           "fire_station",
-          "poi-fire",
+          "poi_fire_station",
           "police",
-          "poi-police",
+          "poi_police_shield",
           "fuel",
-          "poi-fuel",
-          "poi-port"
+          "poi_fuel",
+          "poi_square_dot"
         ],
         "icon-size": 1.15,
         "icon-allow-overlap": false,
@@ -2017,7 +2020,7 @@
       ],
       "layout": {
         "visibility": "visible",
-        "icon-image": "poi-airport",
+        "icon-image": "poi_plane",
         "icon-size": 1.1,
         "text-field": [
           "get",
@@ -2076,15 +2079,15 @@
             "restaurant",
             "fast_food"
           ],
-          "poi-food",
+          "poi_restaurant",
           "lodging",
-          "poi-lodging",
+          "poi_hotel",
           [
             "museum",
             "attraction"
           ],
-          "poi-attraction",
-          "poi-shopping"
+          "poi_museum",
+          "poi_supermarket"
         ],
         "icon-size": 1.08,
         "icon-allow-overlap": false,
@@ -2140,7 +2143,7 @@
       ],
       "layout": {
         "visibility": "visible",
-        "icon-image": "poi-parking",
+        "icon-image": "poi_p",
         "icon-size": 1.02,
         "icon-allow-overlap": false,
         "text-field": [
@@ -2326,7 +2329,60 @@
           12,
           17
         ],
-        "text-max-width": 9
+        "text-max-width": 9,
+        "icon-image": [
+          "match",
+          [
+            "get",
+            "capital"
+          ],
+          2,
+          "place_star_in_circle",
+          3,
+          "place_star",
+          4,
+          "place_star",
+          5,
+          "place_dot_in_circle",
+          6,
+          "place_dot_in_circle",
+          "place_dot"
+        ],
+        "icon-size": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          4,
+          0.4,
+          7,
+          0.5,
+          11,
+          0.9
+        ],
+        "icon-padding": 0,
+        "icon-allow-overlap": false,
+        "icon-optional": false,
+        "text-radial-offset": [
+          "match",
+          [
+            "get",
+            "capital"
+          ],
+          2,
+          0.7,
+          0.5
+        ],
+        "text-variable-anchor": [
+          "bottom",
+          "bottom-right",
+          "bottom-left",
+          "right",
+          "left"
+        ]
       },
       "paint": {
         "text-color": "#e8f0f7",
@@ -2370,14 +2426,14 @@
             "hospital",
             "clinic"
           ],
-          "poi-medical",
+          "poi_hospital",
           "fire_station",
-          "poi-fire",
+          "poi_fire_station",
           "police",
-          "poi-police",
+          "poi_police_shield",
           "fuel",
-          "poi-fuel",
-          "poi-port"
+          "poi_fuel",
+          "poi_square_dot"
         ],
         "icon-size": 1.15,
         "icon-allow-overlap": true,
@@ -2456,15 +2512,15 @@
             "restaurant",
             "fast_food"
           ],
-          "poi-food",
+          "poi_restaurant",
           "lodging",
-          "poi-lodging",
+          "poi_hotel",
           [
             "museum",
             "attraction"
           ],
-          "poi-attraction",
-          "poi-shopping"
+          "poi_museum",
+          "poi_supermarket"
         ],
         "icon-size": 1.08,
         "icon-allow-overlap": true,
@@ -2522,7 +2578,7 @@
       ],
       "layout": {
         "visibility": "none",
-        "icon-image": "poi-parking",
+        "icon-image": "poi_p",
         "icon-size": 1.02,
         "icon-allow-overlap": true,
         "text-field": [
@@ -2586,7 +2642,7 @@
       ],
       "layout": {
         "visibility": "none",
-        "icon-image": "poi-airport",
+        "icon-image": "poi_plane",
         "icon-size": 1.1,
         "text-field": [
           "get",

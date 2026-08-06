@@ -4,20 +4,10 @@ import { createHash } from "node:crypto";
 import { execFile } from "node:child_process";
 import { readFile } from "node:fs/promises";
 import { promisify } from "node:util";
-import sharp from "sharp";
 import { applyAmericanaShields } from "../../web/americana-style.js";
 
 const execute = promisify(execFile);
 const themeIds = ["daylight", "midnight", "dark-blue", "dark-red", "dark-green", "cyberpunk", "cyberpunk-tactical"];
-
-async function countPixels(image, predicate) {
-  const { data } = await image.ensureAlpha().raw().toBuffer({ resolveWithObject: true });
-  let count = 0;
-  for (let offset = 0; offset < data.length; offset += 4) {
-    if (predicate(data[offset], data[offset + 1], data[offset + 2], data[offset + 3])) count += 1;
-  }
-  return count;
-}
 
 test("uses Americana's dynamic nationwide shield system for Daylight", async () => {
   await execute(process.execPath, ["styles/build-styles.mjs"]);
@@ -41,7 +31,8 @@ test("uses Americana browser shields with truthful colored-theme POI categories"
   const designs = JSON.parse(await readFile("styles/cyberpunk-tactical/sprite-design.json", "utf8"));
   const png = await readFile("styles/cyberpunk-tactical/sprite.png");
   const retinaSprite = JSON.parse(await readFile("styles/cyberpunk-tactical/sprite@2x.json", "utf8"));
-  const retinaPng = await readFile("styles/cyberpunk-tactical/sprite@2x.png");
+  const daylightSprite = JSON.parse(await readFile("styles/daylight/sprite.json", "utf8"));
+  const daylightPng = await readFile("styles/daylight/sprite.png");
   const atakSprite = JSON.parse(await readFile("styles/cyberpunk-tactical/atak-sprite.json", "utf8"));
   const atakPng = await readFile("styles/cyberpunk-tactical/atak-sprite.png");
   const html = await readFile("web/index.html", "utf8");
@@ -81,15 +72,16 @@ test("uses Americana browser shields with truthful colored-theme POI categories"
   assert.match(JSON.stringify(layers["poi-explore"]), /restaurant/);
   assert.match(JSON.stringify(layers["poi-explore"]), /lodging/);
 
-  const requiredSprites = [
-    "shield-interstate", "shield-interstate-wide", "shield-us", "shield-us-wide",
-    "shield-state", "shield-state-wide", "shield-county", "shield-county-wide",
-    "poi-medical", "poi-fire", "poi-police", "poi-fuel", "poi-airport", "poi-port",
-    "poi-food", "poi-lodging", "poi-attraction", "poi-shopping", "poi-parking"
-  ];
-  assert.deepEqual(Object.keys(sprite).sort(), requiredSprites.sort());
-  assert.deepEqual(retinaSprite, sprite);
-  assert.deepEqual(retinaPng, png);
+  assert.deepEqual(sprite, daylightSprite, "colored themes must publish only Americana's browser/raster atlas");
+  assert.deepEqual(png, daylightPng, "colored themes must publish Americana's exact sprite pixels");
+  assert.deepEqual(Object.keys(retinaSprite).sort(), Object.keys(sprite).sort());
+  for (const id of [
+    "poi_hospital", "poi_fire_station", "poi_police_shield", "poi_fuel", "poi_plane",
+    "poi_restaurant", "poi_hotel", "poi_museum", "poi_supermarket", "poi_p", "place_star"
+  ]) {
+    assert.ok(sprite[id], `${id} must come from Americana`);
+    assert.equal(retinaSprite[id].pixelRatio, 2);
+  }
   assert.deepEqual(designs["poi-fuel"], {
     label: "Fuel",
     silhouette: ["pump-body", "display-window", "hose", "nozzle"],
@@ -101,43 +93,6 @@ test("uses Americana browser shields with truthful colored-theme POI categories"
   assert.deepEqual(designs["shield-us"], { standard: "FHWA M1-4 guide-sign use", source: fhwaSource });
   assert.deepEqual(designs["shield-state"], { standard: "FHWA M1-5 guide-sign use", source: fhwaSource });
   assert.deepEqual(designs["shield-county"], { standard: "FHWA M1-6", source: fhwaSource });
-  for (const id of ["poi-fire", "poi-police", "poi-airport", "poi-food", "poi-attraction"]) {
-    assert.ok(designs[id].silhouette.length >= 2, `${id} must use a recognizable multi-part silhouette`);
-  }
-  assert.deepEqual([...png.subarray(0, 8)], [137, 80, 78, 71, 13, 10, 26, 10]);
-  assert.equal(sprite["poi-fuel"].width, 128);
-  assert.equal(sprite["poi-fuel"].height, 128);
-  assert.equal(sprite["poi-fuel"].pixelRatio, 4);
-  for (const shieldId of ["shield-interstate", "shield-us", "shield-state", "shield-county"]) {
-    assert.equal(sprite[shieldId].width, sprite[shieldId].height, `${shieldId} must use a fixed square marker`);
-    assert.equal(sprite[shieldId].content, undefined, `${shieldId} must not publish an elastic browser text-content box`);
-    assert.equal(sprite[shieldId].stretchX, undefined, `${shieldId} must not publish a browser stretch region`);
-  }
-  for (const shieldId of ["shield-interstate-wide", "shield-us-wide", "shield-state-wide", "shield-county-wide"]) {
-    assert.equal(sprite[shieldId].width / sprite[shieldId].height, 30 / 24,
-      `${shieldId} must use the MUTCD three-digit 30:24 proportion`);
-    assert.equal(sprite[shieldId].content, undefined);
-    assert.equal(sprite[shieldId].stretchX, undefined);
-  }
-  const shieldAlphaDigests = new Set();
-  for (let index = 0; index < 4; index += 1) {
-    const alpha = await sharp(png).extract({ left: index * 128, top: 0, width: 128, height: 128 }).ensureAlpha().extractChannel("alpha").raw().toBuffer();
-    shieldAlphaDigests.add(createHash("sha256").update(alpha).digest("hex"));
-  }
-  assert.equal(shieldAlphaDigests.size, 4, "browser road classes must use four distinct shield silhouettes");
-  const county = sprite["shield-county"];
-  const countyImage = sharp(png).extract({ left: county.x, top: county.y, width: county.width, height: county.height });
-  assert.ok(await countPixels(countyImage.clone(), (r, g, b, a) => a > 220 && b > 90 && b > r * 1.25) > 2200,
-    "FHWA M1-6 county markers need a substantial blue field");
-  assert.ok(await countPixels(countyImage.clone(), (r, g, b, a) => a > 220 && r > 210 && g > 150 && b < 90) > 500,
-    "FHWA M1-6 county markers need a visible yellow border");
-  const state = sprite["shield-state"];
-  const stateAlpha = await sharp(png).extract({ left: state.x, top: state.y, width: state.width, height: state.height })
-    .ensureAlpha().extractChannel("alpha").raw().toBuffer();
-  assert.ok(stateAlpha[4 * state.width + Math.floor(state.width / 2)] > 220,
-    "FHWA M1-5 state markers need the circle to reach the top center");
-  assert.ok(stateAlpha[4 * state.width + 4] < 30,
-    "FHWA M1-5 state markers need transparent corners instead of a rounded rectangle");
   assert.equal(atakSprite["shield-interstate"].width, 32);
   assert.equal(atakSprite["shield-interstate"].height, 32);
   assert.equal(atakSprite["shield-interstate"].pixelRatio, 1);
@@ -178,7 +133,6 @@ test("uses Americana shields across Daylight and every colored theme", async () 
     const retinaSprite = JSON.parse(await readFile(`styles/${id}/sprite@2x.json`, "utf8"));
     const png = await readFile(`styles/${id}/sprite.png`);
     const atakPng = await readFile(`styles/${id}/atak-sprite.png`);
-    const retinaPng = await readFile(`styles/${id}/sprite@2x.png`);
 
     assert.equal(style.sprite, "{styleJsonFolder}/sprite");
     if (id === "daylight") {
@@ -209,8 +163,7 @@ test("uses Americana shields across Daylight and every colored theme", async () 
     assert.equal(layers["poi-parking"].minzoom, 18);
     assert.equal(layers["house-numbers"].layout.visibility, "visible");
     assert.equal(layers["house-numbers"].minzoom, 18);
-    assert.deepEqual(retinaSprite, sprite);
-    assert.deepEqual(retinaPng, png);
+    assert.deepEqual(Object.keys(retinaSprite).sort(), Object.keys(sprite).sort());
     spriteDigests.add(createHash("sha256").update(png).digest("hex"));
 
     const semantics = {
@@ -226,7 +179,7 @@ test("uses Americana shields across Daylight and every colored theme", async () 
     assert.deepEqual(semantics, canonicalSemantics);
   }
 
-  assert.equal(spriteDigests.size, themeIds.length - 1);
+  assert.equal(spriteDigests.size, 1, "every colored theme must use the same pinned Americana sprite pixels");
 });
 
 test("preserves Americana's neutral building treatment for Daylight", async () => {

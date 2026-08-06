@@ -2,9 +2,70 @@ import { mkdir, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { buildSpriteAtlas } from "./build-sprite.mjs";
-import { buildAmericanaDaylight } from "./build-americana.mjs";
+import { buildAmericanaDaylight, copyAmericanaSpriteAtlas } from "./build-americana.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
+
+const americanaIconIds = new Map([
+  ["shield-interstate", "shield_us_interstate_2"],
+  ["shield-interstate-wide", "shield_us_interstate_3"],
+  ["shield-us", "shield_badge_2"],
+  ["shield-us-wide", "shield_badge_3"],
+  ["shield-state", "shield_badge_2"],
+  ["shield-state-wide", "shield_badge_3"],
+  ["shield-county", "shield_badge_2"],
+  ["shield-county-wide", "shield_badge_3"],
+  ["poi-medical", "poi_hospital"],
+  ["poi-fire", "poi_fire_station"],
+  ["poi-police", "poi_police_shield"],
+  ["poi-fuel", "poi_fuel"],
+  ["poi-airport", "poi_plane"],
+  ["poi-port", "poi_square_dot"],
+  ["poi-food", "poi_restaurant"],
+  ["poi-lodging", "poi_hotel"],
+  ["poi-attraction", "poi_museum"],
+  ["poi-shopping", "poi_supermarket"],
+  ["poi-parking", "poi_p"]
+]);
+
+function replaceIconIds(value) {
+  if (typeof value === "string") return americanaIconIds.get(value) ?? value;
+  if (Array.isArray(value)) return value.map(replaceIconIds);
+  if (!value || typeof value !== "object") return value;
+  return Object.fromEntries(Object.entries(value).map(([key, entry]) => [key, replaceIconIds(entry)]));
+}
+
+function useAmericanaIconography(style) {
+  const adapted = structuredClone(style);
+  adapted.metadata = {
+    ...adapted.metadata,
+    "map-room:iconography": "OpenStreetMap Americana",
+    "map-room:iconography-upstream": "osm-americana/openstreetmap-americana@6098606aae8119de34a5de08e7bedc1ffdd712a8",
+    "map-room:iconography-license": "CC0-1.0"
+  };
+  for (const layer of adapted.layers) {
+    if (layer.layout?.["icon-image"] !== undefined) {
+      layer.layout["icon-image"] = replaceIconIds(layer.layout["icon-image"]);
+    }
+    if (layer.id === "place-labels") {
+      layer.layout["icon-image"] = ["match", ["get", "capital"],
+        2, "place_star_in_circle",
+        3, "place_star",
+        4, "place_star",
+        5, "place_dot_in_circle",
+        6, "place_dot_in_circle",
+        "place_dot"
+      ];
+      layer.layout["icon-size"] = ["interpolate", ["linear"], ["zoom"], 4, 0.4, 7, 0.5, 11, 0.9];
+      layer.layout["icon-padding"] = 0;
+      layer.layout["icon-allow-overlap"] = false;
+      layer.layout["icon-optional"] = false;
+      layer.layout["text-radial-offset"] = ["match", ["get", "capital"], 2, 0.7, 0.5];
+      layer.layout["text-variable-anchor"] = ["bottom", "bottom-right", "bottom-left", "right", "left"];
+    }
+  }
+  return adapted;
+}
 
 const themes = {
   daylight: {
@@ -573,8 +634,9 @@ for (const [id, theme] of Object.entries(themes)) {
   if (id === "daylight") continue;
   const output = resolve(here, id, "style.json");
   await mkdir(dirname(output), { recursive: true });
-  await writeFile(output, `${JSON.stringify(makeStyle(id, theme), null, 2)}\n`);
+  await writeFile(output, `${JSON.stringify(useAmericanaIconography(makeStyle(id, theme)), null, 2)}\n`);
   await buildSpriteAtlas(dirname(output), theme.symbols);
+  await copyAmericanaSpriteAtlas(dirname(output));
   console.log(`wrote ${output}`);
 }
 
