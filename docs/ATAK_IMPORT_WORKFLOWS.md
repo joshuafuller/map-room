@@ -6,6 +6,8 @@ document is inferred from documentation alone.
 
 The decision these findings support is [ADR-0024](adrs/0024-atak-delivery-hosted-by-link-offline-by-file.md).
 The user-facing steps are in [Get a Map Room map into ATAK](GET_A_MAP_INTO_ATAK.md).
+Everything ATAK can import, and the six style documents it ships, are in
+[the import surface](ATAK_IMPORT_SURFACE.md).
 
 ## Summary of findings
 
@@ -536,10 +538,9 @@ They are two different maps.
 - The **offline archive** is vector tiles, drawn by ATAK with its own built-in
   appearance.
 
-### ATAK's vector styling is fixed per schema
+### ATAK's vector styling is chosen by config, not supplied by us
 
-`GLVectorTiles` maps a tileset's schema to a renderer, and that is the whole of
-it:
+`GLVectorTiles` maps a tileset's schema to a renderer:
 
 ```java
 styleSchemas.put("omt", Arrays.asList(Schema.OMT));
@@ -548,13 +549,19 @@ styleSchemas.put("rbt", Arrays.asList(Schema.RBT_CULTURAL, Schema.RBT_PHYSICAL))
 gltiles = createClientImpl(..., client, isOverlay, !Objects.equals(style, "omt"), ptr);
 ```
 
-`Schema.java` hardcodes OMT and RBT as fixed layer and field maps. Nothing in
-the vector-tile path loads a style document — there is no sprite, glyph, or
-`style.json` handling in it. The `style` variable is a schema name, not a
-stylesheet.
+`Schema.java` hardcodes OMT and RBT as fixed layer and field maps, and the
+`style` variable here is a schema name, not a stylesheet.
 
-Map Room publishes OMT-schema tiles, so an offline archive renders with ATAK's
-built-in OMT appearance. **There is no way to supply a different one.**
+The stylesheet itself is loaded natively. `jglvectortiles.cpp` reads a Mapbox
+style document from the APK at `asset:/style/omt/{bright,dark,overlay}/style.json`,
+selected by an `overlay` flag and a `vector-tiles.dark-default` config option.
+ATAK ships six such documents; they are extracted and rendered in
+[the import surface](ATAK_IMPORT_SURFACE.md).
+
+Map Room publishes OMT-schema tiles, so an offline archive renders with one of
+ATAK's bundled OMT styles. **We cannot supply our own style document through
+any tested route**, and whether the built-in light/dark switch can be driven is
+not yet established.
 
 ### Verified: a styled raster archive works offline
 
