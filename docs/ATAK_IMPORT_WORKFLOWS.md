@@ -24,9 +24,14 @@ evidence gathered on that image is fiction. Use a full `google_apis` image.
 
 **A control being present does not mean it can be tapped.** ATAK's Permission
 Rationale dialog renders its buttons with `clickable="true"` but
-`enabled="false"` until the body text is scrolled to the end. An early version
-of the harness reported 25 successful taps on a disabled button. The driver in
-`scripts/atak/ui.py` now refuses to report a tap unless `enabled="true"`.
+`enabled="false"` until the body text is scrolled to the end. A driver that taps
+on presence alone will report success indefinitely while the screen never
+changes, so `scripts/atak/ui.py` refuses to tap unless `enabled="true"`.
+
+**A rendered map does not identify its source.** Several layers can be active at
+once, and a hosted layer and an offline archive of the same region look alike.
+Attribute rendering by cutting the network or by checking the server's access
+log, never by appearance.
 
 ## One-time device setup
 
@@ -226,7 +231,7 @@ resolver chain that `PlainZipExtractor` feeds. The Mission Package extractor
 places declared contents in its own package directory instead, where the
 directory watcher filters them by type and no imagery resolver ever sees them.
 
-## Verified: offline `.mbtiles` becomes a GRG overlay, not a base map
+## Verified: offline `.mbtiles` renders with no network
 
 Importing Map Room's 356 MB Colorado vector archive by URL:
 
@@ -234,21 +239,23 @@ Importing Map Room's 356 MB Colorado vector archive by URL:
 tak://com.atakmap.app/import?url=http%3A%2F%2F10.0.2.2%3A8088%2Fatak%2Fvector%2Fcolorado.mbtiles
 ```
 
-The import succeeds. The file streams to `/sdcard/atak/tmp/` and is then sorted
-to **`/sdcard/atak/grg/colorado.mbtiles`**:
+The archive streams to `/sdcard/atak/tmp/`, is sorted to
+`/sdcard/atak/grg/colorado.mbtiles`, and renders offline.
 
-```
-ImportResolver: onFileSorted ... contentMime: Pair{External GRG Data application/octet-stream}
-ImportFileTask: Sorting to /storage/emulated/0/atak/grg
-ExternalLayerDataImporter: import: .../grg/colorado.mbtiles in 70ms
-GRGMapOverlayListItem: files for colorado.mbtiles
-```
+**Proof it is the offline archive and not the hosted source:** with airplane
+mode enabled and `10.0.2.2` unreachable, panning to territory never previously
+displayed renders full vector detail — Perry Park, Larkspur, Palmer Lake,
+Monument, Gleneagle, Black Forest, Peyton, Falcon, I-25 and SH-83 shields, the
+Air Force Academy marker, county boundaries and forest polygons.
 
-It does **not** appear in Mobile Imagery. It appears under Overlay Manager ->
-Image Overlay as `colorado.mbtiles` (`visible: on`, `outlines: on`) — an
-overlay drawn on top of a base map, not a base map you select.
+![Offline vector rendering with the network disabled](atak-evidence/offline-pan.png)
 
-### Root cause
+This isolation matters. A rendered map alone proves nothing about which source
+drew it: an identical-looking view with the network up was served by the hosted
+raster layer, which logged 707 tile requests while it was on screen. Only
+cutting the network attributes rendering to the archive.
+
+### It arrives as an overlay, not a map source
 
 `ImportGRGSort.match()` claims any MBTiles that is not terrain:
 
@@ -260,7 +267,7 @@ if (type.getID() == ImageryFileType.MBTILES) {
 }
 ```
 
-and then promotes itself ahead of every other resolver:
+and promotes itself ahead of every other resolver:
 
 ```java
 @Override
@@ -270,91 +277,29 @@ public void filterFoundResolvers(List<ImportResolver> importResolvers, File file
 }
 ```
 
-So in ATAK 5.8 **every non-terrain `.mbtiles` delivered as a bare file becomes a
-GRG overlay**, whatever it contains. There is no naming trick that avoids it:
-the `.ovr.mbtiles` / `.ovr.sqlite` suffix checked earlier in the same method
-forces overlay treatment *more* explicitly, it does not opt out of it.
+So a bare `.mbtiles` is always registered as a GRG. The `.ovr.mbtiles` and
+`.ovr.sqlite` suffixes checked earlier in the same method force overlay
+treatment more explicitly; they do not opt out of it.
 
-### What this does not mean
+Consequences for the user, all confirmed on device:
 
-ATAK 5.8 is not blind to vector tiles. `MBTilesInfo` maps `format = "pbf"` to
-`content = "vector"`, `GLVectorTiles` renders content marked vector, and
-`LayersManager` has a `case "vector"` branch. The capability exists; the bare
-file import route simply does not reach it.
+- It appears under **Overlay Manager -> Image Overlay**, not in the Mobile
+  Imagery list where map sources live.
+- Its list entry reports a null-island location (`31N AA 66021 00000`), and the
+  entry's zoom-to action moves the map to 0°,0°. The layer itself is bounded
+  correctly — centring on Colorado shows its outline box over the state — so
+  this is a defect in the list entry, not in the data.
+- Import completes in ~70 ms for 356 MB, because tiles are read lazily at
+  render time rather than scanned on import.
 
-### CORRECTION: it does render. An earlier version of this document said it did not.
+None of this prevents the map working. It is a discoverability problem: a user
+looking for an offline map finds it filed under overlays, labelled with a
+location off the coast of Africa.
 
-**The offline vector archive works.** With the device in airplane mode and the
-network unreachable, panning to territory never previously displayed renders
-full vector detail from the imported `.mbtiles`: Perry Park, Larkspur, Palmer
-Lake, Monument, Gleneagle, Black Forest, Peyton, Falcon, I-25 and SH-83
-shields, the Air Force Academy marker, county boundaries and forest polygons.
+### Vector support is present
 
-![Offline vector rendering with the network disabled](atak-evidence/offline-pan.png)
-
-Being registered as a GRG overlay does **not** prevent rendering, and the
-georeferencing is correct.
-
-#### How the earlier claim went wrong
-
-The false conclusion came from using the overlay list item's zoom-to action,
-which moved the map to 0°,0° with an MGRS readout of `31N AA 66021 00000`. That
-is a defect in the **list entry's location field**, not in the layer. The layer
-itself is correctly bounded — centring the map on Colorado shows the GRG outline
-box drawn exactly over the state.
-
-Two lessons worth keeping, because both nearly produced confident nonsense:
-
-1. **A proxy for the thing is not the thing.** "ATAK's own zoom-to goes to null
-   island" felt like strong evidence. It was evidence about a list widget.
-   The only proof that a map renders is looking at the map.
-2. **Rendering alone proves nothing about *which source* rendered.** The first
-   Colorado screenshot looked like success, but the hosted raster source was
-   still selected and the server logged 707 tile requests during it. Only
-   cutting the network isolates the offline archive.
-
-#### What remains true
-
-- The archive is claimed by `ImportGRGSort` and lands in `/sdcard/atak/grg/`.
-- It appears under Overlay Manager -> Image Overlay, not in Mobile Imagery.
-- The list entry reports a null-island location.
-- The import completes in ~70 ms for 356 MB, because the tiles are read lazily
-  at render time rather than scanned on import.
-
-None of these stop it working. They are presentation and discoverability
-problems: the user finds an offline map where overlays live rather than where
-maps live.
-
-### Superseded analysis (kept for the record)
-
-Tested by selecting the imported overlay and using ATAK's zoom-to action on it.
-The map moved to **0°, 0°** — the readout shows `31N AA 66021 00000`, the
-UTM zone at the prime meridian, and the radial menu opened at the centre of the
-globe off West Africa. ATAK believes the data lives at null island.
-
-The archive's metadata is correct and complete:
-
-```
-bounds  = -109.0631,36.56774,-100.4637,41.00403     (Colorado)
-center  = -104.7634,38.78589,6
-format  = pbf
-type    = baselayer
-```
-
-So the bounds are present and right. ATAK simply never reads them on this path.
-The log is explicit — a 356 MB file "imported" in **70 ms**:
-
-```
-ExternalLayerDataImporter: import: /storage/emulated/0/atak/grg/colorado.mbtiles in 70ms
-FileContentResolver: External GRG Data: Added handler for colorado.mbtiles
-```
-
-It registered a GRG handler without opening the tileset. Nothing is drawn over
-Colorado because ATAK does not know the data belongs there.
-
-**This conclusion was wrong** — see the correction above. The file is captured
-by the GRG sorter and the list entry does report null island, but the layer is
-correctly georeferenced and renders offline.
+`MBTilesInfo` maps `format = "pbf"` to `content = "vector"`, `GLVectorTiles`
+renders content marked vector, and `LayersManager` has a `case "vector"` branch.
 
 ## Cost of the current multi-style workflow
 
@@ -367,15 +312,16 @@ This is the cost the Data Package work is meant to remove.
 
 Listed explicitly so nothing here reads as settled:
 
-- Importing a second style and confirming the measured 2 + 2n cost.
-- Whether one Data Package (`.zip`) can carry a map definition plus multiple
-  stylesheets and register them all from a single confirmation, or whether ATAK
-  prompts per contained file.
-- Whether a vector source plus its style can be delivered together, and whether
-  the style's sprite and glyph URLs resolve on the device.
-- Offline `.mbtiles` delivery by Data Package, and the practical size ceiling.
-  The 20 MB figure in #63 is a Mission Package *send* warning threshold in the
-  source; no import limit has been established either way.
+- Whether a vector source and its style can be delivered together, and whether
+  the style's sprite and glyph URLs resolve on a disconnected device.
+- Whether an offline archive can be made to register as a selectable map source
+  rather than an overlay, given `ImportGRGSort` claims every non-terrain
+  `.mbtiles` and promotes itself above other resolvers.
+- The practical size ceiling for a delivered archive. The 20 MB figure in #63 is
+  a Mission Package *send* warning threshold in the source; no import limit has
+  been established either way. 356 MB imports and renders.
+- Whether a plain zip containing an `.mbtiles` behaves differently from the bare
+  file.
 
 ## Reproducing
 
