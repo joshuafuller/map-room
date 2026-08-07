@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<MissionPackageManifest version="2">
+  <Configuration>
+    <Parameter name="uid" value="maproom-styles-0001"/>
+    <Parameter name="name" value="Map Room Styles"/>
+    <Parameter name="onReceiveImport" value="true"/>
+    <Parameter name="onReceiveDelete" value="false"/>
+    <Parameter name="remarks" value="Map Room hosted raster styles"/>
+  </Configuration>
+  <Contents>
+    <Content ignore="false" zipEntry="maps/daylight.xml">
+      <Parameter name="name" value="Map Room - Daylight"/>
+      <Parameter name="contentType" value="Imagery"/>
+    </Content>
+    <Content ignore="false" zipEntry="maps/midnight.xml">
+      <Parameter name="name" value="Map Room - Midnight"/>
+      <Parameter name="contentType" value="Imagery"/>
+    </Content>
+    <Content ignore="false" zipEntry="maps/dark-blue.xml">
+      <Parameter name="name" value="Map Room - Dark Blue"/>
+      <Parameter name="contentType" value="Imagery"/>
+    </Content>
+  </Contents>
+</MissionPackageManifest>

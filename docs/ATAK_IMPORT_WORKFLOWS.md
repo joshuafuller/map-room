@@ -163,6 +163,69 @@ The generated XML embeds the tile URL from the requesting origin. Requested as
 device will actually use, it correctly embeds `http://10.0.2.2:8088/...`.
 Whatever address the QR encodes must be the address the device can reach.
 
+## Verified: many styles in one file — and the counter-intuitive result
+
+**A Data Package does not register map sources. A plain zip does.** This is the
+opposite of what the "cap pack" instinct suggests, and it was established by
+running both.
+
+### Attempt 1 — Data Package with `MANIFEST/manifest.xml`: fails
+
+A zip containing three `customMapSource` definitions plus a v2 manifest
+declaring each `<Content zipEntry="maps/*.xml">` with
+`contentType="Imagery"`, imported via
+`tak://com.atakmap.app/import?url=…%2Fmaproom-styles.zip`.
+
+The import is accepted and extracted — the files land at
+`/sdcard/atak/tools/datapackage/files/maproom-styles-0001/maps/` — but they are
+never sorted into imagery:
+
+```
+DirectoryWatcher: (CLOSE_WRITE) filtered by type on .../maps/midnight.xml
+DirectoryWatcher: (CLOSE_WRITE) filtered by type on .../maps/daylight.xml
+DirectoryWatcher: (CLOSE_WRITE) filtered by type on .../maps/dark-blue.xml
+```
+
+The Mobile Imagery list afterwards contained only the previously,
+directly-imported `Map Room - Daylight`. **Nothing from the package appeared.**
+
+Note the failure mode: the user sees a successful import and gets no map. There
+is no error to act on.
+
+### Attempt 2 — plain zip, no manifest: works
+
+The same two definitions zipped at the archive root with **no** `MANIFEST`
+directory, imported the same way. `MissionPackageExtractorFactory.GetExtractor()`
+routes a manifest-less zip to `PlainZipExtractor`, which runs the contents
+through the normal import resolvers. Both files landed in
+`/sdcard/atak/imagery/`, and all three styles then appeared in Mobile Imagery:
+
+```
+Map Room - Dark Blue
+Map Room - Daylight
+Map Room - Midnight
+```
+
+### Cost
+
+| Delivery | User cost for *n* styles |
+| --- | --- |
+| One definition per deep link | 2n interactions, n imports |
+| Data Package (`MANIFEST/manifest.xml`) | fails — extracted but never registered |
+| **Plain zip of definitions** | **2 interactions, 1 import**, then 1 tap to switch style |
+
+So the streamlined artifact for hosted styles is a plain zip. The manifest —
+the thing that makes a zip a "Data Package" — is precisely what breaks it for
+this content type.
+
+### Why
+
+`ImportLayersSort` claims imagery by **content sniffing**
+(`ImageryFileType.getFileType`), not by extension, and it is reached through the
+resolver chain that `PlainZipExtractor` feeds. The Mission Package extractor
+places declared contents in its own package directory instead, where the
+directory watcher filters them by type and no imagery resolver ever sees them.
+
 ## Cost of the current multi-style workflow
 
 Each theme is published as its own XML definition, so each one is a separate
