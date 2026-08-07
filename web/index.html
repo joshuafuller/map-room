@@ -165,13 +165,13 @@
           <div><p class="eyebrow">Your maps</p><h3 id="library-title">Map library</h3></div>
           <button id="manager-add-map" class="action primary" type="button">Add map</button>
         </section>
-        <section class="manager-section" aria-labelledby="jobs-title">
-          <h3 id="jobs-title" tabindex="-1">Build activity</h3>
-          <div id="map-jobs" class="manager-list"><p class="empty-state">No map jobs yet.</p></div>
-        </section>
         <section class="manager-section" aria-labelledby="installed-title">
           <h3 id="installed-title">Installed maps</h3>
           <div id="installed-maps" class="manager-list"><p class="empty-state">Loading installed maps…</p></div>
+        </section>
+        <section id="jobs-section" class="manager-section" aria-labelledby="jobs-title" hidden>
+          <h3 id="jobs-title" tabindex="-1">Build activity</h3>
+          <div id="map-jobs" class="manager-list"></div>
         </section>
       </div>
       <div id="manager-create-view" class="manager-view" hidden>
@@ -208,8 +208,16 @@
             <label>Stable ID<input id="map-id" name="id" pattern="[a-z0-9]+(?:-[a-z0-9]+)*" placeholder="florida" required /></label>
           </details>
           <p class="manager-help">Building may take several minutes and substantial temporary disk space. The current map remains live until the replacement succeeds.</p>
+          <p id="create-status" class="manager-status create-status" role="status" aria-live="polite"></p>
           <button class="action primary" type="submit">Build map</button>
           </form>
+          <div id="create-discard" class="delete-confirm" role="group" hidden>
+            <p class="delete-question">Discard this map setup and return to the library?</p>
+            <div class="delete-confirm-actions">
+              <button id="create-keep" class="small-action" type="button">Keep editing</button>
+              <button id="create-discard-confirm" class="small-action danger" type="button">Discard</button>
+            </div>
+          </div>
         </section>
       </div>
       <p id="manager-status" class="manager-status" role="status" aria-live="polite"></p>
