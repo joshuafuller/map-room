@@ -507,6 +507,23 @@ stylesheet.
 Map Room publishes OMT-schema tiles, so an offline archive renders with ATAK's
 built-in OMT appearance. **There is no way to supply a different one.**
 
+### Verified: a styled raster archive works offline
+
+Baked 164 tiles of Map Room's Daylight raster over the Colorado Springs area,
+zoom 6-12, into a 7.1 MB `.mbtiles` with `format = png` and correct bounds
+(`scripts/atak/make-raster-mbtiles.py`).
+
+Placed in `/sdcard/atak/imagery/`, it appears in the Map Source list as
+`daylight-cos.mbtiles` ("7.1 MB local"). Selected, with airplane mode enabled
+and `10.0.2.2` unreachable, it renders Colorado Springs in the Daylight style —
+I-25 and US-24 shields, street grid, parks — visibly different from ATAK's
+built-in vector appearance.
+
+![A styled raster archive rendering offline](atak-evidence/raster-offline.png)
+
+So an offline map **can** carry a Map Room style. The style is applied when the
+archive is baked, not on the device.
+
 ### What this means for offline style choice
 
 Switching appearance offline cannot be done by shipping more style documents.
@@ -519,8 +536,12 @@ The options are:
    raster is far larger than vector for the same coverage.
 3. **A plugin.** Out of scope for a map server to require.
 
-Option 2 is the only route to offline style switching with stock ATAK, and its
-cost is size. This has not been measured — see below.
+Option 2 is the only route to offline style switching with stock ATAK, and it
+is proven to work. Its cost is size, and only a small sample has been measured:
+164 tiles over roughly 0.9° x 0.5° at zoom 6-12 came to 7.1 MB. Each further
+zoom level roughly quadruples tile count, and each style is a separate archive.
+A state-sized region at operational zoom has not been measured and must be
+before any size is promised.
 
 ## Cost compared
 
