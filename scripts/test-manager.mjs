@@ -18,8 +18,12 @@ try {
   if (!await page.locator("#manager-library-view").isVisible() || await page.locator("#manager-create-view").isVisible()) failures.push("manager did not open on the map library");
   if (await page.locator("#manager-library-view").evaluate((view) => view.querySelector("#installed-maps").compareDocumentPosition(view.querySelector("#map-jobs")) !== Node.DOCUMENT_POSITION_FOLLOWING)) failures.push("library did not lead with installed maps ahead of build activity");
   if (await page.locator(".job-row").count() === 0 && await page.locator("#jobs-section").isVisible()) failures.push("idle library still showed an empty build activity section");
+  const libraryHeadings = (await page.locator("#manager-library-view h3").allTextContents()).join(" | ");
+  if (libraryHeadings !== "Installed maps | Build activity") failures.push(`library restated its own title instead of naming only its sections: ${libraryHeadings}`);
   await page.locator("#manager-add-map").click();
   if (!await page.locator("#manager-create-view").isVisible() || await page.locator("#manager-library-view").isVisible()) failures.push("Add map did not open a dedicated creation view");
+  if (await page.locator("#manager-create-view h3").count() !== 0) failures.push("creation view repeated the dialog title in a section heading");
+  if (await page.locator("#manager-title").textContent() !== "Create map") failures.push("dialog title did not name the creation view it was showing");
   await page.locator("#catalog-search").focus();
   await page.locator("#catalog-results").waitFor({ state: "visible" });
   await page.keyboard.press("Escape");

@@ -161,12 +161,11 @@
       </div>
       <p class="manager-warning"><strong>Trusted local network only.</strong> Map administration does not have user authentication yet.</p>
       <div id="manager-library-view" class="manager-view">
-        <section class="manager-section manager-library-heading" aria-labelledby="library-title">
-          <div><p class="eyebrow">Your maps</p><h3 id="library-title">Map library</h3></div>
-          <button id="manager-add-map" class="action primary" type="button">Add map</button>
-        </section>
         <section class="manager-section" aria-labelledby="installed-title">
-          <h3 id="installed-title">Installed maps</h3>
+          <div class="manager-section-head">
+            <h3 id="installed-title">Installed maps</h3>
+            <button id="manager-add-map" class="action primary" type="button">Add map</button>
+          </div>
           <div id="installed-maps" class="manager-list"><p class="empty-state">Loading installed maps…</p></div>
         </section>
         <section id="jobs-section" class="manager-section" aria-labelledby="jobs-title" hidden>
@@ -175,10 +174,8 @@
         </section>
       </div>
       <div id="manager-create-view" class="manager-view" hidden>
-        <section class="manager-section" aria-labelledby="add-map-title">
+        <section class="manager-section" aria-labelledby="manager-title">
           <button id="manager-back" class="manager-back" type="button">← Back to library</button>
-          <p class="eyebrow">New map</p>
-          <h3 id="add-map-title">Add a map</h3>
           <form id="map-create-form">
           <label>Source
             <select id="map-source-type" name="sourceType">
