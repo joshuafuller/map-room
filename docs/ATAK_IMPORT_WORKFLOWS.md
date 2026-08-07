@@ -282,10 +282,43 @@ ATAK 5.8 is not blind to vector tiles. `MBTilesInfo` maps `format = "pbf"` to
 `LayersManager` has a `case "vector"` branch. The capability exists; the bare
 file import route simply does not reach it.
 
-**Still unverified:** whether a vector `.mbtiles` sitting in the GRG path
-actually draws its tiles, and which delivery route reaches the vector layer
-path instead. Do not assume either way until it is tested — this is the open
-question that decides the offline vector workflow.
+### Verified: it does not render, because georeferencing is lost
+
+Tested by selecting the imported overlay and using **ATAK's own zoom-to action**
+on it. The map moved to **0°, 0°** — the readout shows `31N AA 66021 00000`, the
+UTM zone at the prime meridian, and the radial menu opened at the centre of the
+globe off West Africa. ATAK believes the data lives at null island.
+
+The archive's metadata is correct and complete:
+
+```
+bounds  = -109.0631,36.56774,-100.4637,41.00403     (Colorado)
+center  = -104.7634,38.78589,6
+format  = pbf
+type    = baselayer
+```
+
+So the bounds are present and right. ATAK simply never reads them on this path.
+The log is explicit — a 356 MB file "imported" in **70 ms**:
+
+```
+ExternalLayerDataImporter: import: /storage/emulated/0/atak/grg/colorado.mbtiles in 70ms
+FileContentResolver: External GRG Data: Added handler for colorado.mbtiles
+```
+
+It registered a GRG handler without opening the tileset. Nothing is drawn over
+Colorado because ATAK does not know the data belongs there.
+
+**Conclusion: delivering a vector `.mbtiles` as a bare file to ATAK 5.8 does not
+work.** It is not a size problem, not a metadata problem on our side, and not a
+missing-style problem. The file is captured by the GRG sorter, which promotes
+itself above every other resolver, and that path does not georeference a pbf
+tileset. The user gets a successful import, a visible overlay entry, and no map.
+
+The remaining question is not whether the bare-file route can be improved but
+**which route reaches `GLVectorTiles` at all** — the renderer exists and
+`LayersManager` has a `case "vector"`, so the capability is there and unused by
+this path.
 
 ## Cost of the current multi-style workflow
 
