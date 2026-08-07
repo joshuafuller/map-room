@@ -16,12 +16,19 @@ try {
   await page.locator("#map-manager").waitFor({ state: "visible" });
   if (!await page.locator(".manager-warning").getByText("Trusted local network only").isVisible()) failures.push("manager did not disclose the unauthenticated trusted-network boundary");
   if (!await page.locator("#manager-library-view").isVisible() || await page.locator("#manager-create-view").isVisible()) failures.push("manager did not open on the map library");
+  if (await page.locator("#manager-library-view").evaluate((view) => view.querySelector("#installed-maps").compareDocumentPosition(view.querySelector("#map-jobs")) !== Node.DOCUMENT_POSITION_FOLLOWING)) failures.push("library did not lead with installed maps ahead of build activity");
+  if (await page.locator(".job-row").count() === 0 && await page.locator("#jobs-section").isVisible()) failures.push("idle library still showed an empty build activity section");
   await page.locator("#manager-add-map").click();
   if (!await page.locator("#manager-create-view").isVisible() || await page.locator("#manager-library-view").isVisible()) failures.push("Add map did not open a dedicated creation view");
+  await page.locator("#catalog-search").focus();
+  await page.locator("#catalog-results").waitFor({ state: "visible" });
+  await page.keyboard.press("Escape");
+  if (!await page.locator("#manager-create-view").isVisible() || !await page.locator("#catalog-results").isHidden()) failures.push("Escape with the region list open abandoned the creation view instead of only dismissing the list");
   await page.keyboard.press("Escape");
   if (!await page.locator("#map-manager").isVisible() || !await page.locator("#manager-library-view").isVisible()) failures.push("Escape did not return from creation to the library");
   await page.locator("#manager-add-map").click();
   await page.locator("#manager-back").click();
+  if (await page.locator("#create-discard").isVisible()) failures.push("an untouched creation form asked to discard work that did not exist");
   if (!await page.locator("#manager-add-map").evaluate((button) => button === document.activeElement)) failures.push("Back to library did not restore focus to Add map");
   await page.locator("#manager-add-map").click();
   const mapState = await page.evaluate(() => fetch("/api/maps").then((response) => response.json()));
@@ -70,27 +77,66 @@ try {
   await page.locator("#map-name").fill("Unsafe Source");
   if (await page.locator("#map-id").inputValue() !== "unsafe-source") failures.push("map name did not generate the hidden stable ID");
   await page.locator("#map-create-form button[type=submit]").click();
-  await page.waitForFunction(() => document.querySelector("#manager-status")?.textContent.includes("not allowed"));
+  await page.waitForFunction(() => document.querySelector("#create-status")?.textContent.includes("not allowed"));
+  if (await page.locator("#manager-status").textContent() !== "") failures.push("a creation failure was reported away from the form it belongs to");
+
+  await page.locator("#manager-back").click();
+  if (!await page.locator("#create-discard").isVisible() || !await page.locator("#manager-create-view").isVisible()) failures.push("leaving a filled creation form discarded it without asking");
+  await page.locator("#create-keep").click();
+  if (await page.locator("#create-discard").isVisible() || await page.locator("#map-name").inputValue() !== "Unsafe Source") failures.push("keep editing did not restore the creation form untouched");
+  await page.locator("#manager-back").click();
+  await page.locator("#create-discard-confirm").click();
+  if (!await page.locator("#manager-library-view").isVisible()) failures.push("discarding the creation form did not return to the library");
+  await page.locator("#manager-add-map").click();
+  if (await page.locator("#map-name").inputValue() !== "") failures.push("a discarded creation form was reopened with its old values");
   await page.locator("#manager-back").click();
 
   const renameTarget = mapState.maps[0];
   if (renameTarget) {
     const changedName = `${renameTarget.name} UI Test`;
     const row = page.locator(".map-row").filter({ hasText: renameTarget.id }).first();
-    page.once("dialog", (dialog) => dialog.accept(changedName));
+    let dialogs = 0;
+    page.on("dialog", (dialog) => { dialogs += 1; dialog.dismiss(); });
     await row.locator(".rename").click();
+    const renameInput = row.locator(".rename-input");
+    if (!await renameInput.isVisible() || await renameInput.inputValue() !== renameTarget.name) failures.push("rename did not open an in-place editor seeded with the current name");
+    await renameInput.fill(changedName);
+
+    // A background library poll must not wipe out an edit in progress.
+    await page.route("**/api/maps", async (route) => {
+      const response = await route.fetch();
+      const payload = await response.json();
+      payload.maps = payload.maps.map((map) => map.id === renameTarget.id ? { ...map, archiveBytes: (map.archiveBytes ?? 0) + 4096 } : map);
+      await route.fulfill({ response, json: payload });
+    });
+    await page.waitForTimeout(2500);
+    if (!await renameInput.isVisible() || await renameInput.inputValue() !== changedName) failures.push("a background library refresh discarded the rename in progress");
+    await page.unroute("**/api/maps");
+
+    await row.locator(".save-rename").click();
     await page.waitForFunction(({ id, name }) => [...document.querySelectorAll('#region-select option')].some((option) => option.value === id && option.textContent === name), { id: renameTarget.id, name: changedName });
-    page.once("dialog", (dialog) => dialog.accept(renameTarget.name));
-    await page.locator(".map-row").filter({ hasText: renameTarget.id }).first().locator(".rename").click();
+    const renamed = page.locator(".map-row").filter({ hasText: renameTarget.id }).first();
+    await renamed.locator(".rename").click();
+    await renamed.locator(".rename-input").fill(renameTarget.name);
+    await renamed.locator(".save-rename").click();
     await page.waitForFunction(({ id, name }) => [...document.querySelectorAll('#region-select option')].some((option) => option.value === id && option.textContent === name), renameTarget);
 
     const restored = page.locator(".map-row").filter({ hasText: renameTarget.id }).first();
+    await restored.locator(".rename").click();
+    await restored.locator(".cancel-rename").click();
+    if (await restored.locator(".rename-input").isVisible()) failures.push("canceling a rename left the editor open");
+    if (!await restored.locator(".rename").evaluate((button) => button === document.activeElement)) failures.push("canceling a rename did not restore focus to Rename");
+    if (dialogs !== 0) failures.push("map management still fell back to a browser dialog");
+    page.removeAllListeners("dialog");
+
     await restored.locator(".delete").click();
     const deleteConfirmation = restored.locator(".delete-confirm");
     if (!(await deleteConfirmation.getByText(`Are you sure you want to delete ${renameTarget.name}?`).isVisible()) ||
         await deleteConfirmation.locator("input").count() !== 0) {
       failures.push("delete confirmation did not name the map without requiring typed input");
     }
+    await page.waitForTimeout(2500);
+    if (!await deleteConfirmation.isVisible()) failures.push("a background library refresh closed an open delete confirmation");
     await deleteConfirmation.locator(".cancel-delete").click();
     if (await deleteConfirmation.isVisible() ||
         await page.locator(".map-row").filter({ hasText: renameTarget.id }).count() !== 1) {
@@ -105,6 +151,7 @@ try {
 
   if (smokePbf) {
     await page.setViewportSize({ width: 1280, height: 900 });
+    await page.locator("#manager-add-map").click();
     await page.locator("#map-source-type").selectOption("upload");
     await page.locator("#map-upload").setInputFiles(smokePbf);
     await page.locator("#map-name").fill("CRUD Smoke");

@@ -20,7 +20,6 @@ async function waitForJob(name) {
 async function deleteMap(id) {
   const row = page.locator(".map-row").filter({ hasText: id }).first();
   await row.locator(".delete").click();
-  await row.locator(".delete-confirm input").fill(id);
   await row.locator(".confirm-delete").click();
   await page.waitForFunction((mapId) => ![...document.querySelectorAll("#region-select option")].some(({ value }) => value === mapId), id);
 }
@@ -40,6 +39,7 @@ try {
     return row?.textContent.includes("Generating vector tiles with Planetiler — still working") && /\d+s elapsed/.test(row.textContent);
   }, null, { timeout: 10 * 60 * 1000 });
 
+  await page.locator("#manager-add-map").click();
   await page.locator("#map-source-type").selectOption("url");
   await page.locator("#map-source-url").fill("https://download.geofabrik.de/north-america/us/rhode-island-latest.osm.pbf");
   await page.locator("#map-name").fill("HTTPS Smoke");
