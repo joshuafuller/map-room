@@ -202,7 +202,7 @@
           <label class="map-name-field">Map name<input id="map-name" name="name" maxlength="120" required /></label>
           <details class="advanced-fields">
             <summary>Advanced settings</summary>
-            <label>Stable ID<input id="map-id" name="id" pattern="[a-z0-9]+(?:-[a-z0-9]+)*" placeholder="florida" required /></label>
+            <label>Stable ID<input id="map-id" name="id" pattern="[a-z0-9]+(?:-[a-z0-9]+)*" maxlength="64" placeholder="florida" required /></label>
           </details>
           <p class="manager-help">Building may take several minutes and substantial temporary disk space. The current map remains live until the replacement succeeds.</p>
           <p id="create-status" class="manager-status create-status" role="status" aria-live="polite"></p>

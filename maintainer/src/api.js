@@ -40,7 +40,14 @@ async function readJson(request) {
     if (bytes > 64 * 1024) throw new Error("Request body is too large");
     chunks.push(chunk);
   }
-  return JSON.parse(Buffer.concat(chunks).toString("utf8"));
+  // A body the client mis-typed is the client's fault, not a server fault.
+  let parsed;
+  try { parsed = JSON.parse(Buffer.concat(chunks).toString("utf8")); }
+  catch { throw new Error("Request body must be valid JSON"); }
+  if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) {
+    throw new Error("Request body must be a JSON object");
+  }
+  return parsed;
 }
 
 export function createApi({ library, queue, catalog, saveUpload, loadTileJson, allowedSourceHosts = ["download.geofabrik.de"] }) {

@@ -3,9 +3,14 @@ import { access, mkdir, readFile, readdir, rename, rm, writeFile } from "node:fs
 import path from "node:path";
 
 const SAFE_ID = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+// Every ID becomes a filename, so it must stay well inside the 255-byte limit
+// that filesystems impose — otherwise a valid-looking ID fails as ENAMETOOLONG.
+const MAX_ID_LENGTH = 64;
 
 function validateId(id) {
-  if (typeof id !== "string" || !SAFE_ID.test(id)) throw new Error("Map ID must be a lowercase slug");
+  if (typeof id !== "string" || !SAFE_ID.test(id) || id.length > MAX_ID_LENGTH) {
+    throw new Error(`Map ID must be a lowercase slug of 1 to ${MAX_ID_LENGTH} characters`);
+  }
 }
 
 function validateName(name) {

@@ -19,6 +19,7 @@
     "dev": "docker compose -f compose.yaml -f compose.dev.yaml up --build --wait",
     "dev:down": "docker compose -f compose.yaml -f compose.dev.yaml down",
     "test:unit": "node --test maintainer/test/*.test.js styles/test/*.test.js web/*.test.js",
+    "test:mutation": "node scripts/test-mutation.mjs",
     "test:create-map": "./scripts/test-create-map.sh",
     "test:empty-library": "./scripts/test-empty-library.sh",
     "test:coverage:atak": "c8 --all --include=web/atak.js --include=web/atak-vector.js --include=web/atak-import.js --include=web/qr-code.js --check-coverage --lines 100 --statements 100 --functions 100 --branches 100 node --test web/atak.test.js web/atak-vector.test.js web/atak-import.test.js web/qr-code.test.js",
@@ -31,6 +32,7 @@
   },
   "devDependencies": {
     "c8": "^12.0.0",
+    "fast-check": "^4.9.0",
     "jsqr": "1.4.0",
     "lucide-static": "1.28.0",
     "playwright": "1.62.1",
