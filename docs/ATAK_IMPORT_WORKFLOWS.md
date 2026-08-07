@@ -418,10 +418,46 @@ The cause is `ImportGRGSort`, which claims every non-terrain `.mbtiles` and
 promotes itself ahead of all other resolvers. Nothing Map Room emits changes
 which resolver wins.
 
-To get an offline archive listed as a map source, the file must be **placed**
-in `/sdcard/atak/imagery/` — by USB, by a file manager, or by any tool that
-writes there — rather than imported. Placement and import are different
-mechanisms with different outcomes, and only import can be driven by a QR code.
+### The Import Manager UI lets the user choose, and that is the difference
+
+When more than one resolver matches, `ImportFileTask` can ask which to use —
+but only when the caller sets a flag:
+
+```java
+if (matchingSorters.size() > 1 && checkFlag(FlagPromptOnMultipleMatch)) {
+    promptForUserOrder(finalFile, matchingSorters, isCanceled);
+}
+```
+
+`ImportManagerView` sets `FlagPromptOnMultipleMatch`. The QR deep-link path does
+not — `beginImport()` hands the URL straight to the downloader — so it silently
+takes the first matching resolver, which is the one GRG promoted itself to be.
+
+Verified end to end through **Tools -> Import -> Local SD**:
+
+| # | Screen | Choice |
+| --- | --- | --- |
+| 1 | Select Import Type | `Local SD` |
+| 2 | Select Files to Import | browse to the file, `OK` |
+| 3 | Suggested Import Strategy | `Copy` (or `Move`, or `Use In Place`) |
+| 4 | **Select Desired Import Method** | **`Imagery`** (the alternative is `Image Overlay File`) |
+
+![The resolver choice ATAK offers](atak-evidence/resolver-choice.png)
+
+Choosing `Imagery` copies the archive to `/sdcard/atak/imagery/`, leaves `grg/`
+empty, and it appears in the Map Source list as `colorado.mbtiles`
+("339.6 MB local") beside the style entries — a selectable base map, not an
+overlay.
+
+So an offline archive **can** be imported as a map source. It costs a longer
+manual path — five screens instead of a scan and a confirmation — and the user
+must know to pick `Imagery` at step 4. What cannot currently be done is reaching
+that outcome from a QR code, because the deep-link path never offers the choice.
+
+Placement in `/sdcard/atak/imagery/` by USB or file manager produces the same
+result and skips the resolvers entirely: `ImageryScanner` walks that directory
+and registers whatever `DatasetDescriptorFactory2.isSupported()` accepts — a
+separate subsystem from the import resolvers, which is why the routes diverge.
 
 ### Known rough edges
 

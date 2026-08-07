@@ -45,9 +45,14 @@ filed under `Overlay Manager -> Image Overlay`, not with the map sources. Look
 for `<region>.mbtiles` there, not under the folded-map icon. It still draws, and
 it still works with no network — it is simply filed as an overlay.
 
-If you copy the `.mbtiles` onto the device yourself, into `atak/imagery/`, it
-appears in the map list instead and can be chosen as the base map. That is the
-only way to get it there; ATAK always files an *imported* archive as an
+To get it into the map list instead, import it through **Tools -> Import ->
+Local SD** rather than by QR. At the last step ATAK asks "Select Desired Import
+Method" and offers `Image Overlay File` or `Imagery` — choose **Imagery**. The
+map then appears in the map list and can be selected as the base map.
+
+Copying the file into `atak/imagery/` yourself does the same thing.
+
+The QR route never offers that choice, which is why it always produces an
 overlay.
 
 **It says it is off the coast of Africa.** The overlay's list entry shows a
