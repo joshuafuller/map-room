@@ -79,7 +79,9 @@ output.
 | --- | --- |
 | ![Daylight theme over downtown Miami](docs/screenshots/daylight-3d.jpg) | ![Florida displayed with the Dark Blue theme](docs/screenshots/dark-blue-theme.jpg) |
 
-![UI-driven map creation and installed-map management](docs/screenshots/map-management.jpg)
+| Installed-map library | Search-first map creation |
+| --- | --- |
+| ![The map library listing installed maps and build activity](docs/screenshots/map-library.jpg) | ![Creating a map by searching the worldwide region catalog](docs/screenshots/map-management.jpg) |
 
 The map manager reports each phase instead of leaving a long-running build as a
 black box:

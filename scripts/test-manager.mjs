@@ -88,7 +88,7 @@ try {
   await page.locator("#create-discard-confirm").click();
   if (!await page.locator("#manager-library-view").isVisible()) failures.push("discarding the creation form did not return to the library");
   await page.locator("#manager-add-map").click();
-  if (await page.locator("#map-name").inputValue() !== "") failures.push("a discarded creation form was reopened with its old values");
+  if (await page.locator("#map-name").inputValue() !== "" || await page.locator("#catalog-search").inputValue() !== "" || await page.locator("#catalog-region").inputValue() !== "") failures.push("a discarded creation form was reopened with its old values");
   await page.locator("#manager-back").click();
 
   const renameTarget = mapState.maps[0];

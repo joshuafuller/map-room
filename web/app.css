@@ -233,7 +233,6 @@ button { font: inherit; }
 .job-actions { display: flex; justify-content: flex-end; margin-top: 8px; }
 .manager-status { min-height: 20px; margin: 0 22px 20px; color: #315e54; font-size: 11px; }
 .manager-status.create-status { min-height: 0; margin: 10px 0 0; }
-.manager-status.create-status:empty { display: none; }
 .maplibregl-ctrl-bottom-right { right: 82px; }
 html[data-controls-expanded="true"] .maplibregl-ctrl-bottom-right { right: 300px; }
 
