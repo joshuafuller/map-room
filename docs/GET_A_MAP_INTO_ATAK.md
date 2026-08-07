@@ -39,9 +39,12 @@ The fastest route, and the right one for styles.
 Switching style later is one tap in that same list.
 
 **If the archive also held an offline `.mbtiles`,** this route files it as an
-*overlay* rather than a map. It works and it renders, but it appears under
-`Overlay Manager -> Image Overlay` instead of the map list. To get it into the
-map list, use the next section.
+*overlay* rather than a map. It works and it renders offline, but it appears
+under `Overlay Manager -> Image Overlay` instead of the map list.
+
+This is not something a better QR code can fix. ATAK never offers the choice on
+a downloaded file — only on a file already sitting on the device. If you want
+the offline map in the map list, use the next section.
 
 ## Load an offline map
 
@@ -82,6 +85,21 @@ Internal storage / atak / imagery / <style>.xml
 ```
 
 Restart ATAK if something you copied in does not show up.
+
+## How much map to take
+
+An offline archive's size is decided by how far in you need to zoom, and the
+detail is not recoverable later — a shallow archive cannot be zoomed into a
+detailed one, because the detail was never in it.
+
+| Depth | Colorado-sized region | What you get |
+| --- | --- | --- |
+| To zoom 12 | ~47 MB | Regional context; main roads, no street grid |
+| To zoom 13 | ~118 MB | Intermediate |
+| To zoom 14 | ~309 MB | Full street detail |
+
+Decide before departure. Take the deeper archive if you will need street-level
+detail, because you cannot add it in the field.
 
 ## Where things end up
 

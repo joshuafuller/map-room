@@ -4,6 +4,28 @@ Every step here was executed against a real ATAK build on an emulator and
 recorded. Where something has not been tested yet, it says so. Nothing in this
 document is inferred from documentation alone.
 
+The decision these findings support is [ADR-0024](adrs/0024-atak-delivery-hosted-by-link-offline-by-file.md).
+The user-facing steps are in [Get a Map Room map into ATAK](GET_A_MAP_INTO_ATAK.md).
+
+## Summary of findings
+
+| Question | Answer | Where |
+| --- | --- | --- |
+| Can one archive carry tiles and every style? | Yes — 3 interactions | [one archive](#verified-everything-in-one-archive-one-confirmation) |
+| Does a Data Package work? | **No** — a `MANIFEST` stops styles registering, silently | [many styles](#verified-many-styles-in-one-file--and-the-counter-intuitive-result) |
+| Does an offline vector archive render? | Yes, with no network | [offline mbtiles](#verified-offline-mbtiles-renders-with-no-network) |
+| Does it arrive as a selectable map? | No — always an Image Overlay | [overlay, not map source](#it-arrives-as-an-overlay-not-a-map-source) |
+| Can any URL import make it a map source? | **No** — file import or manual placement only | [no URL import](#no-url-import-can-produce-a-map-source) |
+| Can ATAK apply our styles to vector tiles? | **No** — fixed per schema | [styles do not apply](#styles-do-not-apply-to-an-offline-vector-map) |
+| Can an offline map carry a Map Room style? | Yes, baked as raster | [styled raster](#verified-a-styled-raster-archive-works-offline) |
+| Vector against raster size, same coverage | 0.36 GB against ~6 GB per style | [vector against raster](#vector-against-styled-raster-same-view-both-offline) |
+| Can a shallow archive be over-zoomed? | **No** — detail is absent from the data | [capping zoom](#capping-zoom-loses-detail-atak-does-not-fill-it-in) |
+| Is stripping unread tile attributes worth it? | No — 2.4% | [tile diet](ATAK_VECTOR_TILE_DIET.md) |
+
+Two rules that break things silently if ignored: never include
+`MANIFEST/manifest.xml`, and the deep-link host segment must be exactly
+`com.atakmap.app`.
+
 ## Test environment
 
 | | |
