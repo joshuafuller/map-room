@@ -42,7 +42,6 @@ await page.setViewportSize({ width: 1440, height: 900 });
 await page.locator('[data-theme="daylight"]').click();
 await page.locator('[data-theme="daylight"][aria-checked="true"]').waitFor();
 await page.evaluate(() => { window.location.hash = "#16/25.775/-80.19/-18/58"; });
-await page.locator("#buildings-toggle").click();
 await page.waitForTimeout(1200);
 await page.locator("#panel-toggle").click();
 await capture("daylight-3d.jpg");
@@ -66,6 +65,9 @@ await page.route("**/api/maps", (route) => route.fulfill({
 }));
 await page.locator("#manage-maps").click();
 await page.locator("#map-manager").waitFor({ state: "visible" });
+await page.locator("#installed-maps .map-row").first().waitFor();
+await capture("map-library.jpg");
+await page.locator("#manager-add-map").click();
 await page.locator("#catalog-search").fill("florida");
 await page.locator('#catalog-results [role="option"][data-region-id="us/florida"]').click();
 await capture("map-management.jpg");

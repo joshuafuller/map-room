@@ -149,7 +149,7 @@ button { font: inherit; }
 .delivery-guide p { margin: 10px 11px 11px; padding-top: 9px; border-top: 1px solid var(--line); }
 #toast { position: fixed; z-index: 3; left: 50%; bottom: 24px; transform: translate(-50%, 20px); padding: 9px 13px; border-radius: 10px; color: white; background: #1f313b; opacity: 0; transition: .2s ease; pointer-events: none; font-size: 12px; }
 #toast.show { opacity: 1; transform: translate(-50%, 0); }
-.manager-dialog { width: min(760px, calc(100vw - 28px)); max-height: calc(100dvh - 28px); padding: 0; border: 1px solid rgba(255,255,255,.78); border-radius: 20px; color: var(--ink); background: #fbfaf7; box-shadow: 0 28px 90px rgba(10,18,24,.36); }
+.manager-dialog { width: min(760px, calc(100vw - 28px)); max-height: calc(100dvh - 28px); overflow-y: auto; overscroll-behavior: contain; padding: 0; border: 1px solid rgba(255,255,255,.78); border-radius: 20px; color: var(--ink); background: #fbfaf7; box-shadow: 0 28px 90px rgba(10,18,24,.36); }
 .manager-dialog::backdrop, .atak-share-dialog::backdrop { background: rgba(8,14,18,.56); backdrop-filter: blur(5px); }
 .atak-share-dialog { width: min(430px, calc(100vw - 28px)); max-height: calc(100dvh - 28px); padding: 0; border: 1px solid rgba(255,255,255,.78); border-radius: 20px; color: var(--ink); background: #fbfaf7; box-shadow: 0 28px 90px rgba(10,18,24,.36); }
 .atak-share-content { padding: 18px 22px 22px; }
@@ -168,8 +168,15 @@ button { font: inherit; }
 .icon-button { width: 38px; height: 38px; border: 1px solid var(--line); border-radius: 50%; color: var(--ink); background: white; cursor: pointer; font-size: 24px; line-height: 1; }
 .manager-warning { margin: 18px 22px 0; padding: 11px 13px; border: 1px solid rgba(186,119,46,.28); border-radius: 11px; color: #72512c; background: #fff6e8; font-size: 12px; }
 .manager-section { margin: 18px 22px; padding-bottom: 18px; border-bottom: 1px solid var(--line); }
-.manager-section:last-of-type { border-bottom: 0; }
+.manager-section:last-of-type, .manager-section:has(+ .manager-section[hidden]:last-of-type) { border-bottom: 0; }
+.manager-section[hidden] { display: none; }
 .manager-section h3 { margin: 0 0 12px; font-size: 15px; }
+.manager-view[hidden] { display: none; }
+.manager-section-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 12px; }
+.manager-section-head h3 { margin-bottom: 0; }
+.manager-section-head .action { width: auto; min-width: 118px; margin: 0; }
+.manager-back { margin: 0 0 14px; padding: 0; border: 0; color: #315e54; background: transparent; cursor: pointer; font-size: 11px; font-weight: 800; }
+.manager-back:hover { text-decoration: underline; }
 .manager-section label { display: grid; gap: 5px; color: var(--muted); font-size: 11px; font-weight: 700; }
 .manager-section input, .manager-section select { width: 100%; min-height: 40px; padding: 9px 11px; border: 1px solid var(--line); border-radius: 9px; color: var(--ink); background: white; font: inherit; font-size: 12px; }
 .source-fields { display: grid; gap: 10px; margin-top: 10px; }
@@ -200,6 +207,11 @@ button { font: inherit; }
 .small-action.danger { color: #8a342d; border-color: rgba(157,55,45,.25); }
 .delete-confirm { display: grid; gap: 9px; margin-top: 9px; padding: 10px; border: 1px solid rgba(157,55,45,.2); border-radius: 9px; background: #fff7f5; }
 .delete-confirm[hidden] { display: none; }
+.map-actions[hidden] { display: none; }
+.rename-form { display: grid; gap: 9px; margin-top: 9px; }
+.rename-form[hidden] { display: none; }
+.rename-input { width: 100%; min-height: 36px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; color: var(--ink); background: white; font: inherit; font-size: 12px; }
+.rename-actions { display: flex; justify-content: flex-end; gap: 6px; }
 .delete-question { margin: 0; color: #6e302b; font-size: 11px; font-weight: 700; line-height: 1.4; }
 .delete-confirm-actions { display: flex; justify-content: flex-end; gap: 6px; }
 .job-state { padding: 3px 6px; border-radius: 999px; color: #315e54; background: #e7f3ef; font-size: 9px; font-weight: 800; text-transform: uppercase; }
@@ -220,6 +232,7 @@ button { font: inherit; }
 .job-error { margin: 8px 0 0; color: #8a342d; font-size: 10px; }
 .job-actions { display: flex; justify-content: flex-end; margin-top: 8px; }
 .manager-status { min-height: 20px; margin: 0 22px 20px; color: #315e54; font-size: 11px; }
+.manager-status.create-status { min-height: 0; margin: 10px 0 0; }
 .maplibregl-ctrl-bottom-right { right: 82px; }
 html[data-controls-expanded="true"] .maplibregl-ctrl-bottom-right { right: 300px; }
 

@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import http from "node:http";
 import { createApi } from "../src/api.js";
+import { RequestError } from "../src/request-error.js";
 
 async function serve(api, run) {
   const server = http.createServer(api);
@@ -104,7 +105,7 @@ test("updates and deletes one validated map", async () => {
 });
 
 test("returns structured client errors for unsafe or unknown input", async () => {
-  const { api } = fixture({ library: { update: async () => { throw new Error("Map 'missing' not found"); } } });
+  const { api } = fixture({ library: { update: async () => { throw new RequestError("Map 'missing' not found", 404); } } });
   await serve(api, async (base) => {
     const cases = [
       fetch(`${base}/api/maps`, { method: "POST", body: JSON.stringify({ id: "bad/id", name: "Bad", sourceType: "url", url: "https://download.geofabrik.de/a.osm.pbf" }) }),
@@ -114,7 +115,7 @@ test("returns structured client errors for unsafe or unknown input", async () =>
       fetch(`${base}/api/unknown`)
     ];
     const responses = await Promise.all(cases);
-    assert.deepEqual(responses.map(({ status }) => status), [400, 400, 400, 400, 404]);
+    assert.deepEqual(responses.map(({ status }) => status), [400, 400, 400, 404, 404]);
     for (const response of responses) assert.equal(typeof (await response.json()).error, "string");
   });
 });
@@ -146,6 +147,6 @@ test("ATAK definition endpoints reject unknown maps, themes, and untrusted forwa
       fetch(`${base}/api/atak/vector/missing.json`),
       fetch(`${base}/api/atak/raster/daylight.xml`, { headers: { "x-forwarded-proto": "javascript" } })
     ]);
-    assert.deepEqual(statuses.map(({ status }) => status), [400, 400, 400]);
+    assert.deepEqual(statuses.map(({ status }) => status), [404, 404, 400]);
   });
 });

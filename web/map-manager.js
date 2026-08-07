@@ -130,7 +130,18 @@ export function setupMapManager({ onLibraryChanged = async () => {} } = {}) {
   const summary = document.querySelector("#catalog-summary");
   const name = document.querySelector("#map-name");
   const id = document.querySelector("#map-id");
+  const libraryView = document.querySelector("#manager-library-view");
+  const createView = document.querySelector("#manager-create-view");
+  const addMap = document.querySelector("#manager-add-map");
+  const managerTitle = document.querySelector("#manager-title");
+  const form = document.querySelector("#map-create-form");
+  const createStatus = document.querySelector("#create-status");
+  const discard = document.querySelector("#create-discard");
+  const jobsSection = document.querySelector("#jobs-section");
+  const upload = document.querySelector("#map-upload");
+  const sourceUrl = document.querySelector("#map-source-url");
   let polling = null;
+  const openRows = new Set();
   let completedJobs = new Set();
   let renderedMaps = null;
   let renderedJobs = null;
@@ -161,14 +172,50 @@ export function setupMapManager({ onLibraryChanged = async () => {} } = {}) {
     return payload;
   };
 
+  // Report each outcome next to the work that produced it, never on the view the operator just left.
   const setStatus = (message, error = false) => {
-    status.textContent = message;
-    status.style.color = error ? "#8a342d" : "#315e54";
+    const target = createView.hidden ? status : createStatus;
+    const other = createView.hidden ? createStatus : status;
+    other.textContent = "";
+    target.textContent = message;
+    target.style.color = error ? "#8a342d" : "#315e54";
+  };
+
+  const showManagerView = (view, { focus = true, clearStatus = true } = {}) => {
+    const creating = view === "create";
+    libraryView.hidden = creating;
+    createView.hidden = !creating;
+    managerTitle.textContent = creating ? "Create map" : "Manage maps";
+    discard.hidden = true;
+    if (clearStatus) { status.textContent = ""; createStatus.textContent = ""; }
+    closeCatalog();
+    if (!focus) return;
+    if (creating) (sourceType.value === "catalog" ? search : sourceType).focus();
+    else addMap.focus();
+  };
+
+  const createDirty = () => Boolean(name.value.trim() || search.value.trim() || region.value || sourceUrl.value.trim() || upload.files.length);
+
+  const resetCreateForm = () => {
+    form.reset();
+    region.value = "";
+    suggestedId = "";
+    updateSourceFields();
+    summary.textContent = "Search by region, country, provider ID, or geographic group.";
+  };
+
+  // Backing out of a half-filled form is only safe if the operator meant it.
+  const leaveCreateView = () => {
+    if (!createDirty()) { resetCreateForm(); showManagerView("library"); return; }
+    closeCatalog();
+    discard.hidden = false;
+    document.querySelector("#create-keep").focus();
   };
 
   const renderJobs = (jobs) => {
     const target = document.querySelector("#map-jobs");
-    if (jobs.length === 0) { target.innerHTML = '<p class="empty-state">No map jobs yet.</p>'; return; }
+    jobsSection.hidden = jobs.length === 0;
+    if (jobs.length === 0) { target.replaceChildren(); return; }
     target.replaceChildren(...[...jobs].reverse().map((job) => {
       const row = document.createElement("article");
       row.className = "job-row";
@@ -193,25 +240,54 @@ export function setupMapManager({ onLibraryChanged = async () => {} } = {}) {
       const row = document.createElement("article");
       row.className = "map-row";
       const generated = map.generatedAt ? new Date(map.generatedAt).toLocaleDateString() : "Unknown build date";
-      row.innerHTML = `<div class="map-row-head"><div><strong></strong><span class="map-meta"></span></div></div><div class="map-actions"><button class="small-action rename" type="button">Rename</button><button class="small-action rebuild" type="button" ${map.canRebuild ? "" : "disabled"}>Rebuild</button><button class="small-action danger delete" type="button">Delete</button></div><div class="delete-confirm" role="group" hidden><p class="delete-question"></p><div class="delete-confirm-actions"><button class="small-action cancel-delete" type="button">Cancel</button><button class="small-action danger confirm-delete" type="button">Delete map</button></div></div>`;
+      row.innerHTML = `<div class="map-row-head"><div><strong></strong><span class="map-meta"></span></div></div><div class="map-actions"><button class="small-action rename" type="button">Rename</button><button class="small-action rebuild" type="button" ${map.canRebuild ? "" : "disabled"}>Rebuild</button><button class="small-action danger delete" type="button">Delete</button></div><form class="rename-form" hidden><label class="sr-only" for="rename-${escapeHtml(map.id)}">Map name</label><input id="rename-${escapeHtml(map.id)}" class="rename-input" maxlength="120" required /><div class="rename-actions"><button class="small-action cancel-rename" type="button">Cancel</button><button class="small-action save-rename" type="submit">Save name</button></div></form><div class="delete-confirm" role="group" hidden><p class="delete-question"></p><div class="delete-confirm-actions"><button class="small-action cancel-delete" type="button">Cancel</button><button class="small-action danger confirm-delete" type="button">Delete map</button></div></div>`;
       row.querySelector("strong").textContent = map.name;
       row.querySelector(".map-meta").textContent = `${map.id} · ${formatBytes(map.archiveBytes)} · ${describeSource(map.source)} · built ${generated}`;
       row.querySelector(".delete-question").textContent = `Are you sure you want to delete ${map.name}?`;
-      row.querySelector(".rename").addEventListener("click", async () => {
-        const next = window.prompt("Map name", map.name);
-        if (!next || next === map.name) return;
-        await action(() => request(`/api/maps/${map.id}`, { method: "PATCH", body: JSON.stringify({ name: next }) }), "Map renamed", true);
+      const renameForm = row.querySelector(".rename-form");
+      const renameInput = row.querySelector(".rename-input");
+      const actions = row.querySelector(".map-actions");
+      const closeRename = () => {
+        openRows.delete(map.id);
+        renameForm.hidden = true;
+        actions.hidden = false;
+        row.querySelector(".rename").focus();
+      };
+      row.querySelector(".rename").addEventListener("click", () => {
+        openRows.add(map.id);
+        renameInput.value = map.name;
+        renameForm.hidden = false;
+        actions.hidden = true;
+        renameInput.focus();
+        renameInput.select();
+      });
+      row.querySelector(".cancel-rename").addEventListener("click", closeRename);
+      renameForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const next = renameInput.value.trim();
+        if (!next || next === map.name) { closeRename(); return; }
+        // Hold the row until the rename lands: a rejected PATCH must leave the
+        // operator's typed name on screen to correct, not discard it.
+        const renamed = await action(() => request(`/api/maps/${map.id}`, { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ name: next }) }), "Map renamed", true);
+        if (!renamed) return;
+        openRows.delete(map.id);
+        renderedMaps = null;
+        await refresh();
       });
       row.querySelector(".rebuild").addEventListener("click", () => action(() => request(`/api/maps/${map.id}/rebuild`, { method: "POST" }), "Rebuild queued"));
       row.querySelector(".delete").addEventListener("click", () => {
+        openRows.add(map.id);
         row.querySelector(".delete-confirm").hidden = false;
         row.querySelector(".cancel-delete").focus();
       });
       row.querySelector(".cancel-delete").addEventListener("click", () => {
+        openRows.delete(map.id);
         row.querySelector(".delete-confirm").hidden = true;
         row.querySelector(".delete").focus();
       });
       row.querySelector(".confirm-delete").addEventListener("click", async () => {
+        openRows.delete(map.id);
+        renderedMaps = null;
         await action(() => request(`/api/maps/${map.id}?confirm=${encodeURIComponent(map.id)}`, { method: "DELETE" }), "Map deleted", true);
       });
       return row;
@@ -224,7 +300,8 @@ export function setupMapManager({ onLibraryChanged = async () => {} } = {}) {
     const mapState = JSON.stringify(maps);
     const activeClock = jobs.some(({ status: jobStatus }) => jobStatus === "queued" || jobStatus === "running") ? Math.floor(Date.now() / 1000) : null;
     const jobState = JSON.stringify([jobs, activeClock]);
-    if (mapState !== renderedMaps) { renderMaps(maps); renderedMaps = mapState; }
+    // Re-rendering a row would destroy an open rename editor or delete confirmation mid-use.
+    if (mapState !== renderedMaps && openRows.size === 0) { renderMaps(maps); renderedMaps = mapState; }
     if (jobState !== renderedJobs) { renderJobs(jobs); renderedJobs = jobState; }
     const newlyCompleted = jobs.filter(({ status, id: jobId }) => status === "complete" && !completedJobs.has(jobId));
     completedJobs = new Set(jobs.filter(({ status }) => status === "complete").map(({ id: jobId }) => jobId));
@@ -232,8 +309,8 @@ export function setupMapManager({ onLibraryChanged = async () => {} } = {}) {
   };
 
   const action = async (operation, message, libraryChanged = false) => {
-    try { await operation(); setStatus(message); await refresh(); if (libraryChanged) await onLibraryChanged(); }
-    catch (error) { setStatus(error.message, true); }
+    try { await operation(); setStatus(message); await refresh(); if (libraryChanged) await onLibraryChanged(); return true; }
+    catch (error) { setStatus(error.message, true); return false; }
   };
 
   const closeCatalog = () => {
@@ -349,7 +426,8 @@ export function setupMapManager({ onLibraryChanged = async () => {} } = {}) {
   });
   search.addEventListener("keydown", (event) => {
     if (!["ArrowDown", "ArrowUp", "Enter", "Escape"].includes(event.key)) return;
-    if (event.key === "Escape") { closeCatalog(); return; }
+    // Escape belongs to the open list first, and only then to the creation view.
+    if (event.key === "Escape") { if (!results.hidden) { event.preventDefault(); closeCatalog(); } return; }
     if (event.key === "Enter") {
       if (focusedCatalogOption >= 0) { event.preventDefault(); chooseCatalogRegion(catalogOptions[focusedCatalogOption]); }
       return;
@@ -364,10 +442,10 @@ export function setupMapManager({ onLibraryChanged = async () => {} } = {}) {
     if (!id.value || id.value === suggestedId) id.value = nextSuggestion;
     suggestedId = nextSuggestion;
   });
-  document.querySelector("#map-create-form").addEventListener("submit", async (event) => {
+  form.addEventListener("submit", async (event) => {
     event.preventDefault();
     const type = sourceType.value;
-    await action(async () => {
+    const created = await action(async () => {
       if (type === "upload") {
         const file = document.querySelector("#map-upload").files[0];
         if (!file) throw new Error("Choose an .osm.pbf file");
@@ -376,15 +454,40 @@ export function setupMapManager({ onLibraryChanged = async () => {} } = {}) {
       if (type === "catalog" && !region.value) throw new Error("Choose a map region from the search results");
       return request("/api/maps", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ sourceType: type, catalogId: region.value, url: document.querySelector("#map-source-url").value, id: id.value, name: name.value }) });
     }, "Map build queued");
+    if (created) {
+      resetCreateForm();
+      showManagerView("library", { focus: false });
+      setStatus("Map build queued");
+      document.querySelector("#jobs-title").focus();
+    }
+  });
+  addMap.addEventListener("click", () => showManagerView("create"));
+  document.querySelector("#manager-back").addEventListener("click", leaveCreateView);
+  document.querySelector("#create-keep").addEventListener("click", () => {
+    discard.hidden = true;
+    document.querySelector("#manager-back").focus();
+  });
+  document.querySelector("#create-discard-confirm").addEventListener("click", () => {
+    resetCreateForm();
+    showManagerView("library");
   });
   document.querySelector("#manage-maps").addEventListener("click", async () => {
+    showManagerView("library", { focus: false });
     dialog.showModal();
     await action(async () => { await refresh(); showCatalogShortcuts(); }, "Map library ready");
     polling = setInterval(() => refresh().catch((error) => setStatus(error.message, true)), 2000);
   });
-  const close = () => { clearInterval(polling); polling = null; dialog.close(); };
+  const close = () => { clearInterval(polling); polling = null; openRows.clear(); renderedMaps = null; dialog.close(); };
   document.querySelector("#manager-close").addEventListener("click", close);
-  dialog.addEventListener("cancel", (event) => { event.preventDefault(); close(); });
+  dialog.addEventListener("cancel", (event) => {
+    event.preventDefault();
+    // Escape belongs to the innermost thing that is open.
+    const openRow = document.querySelector(".map-row .rename-form:not([hidden]), .map-row .delete-confirm:not([hidden])");
+    if (!discard.hidden) discard.hidden = true;
+    else if (openRow) openRow.closest(".map-row").querySelector(openRow.matches(".rename-form") ? ".cancel-rename" : ".cancel-delete").click();
+    else if (!createView.hidden) leaveCreateView();
+    else close();
+  });
 
   return { refresh, formatBytes, slug };
 }

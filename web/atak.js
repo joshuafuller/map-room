@@ -1,4 +1,4 @@
-const atakThemes = {
+export const atakThemes = {
   daylight: { name: "Daylight", color: "#f4f1ea" },
   midnight: { name: "Midnight", color: "#101820" },
   "dark-blue": { name: "Dark Blue", color: "#07111f" },

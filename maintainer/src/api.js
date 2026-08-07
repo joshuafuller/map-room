@@ -1,7 +1,8 @@
 import { URL } from "node:url";
 import { validateMapIdentity } from "./map-library.js";
+import { RequestError, clientError } from "./request-error.js";
 import { validateRemoteSourceUrl } from "./source-policy.js";
-import { buildAtakVectorDescriptor, buildAtakXml } from "../../web/atak.js";
+import { atakThemes, buildAtakVectorDescriptor, buildAtakXml } from "../../web/atak.js";
 
 const json = (response, status, value) => {
   response.writeHead(status, { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" });
@@ -23,11 +24,11 @@ function requestBaseUrl(request) {
   const protocol = forwardedProtocol ?? "http";
   const host = forwardedHost ?? request.headers.host;
   if (!/^(?:http|https)$/.test(protocol) || typeof host !== "string" || /[,/\\\s]/.test(host)) {
-    throw new Error("ATAK definition requires valid HTTP forwarding headers");
+    throw clientError("ATAK definition requires valid HTTP forwarding headers");
   }
   const parsed = new URL(`${protocol}://${host}`);
   if (parsed.username || parsed.password || parsed.pathname !== "/") {
-    throw new Error("ATAK definition requires valid HTTP forwarding headers");
+    throw clientError("ATAK definition requires valid HTTP forwarding headers");
   }
   return parsed.origin;
 }
@@ -37,10 +38,17 @@ async function readJson(request) {
   let bytes = 0;
   for await (const chunk of request) {
     bytes += chunk.length;
-    if (bytes > 64 * 1024) throw new Error("Request body is too large");
+    if (bytes > 64 * 1024) throw clientError("Request body is too large");
     chunks.push(chunk);
   }
-  return JSON.parse(Buffer.concat(chunks).toString("utf8"));
+  // A body the client mis-typed is the client's fault, not a server fault.
+  let parsed;
+  try { parsed = JSON.parse(Buffer.concat(chunks).toString("utf8")); }
+  catch { throw clientError("Request body must be valid JSON"); }
+  if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) {
+    throw clientError("Request body must be a JSON object");
+  }
+  return parsed;
 }
 
 export function createApi({ library, queue, catalog, saveUpload, loadTileJson, allowedSourceHosts = ["download.geofabrik.de"] }) {
@@ -57,6 +65,7 @@ export function createApi({ library, queue, catalog, saveUpload, loadTileJson, a
       }
       const rasterDefinition = url.pathname.match(/^\/api\/atak\/raster\/([a-z0-9-]+)\.xml$/);
       if (request.method === "GET" && rasterDefinition) {
+        if (!atakThemes[rasterDefinition[1]]) throw new RequestError(`Unknown ATAK theme: ${rasterDefinition[1]}`, 404);
         return document(response, "application/xml; charset=utf-8", buildAtakXml({
           theme: rasterDefinition[1],
           baseUrl: requestBaseUrl(request)
@@ -65,7 +74,7 @@ export function createApi({ library, queue, catalog, saveUpload, loadTileJson, a
       const vectorDefinition = url.pathname.match(/^\/api\/atak\/vector\/([a-z0-9-]+)\.json$/);
       if (request.method === "GET" && vectorDefinition) {
         const publication = (await library.list()).find(({ id }) => id === vectorDefinition[1]);
-        if (!publication) throw new Error(`Map '${vectorDefinition[1]}' not found`);
+        if (!publication) throw new RequestError(`Map '${vectorDefinition[1]}' not found`, 404);
         if (typeof loadTileJson !== "function") throw new Error("ATAK vector definition service is unavailable");
         const descriptor = buildAtakVectorDescriptor({
           publication,
@@ -92,7 +101,7 @@ export function createApi({ library, queue, catalog, saveUpload, loadTileJson, a
       if (retry && request.method === "POST") {
         const { buildMemory = null } = await readJson(request);
         if (buildMemory !== null && !["4g", "8g", "12g", "16g"].includes(buildMemory)) {
-          throw new Error("Build memory must be 4g, 8g, 12g, or 16g");
+          throw clientError("Build memory must be 4g, 8g, 12g, or 16g");
         }
         return json(response, 202, { job: queue.retry(retry[1], { buildMemory }) });
       }
@@ -116,7 +125,11 @@ export function createApi({ library, queue, catalog, saveUpload, loadTileJson, a
       }
       return json(response, 404, { error: "Not found" });
     } catch (error) {
-      return json(response, /not found|not allowed|unknown|requires|must|too large|valid HTTPS/i.test(error.message) ? 400 : 500, { error: error.message });
+      if (error.status) return json(response, error.status, { error: error.message });
+      // An internal failure is the operator's to debug, not the caller's to read:
+      // its message can carry filesystem paths and other deployment detail.
+      console.error("Map Room API request failed", error);
+      return json(response, 500, { error: "Map Room could not complete the request. Check the server logs." });
     }
   };
 }

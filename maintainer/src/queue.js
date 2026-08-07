@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { EventEmitter } from "node:events";
+import { RequestError, clientError } from "./request-error.js";
 
 export class JobQueue extends EventEmitter {
   constructor({ worker }) {
@@ -32,8 +33,8 @@ export class JobQueue extends EventEmitter {
 
   retry(id, { buildMemory } = {}) {
     const original = this.jobs.find((job) => job.id === id);
-    if (!original) throw new Error(`Job '${id}' not found`);
-    if (original.status !== "failed") throw new Error("Only a failed job can be retried");
+    if (!original) throw new RequestError(`Job '${id}' not found`, 404);
+    if (original.status !== "failed") throw clientError("Only a failed job can be retried");
     return this.enqueue({
       type: original.type,
       regionId: original.regionId,
