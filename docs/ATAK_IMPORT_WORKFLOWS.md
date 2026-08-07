@@ -301,6 +301,58 @@ location off the coast of Africa.
 `MBTilesInfo` maps `format = "pbf"` to `content = "vector"`, `GLVectorTiles`
 renders content marked vector, and `LayersManager` has a `case "vector"` branch.
 
+## Verified: everything in one archive, one confirmation
+
+A single 340 MB plain zip containing the offline vector archive and all three
+style definitions:
+
+```
+colorado.mbtiles   356 MB    offline vector tiles
+daylight.xml                 hosted style
+midnight.xml                 hosted style
+dark-blue.xml                hosted style
+```
+
+Imported with one deep link and one `Yes`:
+
+```
+tak://com.atakmap.app/import?url=http%3A%2F%2F10.0.2.2%3A8099%2Fmaproom-combined.zip
+```
+
+Everything registers from that single confirmation:
+
+- `colorado.mbtiles` -> `/sdcard/atak/grg/`, available as an Image Overlay
+- all three definitions -> `/sdcard/atak/imagery/`, all three listed in Mobile
+  Imagery as `Map Room - Daylight`, `Map Room - Midnight`, `Map Room - Dark Blue`
+
+Confirmed offline: with airplane mode enabled and `10.0.2.2` unreachable,
+panning to territory never previously displayed renders Leadville, Alma,
+Fairplay, Como, Jefferson, SH-9, US-285 and the Lake County airport from the
+archive alone.
+
+![One archive, rendering offline](atak-evidence/combined-offline.png)
+
+### It must be a plain zip
+
+Adding `MANIFEST/manifest.xml` — the thing that makes a zip a Data Package —
+breaks it. A manifest routes the archive to `MissionPackageExtractor`, which
+places declared contents in its own package directory where the imagery
+resolvers never see them. Without a manifest, `PlainZipExtractor` feeds the
+normal resolver chain and every file is claimed correctly.
+
+Use a plain zip. Do not add a manifest.
+
+### Total user cost
+
+| | Interactions |
+| --- | --- |
+| One deep link or QR scan | 1 |
+| `Yes` to confirm | 1 |
+| Select a style in Mobile Imagery | 1 |
+
+**Three interactions** for an offline map plus three switchable styles, against
+2 + 2n for separate definitions and a separate archive.
+
 ## Cost of the current multi-style workflow
 
 Each theme is published as its own XML definition, so each one is a separate
