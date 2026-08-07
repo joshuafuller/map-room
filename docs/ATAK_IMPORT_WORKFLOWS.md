@@ -477,6 +477,33 @@ Both come from `ImportGRGSort` claiming every non-terrain `.mbtiles` and
 promoting itself above the other resolvers. Nothing Map Room emits changes
 this.
 
+## Vector against styled raster, same view, both offline
+
+![ATAK built-in vector rendering above, Map Room Daylight raster below](atak-evidence/vector-vs-raster.png)
+
+Same viewport, same 2.94 km scale, airplane mode in both. Above: the vector
+archive drawn by ATAK. Below: a Map Room Daylight raster archive.
+
+ATAK's vector rendering carries more information at this zoom — neighbourhood
+labels, building footprints, parks — while the raster carries Map Room's road
+hierarchy and shields.
+
+Size for the same Colorado coverage:
+
+| Format | Size | Styles |
+| --- | --- | --- |
+| Vector (measured) | 0.36 GB | ATAK's built-in appearance only |
+| Raster z0-14 (projected at 43 KB/tile measured) | ~6.0 GB | one style per archive |
+| Raster z0-13 | ~1.5 GB | one style per archive |
+| Raster z0-12 | ~0.4 GB | one style per archive |
+
+Vector is roughly 17x smaller at full zoom, and does not multiply per style. The
+raster totals are tile-count arithmetic against a measured average, not baked
+archives.
+
+What ATAK reads from a vector tile, and what can be removed, is in
+[the vector tile diet](ATAK_VECTOR_TILE_DIET.md).
+
 ## Styles do not apply to an offline vector map
 
 An offline `.mbtiles` and a Map Room "style" are not two halves of one thing.
