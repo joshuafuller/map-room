@@ -353,12 +353,101 @@ Use a plain zip. Do not add a manifest.
 **Three interactions** for an offline map plus three switchable styles, against
 2 + 2n for separate definitions and a separate archive.
 
-## Cost of the current multi-style workflow
+## What Map Room should publish
 
-Each theme is published as its own XML definition, so each one is a separate
-deep link, a separate `Yes`, and a separate entry to select. For *n* styles the
-user pays roughly **2 + 2n** interactions and performs *n* separate imports.
-This is the cost the Data Package work is meant to remove.
+One **plain zip** per offering, served over HTTP, referenced by one deep link
+that a QR code encodes:
+
+```
+tak://com.atakmap.app/import?url=<percent-encoded https url to the zip>
+```
+
+Contents, all at the archive root:
+
+| File | Purpose |
+| --- | --- |
+| `<region>.mbtiles` | offline vector tiles, works with no network |
+| `<style>.xml` | one `customMapSource` per style, hosted rendering |
+
+Rules that are not optional, each established by testing:
+
+1. **No `MANIFEST/manifest.xml`.** A manifest makes ATAK treat the archive as a
+   Mission Package and the style definitions never register.
+2. **Host segment exactly `com.atakmap.app`.** Not `com.atakmap.app.civ`. The
+   receiver compares `getHost() + getPath()` literally.
+3. **Generate the definitions from the address the device will use.** The tile
+   URL is embedded absolutely; a definition generated against `localhost` gives
+   the device a dead layer.
+4. **Percent-encode the inner URL.**
+
+### The workflow this produces
+
+| Step | What the user does | Result |
+| --- | --- | --- |
+| 1 | Scan the QR code | ATAK opens with an import prompt |
+| 2 | Tap `Yes` | Tiles and every style register |
+| 3 | Map icon -> pick a style | Map renders |
+
+Three interactions. The offline tiles work with no network; the styles work
+whenever Map Room is reachable.
+
+### The tiles land as an overlay, and delivery cannot change that
+
+Where an `.mbtiles` ends up decides what it becomes:
+
+| Location | What ATAK makes of it |
+| --- | --- |
+| `/sdcard/atak/imagery/` | A **map source**, listed in Mobile Imagery, selectable as the base map |
+| `/sdcard/atak/grg/` | An **Image Overlay**, drawn on top of whatever base map is selected |
+
+Both render, and both work offline. Verified: with the archive placed in
+`imagery/`, it appears in the Map Source list as `colorado.mbtiles`
+("339.6 MB local"), and selecting it renders Colorado in airplane mode with the
+network unreachable.
+
+**Every import route puts it in `grg/`.** This is not something the archive can
+influence:
+
+- Imported as a bare file by URL: sorted to `grg/`.
+- Imported inside a plain zip: sorted to `grg/`.
+- Imported inside a plain zip with the entry path `imagery/colorado.mbtiles`:
+  still sorted to `grg/`. `PlainZipExtractor` extracts and then hands each file
+  to the resolvers, so paths inside the archive are discarded.
+
+The cause is `ImportGRGSort`, which claims every non-terrain `.mbtiles` and
+promotes itself ahead of all other resolvers. Nothing Map Room emits changes
+which resolver wins.
+
+To get an offline archive listed as a map source, the file must be **placed**
+in `/sdcard/atak/imagery/` — by USB, by a file manager, or by any tool that
+writes there — rather than imported. Placement and import are different
+mechanisms with different outcomes, and only import can be driven by a QR code.
+
+### Known rough edges
+
+Neither blocks the workflow; both should be explained in user-facing guidance
+because they will otherwise read as failures.
+
+- **An imported offline map is filed under overlays.** It appears in Overlay
+  Manager -> Image Overlay, not in the Mobile Imagery list where map sources
+  live. A user looking for "my offline map" among their maps will not find it.
+  Placing the file in `/sdcard/atak/imagery/` instead makes it a map source, but
+  placement cannot be triggered from a QR code.
+- **Its list entry claims to be at 0 deg, 0 deg** (`31N AA 66021 00000`), and
+  the entry's zoom-to action moves the map there. The layer is bounded
+  correctly; only the list entry is wrong.
+
+Both come from `ImportGRGSort` claiming every non-terrain `.mbtiles` and
+promoting itself above the other resolvers. Nothing Map Room emits changes
+this.
+
+## Cost compared
+
+| Delivery | Interactions for a map plus *n* styles |
+| --- | --- |
+| One definition per deep link, archive separately | 2 + 2n |
+| Data Package with a manifest | styles never register |
+| **One plain zip** | **3** |
 
 ## Not yet verified
 
@@ -366,14 +455,19 @@ Listed explicitly so nothing here reads as settled:
 
 - Whether a vector source and its style can be delivered together, and whether
   the style's sprite and glyph URLs resolve on a disconnected device.
-- Whether an offline archive can be made to register as a selectable map source
-  rather than an overlay, given `ImportGRGSort` claims every non-terrain
-  `.mbtiles` and promotes itself above other resolvers.
-- The practical size ceiling for a delivered archive. The 20 MB figure in #63 is
-  a Mission Package *send* warning threshold in the source; no import limit has
-  been established either way. 356 MB imports and renders.
-- Whether a plain zip containing an `.mbtiles` behaves differently from the bare
-  file.
+- Whether any *import* route can land an archive in `imagery/`. Bare file,
+  plain zip, and path-prefixed zip all sort to `grg/`. Placement works but is
+  not deliverable by QR.
+- Whether ATAK's own Import Manager UI, browsing to a local file, sorts
+  differently from the URL import path.
+- The practical size ceiling. 356 MB imports and renders. The 20 MB figure in
+  #63 is a Mission Package *send* warning threshold, and the working path is not
+  a Mission Package, so that threshold may not apply at all — but this is
+  untested. Confirm before promising it for a multi-gigabyte region such as
+  `us-south` (3.6 GB).
+- Whether the download survives interruption, and what a partial transfer leaves
+  behind.
+- Whether re-importing an archive updates an existing map or duplicates it.
 
 ## Reproducing
 
