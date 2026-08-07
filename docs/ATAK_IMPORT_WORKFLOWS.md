@@ -226,6 +226,67 @@ resolver chain that `PlainZipExtractor` feeds. The Mission Package extractor
 places declared contents in its own package directory instead, where the
 directory watcher filters them by type and no imagery resolver ever sees them.
 
+## Verified: offline `.mbtiles` becomes a GRG overlay, not a base map
+
+Importing Map Room's 356 MB Colorado vector archive by URL:
+
+```
+tak://com.atakmap.app/import?url=http%3A%2F%2F10.0.2.2%3A8088%2Fatak%2Fvector%2Fcolorado.mbtiles
+```
+
+The import succeeds. The file streams to `/sdcard/atak/tmp/` and is then sorted
+to **`/sdcard/atak/grg/colorado.mbtiles`**:
+
+```
+ImportResolver: onFileSorted ... contentMime: Pair{External GRG Data application/octet-stream}
+ImportFileTask: Sorting to /storage/emulated/0/atak/grg
+ExternalLayerDataImporter: import: .../grg/colorado.mbtiles in 70ms
+GRGMapOverlayListItem: files for colorado.mbtiles
+```
+
+It does **not** appear in Mobile Imagery. It appears under Overlay Manager ->
+Image Overlay as `colorado.mbtiles` (`visible: on`, `outlines: on`) — an
+overlay drawn on top of a base map, not a base map you select.
+
+### Root cause
+
+`ImportGRGSort.match()` claims any MBTiles that is not terrain:
+
+```java
+if (type.getID() == ImageryFileType.MBTILES) {
+    MBTilesInfo mbTilesInfo = MBTilesInfo.get(file.getPath(), null);
+    if (mbTilesInfo != null)
+        return !Objects.equals(mbTilesInfo.content, "terrain");
+}
+```
+
+and then promotes itself ahead of every other resolver:
+
+```java
+@Override
+public void filterFoundResolvers(List<ImportResolver> importResolvers, File file) {
+    // increase the priority of this sorter vs all of the others
+    if (importResolvers.remove(this)) importResolvers.add(0, this);
+}
+```
+
+So in ATAK 5.8 **every non-terrain `.mbtiles` delivered as a bare file becomes a
+GRG overlay**, whatever it contains. There is no naming trick that avoids it:
+the `.ovr.mbtiles` / `.ovr.sqlite` suffix checked earlier in the same method
+forces overlay treatment *more* explicitly, it does not opt out of it.
+
+### What this does not mean
+
+ATAK 5.8 is not blind to vector tiles. `MBTilesInfo` maps `format = "pbf"` to
+`content = "vector"`, `GLVectorTiles` renders content marked vector, and
+`LayersManager` has a `case "vector"` branch. The capability exists; the bare
+file import route simply does not reach it.
+
+**Still unverified:** whether a vector `.mbtiles` sitting in the GRG path
+actually draws its tiles, and which delivery route reaches the vector layer
+path instead. Do not assume either way until it is tested — this is the open
+question that decides the offline vector workflow.
+
 ## Cost of the current multi-style workflow
 
 Each theme is published as its own XML definition, so each one is a separate
