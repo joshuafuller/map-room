@@ -570,6 +570,56 @@ zoom level roughly quadruples tile count, and each style is a separate archive.
 A state-sized region at operational zoom has not been measured and must be
 before any size is promised.
 
+## No URL import can produce a map source
+
+`ImportFileTask` prompts the user to choose a resolver only when the caller sets
+`FlagPromptOnMultipleMatch`. Every call site that sets it in `ImportManagerView`
+is a **file** path — an activity result, a Local SD multi-select, and a Local SD
+single file with an import strategy.
+
+URL imports do not go through those. They use the shared downloader, built once:
+
+```java
+_downloader = new ImportFileDownloader(mapView.getContext(),
+        ImportRemoteFileTask.FlagNotifyUserSuccess
+                | ImportRemoteFileTask.FlagUpdateResourceLocalPath);
+```
+
+No prompt flag. That same `_downloader` serves both the QR deep link
+(`ImportExportMapComponent:1220`) and the Import Manager's `HTTP URL` option
+(`:795`), so both take the first matching resolver — which for any non-terrain
+`.mbtiles` is `ImportGRGSort`, because it promotes itself.
+
+**Consequence: an offline archive delivered by any URL always becomes an Image
+Overlay.** Reaching the map list requires a file already on the device, imported
+through `Local SD` and answering `Imagery`, or placed in `atak/imagery/`
+directly. A QR code cannot produce a map source, and no change to what we
+publish alters that.
+
+## Capping zoom loses detail; ATAK does not fill it in
+
+Built a z0-12 copy of the Colorado archive (6,964 tiles, 47 MB against 309 MB
+for z0-14) to test whether a shallower archive can be over-zoomed.
+
+It cannot. At 1,611 m scale — past the archive's maxzoom — only a blurred
+arterial and the `Colorado Springs` label render. No street grid, no buildings.
+The full z0-14 archive shows the complete street network at a *wider* 2.94 km
+scale.
+
+![A z0-12 archive over-zoomed past its maxzoom](atak-evidence/overzoom-z12.png)
+
+Two things combine: ATAK scales the deepest available tile rather than
+re-rendering, and OMT does not carry minor streets at z12 in the first place.
+The detail is absent from the data, so nothing can recover it.
+
+Zoom depth is therefore a real product trade, not a packaging trick:
+
+| Archive | Size | What the user gets |
+| --- | --- | --- |
+| z0-12 | 47 MB | Regional context; no street detail |
+| z0-13 | 118 MB | Intermediate |
+| z0-14 | 309 MB | Full street detail |
+
 ## Cost compared
 
 | Delivery | Interactions for a map plus *n* styles |
