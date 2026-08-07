@@ -141,7 +141,7 @@ export function setupMapManager({ onLibraryChanged = async () => {} } = {}) {
   const upload = document.querySelector("#map-upload");
   const sourceUrl = document.querySelector("#map-source-url");
   let polling = null;
-  let rowInteraction = null;
+  const openRows = new Set();
   let completedJobs = new Set();
   let renderedMaps = null;
   let renderedJobs = null;
@@ -248,13 +248,13 @@ export function setupMapManager({ onLibraryChanged = async () => {} } = {}) {
       const renameInput = row.querySelector(".rename-input");
       const actions = row.querySelector(".map-actions");
       const closeRename = () => {
-        rowInteraction = null;
+        openRows.delete(map.id);
         renameForm.hidden = true;
         actions.hidden = false;
         row.querySelector(".rename").focus();
       };
       row.querySelector(".rename").addEventListener("click", () => {
-        rowInteraction = map.id;
+        openRows.add(map.id);
         renameInput.value = map.name;
         renameForm.hidden = false;
         actions.hidden = true;
@@ -266,23 +266,27 @@ export function setupMapManager({ onLibraryChanged = async () => {} } = {}) {
         event.preventDefault();
         const next = renameInput.value.trim();
         if (!next || next === map.name) { closeRename(); return; }
-        rowInteraction = null;
+        // Hold the row until the rename lands: a rejected PATCH must leave the
+        // operator's typed name on screen to correct, not discard it.
+        const renamed = await action(() => request(`/api/maps/${map.id}`, { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ name: next }) }), "Map renamed", true);
+        if (!renamed) return;
+        openRows.delete(map.id);
         renderedMaps = null;
-        await action(() => request(`/api/maps/${map.id}`, { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ name: next }) }), "Map renamed", true);
+        await refresh();
       });
       row.querySelector(".rebuild").addEventListener("click", () => action(() => request(`/api/maps/${map.id}/rebuild`, { method: "POST" }), "Rebuild queued"));
       row.querySelector(".delete").addEventListener("click", () => {
-        rowInteraction = map.id;
+        openRows.add(map.id);
         row.querySelector(".delete-confirm").hidden = false;
         row.querySelector(".cancel-delete").focus();
       });
       row.querySelector(".cancel-delete").addEventListener("click", () => {
-        rowInteraction = null;
+        openRows.delete(map.id);
         row.querySelector(".delete-confirm").hidden = true;
         row.querySelector(".delete").focus();
       });
       row.querySelector(".confirm-delete").addEventListener("click", async () => {
-        rowInteraction = null;
+        openRows.delete(map.id);
         renderedMaps = null;
         await action(() => request(`/api/maps/${map.id}?confirm=${encodeURIComponent(map.id)}`, { method: "DELETE" }), "Map deleted", true);
       });
@@ -297,7 +301,7 @@ export function setupMapManager({ onLibraryChanged = async () => {} } = {}) {
     const activeClock = jobs.some(({ status: jobStatus }) => jobStatus === "queued" || jobStatus === "running") ? Math.floor(Date.now() / 1000) : null;
     const jobState = JSON.stringify([jobs, activeClock]);
     // Re-rendering a row would destroy an open rename editor or delete confirmation mid-use.
-    if (mapState !== renderedMaps && rowInteraction === null) { renderMaps(maps); renderedMaps = mapState; }
+    if (mapState !== renderedMaps && openRows.size === 0) { renderMaps(maps); renderedMaps = mapState; }
     if (jobState !== renderedJobs) { renderJobs(jobs); renderedJobs = jobState; }
     const newlyCompleted = jobs.filter(({ status, id: jobId }) => status === "complete" && !completedJobs.has(jobId));
     completedJobs = new Set(jobs.filter(({ status }) => status === "complete").map(({ id: jobId }) => jobId));
@@ -473,11 +477,14 @@ export function setupMapManager({ onLibraryChanged = async () => {} } = {}) {
     await action(async () => { await refresh(); showCatalogShortcuts(); }, "Map library ready");
     polling = setInterval(() => refresh().catch((error) => setStatus(error.message, true)), 2000);
   });
-  const close = () => { clearInterval(polling); polling = null; dialog.close(); };
+  const close = () => { clearInterval(polling); polling = null; openRows.clear(); renderedMaps = null; dialog.close(); };
   document.querySelector("#manager-close").addEventListener("click", close);
   dialog.addEventListener("cancel", (event) => {
     event.preventDefault();
+    // Escape belongs to the innermost thing that is open.
+    const openRow = document.querySelector(".map-row .rename-form:not([hidden]), .map-row .delete-confirm:not([hidden])");
     if (!discard.hidden) discard.hidden = true;
+    else if (openRow) openRow.closest(".map-row").querySelector(openRow.matches(".rename-form") ? ".cancel-rename" : ".cancel-delete").click();
     else if (!createView.hidden) leaveCreateView();
     else close();
   });

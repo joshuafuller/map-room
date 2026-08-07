@@ -56,7 +56,7 @@ test("escaping leaves no markup a browser could execute", () => {
       .replace(/&lt;/g, "<").replace(/&gt;/g, ">")
       .replace(/&quot;/g, '"').replace(/&#39;/g, "'")
       .replace(/&amp;/g, "&");
-    assert.equal(decoded, String(value));
+    assert.equal(decoded, String(value), "escaping was not lossless");
   }));
 });
 
@@ -71,7 +71,7 @@ test("byte sizes always render as one readable unit", () => {
     assert.equal(typeof rendered, "string");
     assert.ok(rendered.length > 0);
     if (Number.isFinite(value)) assert.match(rendered, /^\d+(\.\d)? (B|KB|MB|GB|TB)$/);
-    else assert.equal(rendered, "Size unavailable");
+    else assert.equal(rendered, "Size unavailable", "a non-finite size must read as unavailable");
   }));
 });
 
@@ -118,7 +118,7 @@ test("catalog shortcuts never repeat a region", () => {
 test("keyboard focus stays inside the result list", () => {
   fc.assert(fc.property(fc.integer({ min: -1, max: 40 }), fc.constantFrom(1, -1), fc.nat({ max: 40 }), (current, direction, count) => {
     const next = moveCatalogFocus(current, direction, count);
-    if (count === 0) assert.equal(next, -1);
+    if (count === 0) assert.equal(next, -1, "an empty result list did not clear the focused option");
     else assert.ok(next >= 0 && next < count, `focus escaped to ${next} of ${count}`);
   }));
 });

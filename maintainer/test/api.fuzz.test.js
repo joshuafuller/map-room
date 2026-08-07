@@ -136,6 +136,81 @@ test("map IDs are bounded before they become filenames", async () => {
   assert.doesNotThrow(() => validateMapIdentity("a".repeat(64), "Bounded"));
 });
 
+test("a map created before the length cap stays manageable", async () => {
+  const legacy = "a".repeat(120);
+  const calls = [];
+  const api = createApi({
+    library: {
+      list: async () => [{ id: legacy, name: "Legacy" }],
+      update: async (id, input) => (calls.push(["update", id]), { id, name: input.name }),
+      delete: async (id) => { calls.push(["delete", id]); }
+    },
+    queue: { snapshot: () => [], enqueue: (input) => (calls.push(["enqueue", input.regionId]), { id: "j" }), retry: () => ({}) },
+    catalog: async () => [], saveUpload: async () => "x", loadTileJson: async () => ({})
+  });
+  await serve(api, async (base) => {
+    const renamed = await fetch(`${base}/api/maps/${legacy}`, { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ name: "Renamed" }) });
+    assert.equal(renamed.status, 200, "an existing over-long map could no longer be renamed");
+    const deleted = await fetch(`${base}/api/maps/${legacy}?confirm=${legacy}`, { method: "DELETE" });
+    assert.equal(deleted.status, 200, "an existing over-long map could no longer be deleted");
+  });
+  assert.deepEqual(calls.map(([action]) => action), ["update", "delete"]);
+});
+
+test("queue and upload rejections still explain themselves", async () => {
+  const api = createApi({
+    library: { list: async () => [], update: async () => ({}), delete: async () => {} },
+    queue: {
+      snapshot: () => [],
+      enqueue: () => ({ id: "j" }),
+      retry: () => { const error = new Error("Job 'gone' not found"); error.status = 404; throw error; }
+    },
+    catalog: async () => [],
+    saveUpload: async () => { const error = new Error("Uploaded source is too large"); error.status = 400; throw error; },
+    loadTileJson: async () => ({})
+  });
+  await serve(api, async (base) => {
+    const retried = await fetch(`${base}/api/jobs/gone/retry`, { method: "POST", headers: { "content-type": "application/json" }, body: "{}" });
+    assert.equal(retried.status, 404);
+    assert.match((await retried.json()).error, /not found/, "a retried-but-missing job gave the operator nothing to act on");
+
+    const uploaded = await fetch(`${base}/api/maps/import?id=big&name=Big`, { method: "POST", headers: { "content-type": "application/octet-stream" }, body: "x" });
+    assert.equal(uploaded.status, 400);
+    assert.match((await uploaded.json()).error, /too large/, "an oversized upload did not say why it was refused");
+  });
+});
+
+test("an internal failure never hands the operator's filesystem to the client", async () => {
+  const api = createApi({
+    library: { list: async () => { throw new Error('EACCES: permission denied, open "/data/regions/secret.json"'); }, update: async () => ({}), delete: async () => {} },
+    queue: { snapshot: () => [], enqueue: () => ({}), retry: () => ({}) },
+    catalog: async () => [], saveUpload: async () => "x", loadTileJson: async () => ({})
+  });
+  await serve(api, async (base) => {
+    const response = await fetch(`${base}/api/maps`);
+    assert.equal(response.status, 500);
+    const { error } = await response.json();
+    assert.ok(!error.includes("/data/"), `a filesystem path reached the client: ${error}`);
+    assert.ok(!error.includes("EACCES"), `an internal error code reached the client: ${error}`);
+    assert.ok(error.length > 0, "a failure must still say something to the operator");
+  });
+});
+
+test("status comes from the error itself, not from the words in its message", async () => {
+  const rejection = new Error("Nothing about this sentence resembles the old keyword list");
+  rejection.status = 400;
+  const api = createApi({
+    library: { list: async () => [], update: async () => { throw rejection; }, delete: async () => {} },
+    queue: { snapshot: () => [], enqueue: () => ({}), retry: () => ({}) },
+    catalog: async () => [], saveUpload: async () => "x", loadTileJson: async () => ({})
+  });
+  await serve(api, async (base) => {
+    const response = await fetch(`${base}/api/maps/florida`, { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ name: "New" }) });
+    assert.equal(response.status, 400, "a tagged client error was reported as a server fault");
+    assert.equal((await response.json()).error, rejection.message, "a client error must still explain itself");
+  });
+});
+
 test("the API keeps serving after a fuzzing run", async () => {
   const api = fixture();
   await serve(api, async (base) => {

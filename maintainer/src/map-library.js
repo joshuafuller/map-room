@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { RequestError, clientError } from "./request-error.js";
 import { access, mkdir, readFile, readdir, rename, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 
@@ -7,19 +8,21 @@ const SAFE_ID = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 // that filesystems impose — otherwise a valid-looking ID fails as ENAMETOOLONG.
 const MAX_ID_LENGTH = 64;
 
-function validateId(id) {
-  if (typeof id !== "string" || !SAFE_ID.test(id) || id.length > MAX_ID_LENGTH) {
-    throw new Error(`Map ID must be a lowercase slug of 1 to ${MAX_ID_LENGTH} characters`);
-  }
+// The length cap guards new filenames. Addressing a map that already exists
+// only checks the shape, so a map created before the cap stays manageable
+// instead of becoming visible-but-unrenameable and undeletable.
+function validateId(id, { bounded = false } = {}) {
+  if (typeof id !== "string" || !SAFE_ID.test(id)) throw clientError("Map ID must be a lowercase slug");
+  if (bounded && id.length > MAX_ID_LENGTH) throw clientError(`Map ID must be a lowercase slug of 1 to ${MAX_ID_LENGTH} characters`);
 }
 
 function validateName(name) {
-  if (typeof name !== "string" || name.trim() === "" || name.length > 120) throw new Error("Map name must be 1 to 120 characters");
+  if (typeof name !== "string" || name.trim() === "" || name.length > 120) throw clientError("Map name must be 1 to 120 characters");
   return name.trim();
 }
 
 export function validateMapIdentity(id, name) {
-  validateId(id);
+  validateId(id, { bounded: true });
   return { id, name: validateName(name) };
 }
 
@@ -65,7 +68,7 @@ export class MapLibrary {
     await mkdir(this.regionsDirectory, { recursive: true });
     const manifestPath = this.#manifestPath(id);
     const archivePath = this.#archivePath(id);
-    if ((await this.list()).some((map) => map.id === id)) throw new Error(`Map '${id}' already exists`);
+    if ((await this.list()).some((map) => map.id === id)) throw clientError(`Map '${id}' already exists`);
     const token = randomUUID();
     const stagingArchive = path.join(this.dataDirectory, `.${id}-${token}.mbtiles`);
     const stagingManifest = path.join(this.regionsDirectory, `.${id}-${token}.json`);
@@ -95,13 +98,13 @@ export class MapLibrary {
 
   async rebuild(id, { reuseSource, buildMemory, onProgress } = {}) {
     const { manifest } = await this.#load(id);
-    if (!manifest.source?.url && !manifest.source?.catalogId && !manifest.source?.file) throw new Error(`Map '${id}' does not have a reusable source`);
+    if (!manifest.source?.url && !manifest.source?.catalogId && !manifest.source?.file) throw clientError(`Map '${id}' does not have a reusable source`);
     return this.#replace(id, manifest, { reuseSource, buildMemory, onProgress });
   }
 
   async delete(id, { confirmation }) {
     validateId(id);
-    if (confirmation !== id) throw new Error("Delete confirmation must match the map ID");
+    if (confirmation !== id) throw clientError("Delete confirmation must match the map ID");
     const { manifest, manifestPath } = await this.#load(id);
     const archivePath = path.join(this.dataDirectory, manifest.archive);
     const token = randomUUID();
@@ -183,7 +186,7 @@ export class MapLibrary {
     try {
       return { manifestPath, manifest: JSON.parse(await readFile(manifestPath, "utf8")) };
     } catch (error) {
-      if (error.code === "ENOENT") throw new Error(`Map '${id}' not found`);
+      if (error.code === "ENOENT") throw new RequestError(`Map '${id}' not found`, 404);
       throw error;
     }
   }

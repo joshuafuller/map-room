@@ -121,8 +121,11 @@ try {
     await page.locator("#map-name").fill("Unsafe Source");
     if (await page.locator("#map-id").inputValue() !== "unsafe-source") failures.push("map name did not generate the hidden stable ID");
     await page.locator("#map-create-form button[type=submit]").click();
-    await page.waitForFunction(() => document.querySelector("#create-status")?.textContent.includes("not allowed"));
-    if (await page.locator("#manager-status").textContent() !== "") failures.push("a creation failure was reported away from the form it belongs to");
+    // Wait for the rejection to land anywhere, then require it landed on the form.
+    await page.waitForFunction(() => `${document.querySelector("#create-status")?.textContent}${document.querySelector("#manager-status")?.textContent}`.includes("not allowed"));
+    if (!(await page.locator("#create-status").textContent()).includes("not allowed") || await page.locator("#manager-status").textContent() !== "") {
+      failures.push("a creation failure was reported away from the form it belongs to");
+    }
   });
 
   await step("discarding a filled form", async () => {
@@ -184,6 +187,61 @@ try {
 
     if (dialogs !== 0) failures.push("map management still fell back to a browser dialog");
     page.removeAllListeners("dialog");
+
+    await step("escape closes the row editor, not the manager", async () => {
+      const row = page.locator(".map-row").filter({ hasText: renameTarget.id }).first();
+      await row.locator(".rename").click();
+      await page.keyboard.press("Escape");
+      if (!await page.locator("#map-manager").isVisible()) failures.push("Escape while renaming closed the whole manager");
+      if (await row.locator(".rename-input").isVisible()) failures.push("Escape while renaming left the editor open");
+    });
+
+    await step("a second row does not drop the first row's protection", async () => {
+      const rows = page.locator(".map-row");
+      if (await rows.count() < 2) return;
+      const first = rows.nth(0);
+      const second = rows.nth(1);
+      await first.locator(".rename").click();
+      await first.locator(".rename-input").fill("Guarded Draft");
+      await second.locator(".delete").click();
+      await second.locator(".cancel-delete").click();
+      // The guard only matters when the library actually changes underneath.
+      await page.route("**/api/maps", async (route) => {
+        const response = await route.fetch();
+        const payload = await response.json();
+        payload.maps = payload.maps.map((map) => ({ ...map, archiveBytes: (map.archiveBytes ?? 0) + 8192 }));
+        await route.fulfill({ response, json: payload });
+      });
+      await page.waitForTimeout(2500);
+      await page.unroute("**/api/maps");
+      if (await first.locator(".rename-input").inputValue() !== "Guarded Draft") {
+        failures.push("canceling another row's delete let a refresh discard an open rename");
+      }
+      await first.locator(".cancel-rename").click();
+    });
+
+    await step("closing the manager does not freeze the library", async () => {
+      const row = page.locator(".map-row").filter({ hasText: renameTarget.id }).first();
+      await row.locator(".delete").click();
+      await page.locator("#manager-close").click();
+      await page.locator("#manage-maps").click();
+      await page.locator("#map-manager").waitFor({ state: "visible" });
+      // A live library re-renders; a frozen one keeps whatever was on screen.
+      await page.route("**/api/maps", async (route) => {
+        const response = await route.fetch();
+        const payload = await response.json();
+        payload.maps = payload.maps.map((map) => ({ ...map, name: `${map.name} Refreshed` }));
+        await route.fulfill({ response, json: payload });
+      });
+      try {
+        await page.locator(".map-row").filter({ hasText: "Refreshed" }).first().waitFor({ timeout: 8000 });
+      } catch {
+        failures.push("closing the manager with a row open froze the installed-map list");
+      }
+      await page.unroute("**/api/maps");
+      // Let the real names come back before later steps read them.
+      await page.waitForFunction(() => ![...document.querySelectorAll(".map-row strong")].some((name) => name.textContent.includes("Refreshed")));
+    });
 
     await step("guarded delete", async () => {
       const restored = page.locator(".map-row").filter({ hasText: renameTarget.id }).first();
