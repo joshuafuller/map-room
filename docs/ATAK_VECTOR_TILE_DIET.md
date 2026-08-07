@@ -88,19 +88,55 @@ Latin-script deployment will ever see. ATAK will still find `name`.
 
 Nothing here changes what ATAK draws, because none of it reaches the renderer.
 
-## What is not yet known
+## Measured: stripping saves about 2.4%
 
-**The actual size saving has not been measured.** The list above is derived from
-the schema and our tile metadata; it says what is unused, not what it weighs.
-Attribute keys and values are dictionary-encoded per tile, so the saving depends
-on cardinality rather than field count, and cannot be inferred from the table.
+Measured on `colorado.mbtiles` with `scripts/atak/measure-tile-diet.py`. Both
+arms are decoded and re-encoded through the same codec, so the difference is
+attributable to attributes rather than encoder behaviour, and both are gzipped
+as stored.
 
-To measure it: rebuild one region with the fields dropped, compare archive size,
-then import both into ATAK and confirm the rendering is identical. Until that is
-done, no percentage should be quoted.
+| Zoom | Tiles | Archive MB | Share of bytes | Saving |
+| --- | --- | --- | --- | --- |
+| 0-8 | 78 | 1.4 | 0.4% | 5-26% |
+| 9 | 120 | 2.6 | 0.8% | 3.1% |
+| 10 | 380 | 4.5 | 1.5% | 3.4% |
+| 11 | 1,350 | 10.3 | 3.3% | 3.3% |
+| 12 | 5,036 | 24.8 | 8.0% | 4.0% |
+| 13 | 19,437 | 74.2 | 24.0% | 2.4% |
+| 14 | 75,840 | 190.7 | 61.8% | 2.6% |
 
-Also unverified: whether Planetiler's OMT profile can drop these fields through
-configuration alone, or whether it needs a custom profile.
+**Weighted by actual bytes: 2.4%.** On a 309 MB archive that is roughly 7 MB.
+
+The low zooms do save 18-26%, but they are a rounding error in the total. Zooms
+13 and 14 hold 86% of the bytes, and there the saving is 2.4-2.6%. Those two
+were re-measured with random sampling rather than the first rows by rowid, in
+case the sample was spatially clustered; the figures were unchanged.
+
+### Why it is so small
+
+At high zoom the bytes are geometry, not attributes. Attribute keys and values
+are dictionary-encoded once per tile and referenced by index, so 127 surplus
+name variants cost almost nothing when only a handful of features in a z14 tile
+carry a name at all — roads and buildings dominate those tiles and carry none.
+The `route_1_*` through `route_7_*` block looks alarming as a field list but is
+populated on very few features.
+
+Field counts are a bad proxy for bytes. This is the measurement that matters.
+
+### What this means
+
+**Do not do this work for size.** A 2.4% reduction does not widen what a device
+can carry in any meaningful way, and it costs a custom build profile plus a
+per-deployment language decision that can silently discard data a coalition user
+needs.
+
+It may still be worth doing for other reasons — a smaller attribute surface is
+easier to reason about, and dropping unread fields removes a class of "why is
+this in here" questions. Those are not size arguments and should not be
+justified as such.
+
+The real size lever is elsewhere: zoom depth and coverage area. Dropping z14
+alone removes 62% of the archive.
 
 ## Why this matters
 
