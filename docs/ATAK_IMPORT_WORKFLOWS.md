@@ -282,10 +282,53 @@ ATAK 5.8 is not blind to vector tiles. `MBTilesInfo` maps `format = "pbf"` to
 `LayersManager` has a `case "vector"` branch. The capability exists; the bare
 file import route simply does not reach it.
 
-### Verified: it does not render, because georeferencing is lost
+### CORRECTION: it does render. An earlier version of this document said it did not.
 
-Tested by selecting the imported overlay and using **ATAK's own zoom-to action**
-on it. The map moved to **0°, 0°** — the readout shows `31N AA 66021 00000`, the
+**The offline vector archive works.** With the device in airplane mode and the
+network unreachable, panning to territory never previously displayed renders
+full vector detail from the imported `.mbtiles`: Perry Park, Larkspur, Palmer
+Lake, Monument, Gleneagle, Black Forest, Peyton, Falcon, I-25 and SH-83
+shields, the Air Force Academy marker, county boundaries and forest polygons.
+
+![Offline vector rendering with the network disabled](atak-evidence/offline-pan.png)
+
+Being registered as a GRG overlay does **not** prevent rendering, and the
+georeferencing is correct.
+
+#### How the earlier claim went wrong
+
+The false conclusion came from using the overlay list item's zoom-to action,
+which moved the map to 0°,0° with an MGRS readout of `31N AA 66021 00000`. That
+is a defect in the **list entry's location field**, not in the layer. The layer
+itself is correctly bounded — centring the map on Colorado shows the GRG outline
+box drawn exactly over the state.
+
+Two lessons worth keeping, because both nearly produced confident nonsense:
+
+1. **A proxy for the thing is not the thing.** "ATAK's own zoom-to goes to null
+   island" felt like strong evidence. It was evidence about a list widget.
+   The only proof that a map renders is looking at the map.
+2. **Rendering alone proves nothing about *which source* rendered.** The first
+   Colorado screenshot looked like success, but the hosted raster source was
+   still selected and the server logged 707 tile requests during it. Only
+   cutting the network isolates the offline archive.
+
+#### What remains true
+
+- The archive is claimed by `ImportGRGSort` and lands in `/sdcard/atak/grg/`.
+- It appears under Overlay Manager -> Image Overlay, not in Mobile Imagery.
+- The list entry reports a null-island location.
+- The import completes in ~70 ms for 356 MB, because the tiles are read lazily
+  at render time rather than scanned on import.
+
+None of these stop it working. They are presentation and discoverability
+problems: the user finds an offline map where overlays live rather than where
+maps live.
+
+### Superseded analysis (kept for the record)
+
+Tested by selecting the imported overlay and using ATAK's zoom-to action on it.
+The map moved to **0°, 0°** — the readout shows `31N AA 66021 00000`, the
 UTM zone at the prime meridian, and the radial menu opened at the centre of the
 globe off West Africa. ATAK believes the data lives at null island.
 
@@ -309,16 +352,9 @@ FileContentResolver: External GRG Data: Added handler for colorado.mbtiles
 It registered a GRG handler without opening the tileset. Nothing is drawn over
 Colorado because ATAK does not know the data belongs there.
 
-**Conclusion: delivering a vector `.mbtiles` as a bare file to ATAK 5.8 does not
-work.** It is not a size problem, not a metadata problem on our side, and not a
-missing-style problem. The file is captured by the GRG sorter, which promotes
-itself above every other resolver, and that path does not georeference a pbf
-tileset. The user gets a successful import, a visible overlay entry, and no map.
-
-The remaining question is not whether the bare-file route can be improved but
-**which route reaches `GLVectorTiles` at all** — the renderer exists and
-`LayersManager` has a `case "vector"`, so the capability is there and unused by
-this path.
+**This conclusion was wrong** — see the correction above. The file is captured
+by the GRG sorter and the list entry does report null island, but the layer is
+correctly georeferenced and renders offline.
 
 ## Cost of the current multi-style workflow
 
