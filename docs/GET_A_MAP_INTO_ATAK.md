@@ -1,79 +1,122 @@
 # Get a Map Room map into ATAK
 
-Three steps. Scan, confirm, pick a style.
-
-The engineering evidence behind every claim here is in
+Every step below was performed on ATAK 5.8.0.1, and the button labels are what
+you will actually see on screen. Engineering detail and evidence are in
 [ATAK import workflows](ATAK_IMPORT_WORKFLOWS.md).
+
+## First, decide what you need
+
+| You want | Use |
+| --- | --- |
+| A map that works with **no network** | [Load an offline map](#load-an-offline-map) |
+| Map Room's **styles**, on a network that reaches the server | [Scan the QR code](#scan-the-qr-code) |
+| Both | Scan the QR code, then load the offline map as well |
+
+The difference matters. A **style** tells ATAK how to draw tiles it fetches from
+Map Room, so it needs the server. An **offline map** carries the tiles on the
+device and works with nothing at all.
 
 ## Before you start
 
-ATAK asks for a lot on first launch — a licence agreement, a permissions
-explanation you must scroll to the end before its button works, roughly a dozen
-Android permission prompts, all-files access, and a device setup screen you can
-skip. That is about fifteen taps, once per device, before any map will import.
+ATAK's first launch asks for a lot: a licence agreement, a permissions
+explanation whose button stays greyed out until you scroll to the end of the
+text, about a dozen Android permission prompts, all-files access, and a device
+setup screen you can skip with `Done`.
 
-Do it before you need the map.
+Roughly fifteen taps, once per device, before any map will import. Do it before
+you need the map.
 
-## The three steps
+## Scan the QR code
 
-1. **Scan the QR code** from Map Room. ATAK opens with a prompt naming the file
-   it is about to fetch.
-2. **Tap `Yes`.** ATAK downloads the archive and files everything inside it.
-   A large archive takes a while and shows no progress bar; wait for it.
-3. **Tap the folded-map icon** in the top toolbar and choose a style —
+The fastest route, and the right one for styles.
+
+1. **Scan the QR code** from Map Room. ATAK opens with a prompt naming the file.
+2. **Tap `Yes`.** ATAK downloads and files everything inside. A large file takes
+   a while and shows no progress bar — wait for it.
+3. **Tap the folded-map icon** in the top toolbar and pick a style:
    `Map Room - Daylight`, `Map Room - Midnight`, or `Map Room - Dark Blue`.
 
-The map draws. Switching style later is one tap in the same list.
+Switching style later is one tap in that same list.
 
-## What you just installed
+**If the archive also held an offline `.mbtiles`,** this route files it as an
+*overlay* rather than a map. It works and it renders, but it appears under
+`Overlay Manager -> Image Overlay` instead of the map list. To get it into the
+map list, use the next section.
 
-One archive carries two different things, and they behave differently:
+## Load an offline map
 
-**The offline map** works with no network at all. Aeroplane mode, no signal,
-nothing — the tiles are on the device.
+Use this when you want the offline map in the map list, selectable as your base
+map. Two ways; both give the same result.
 
-**The styles** are instructions for drawing tiles fetched from Map Room. They
-need to reach the server. Away from it, a style you select will draw nothing.
+### Through ATAK, from a file on the device
 
-So: the offline map is what you rely on in the field, and the styles are for
-when you are on the same network as Map Room.
+Put the `.mbtiles` anywhere on the device first — `Download` is fine.
 
-## Two things that look broken and are not
+1. Open the **menu** (three bars, top right) and choose **`Tools`**.
+2. Scroll to and tap **`Import`**.
+3. Choose **`Local SD`**.
+4. Browse to the file, tick it, tap **`OK`**.
+5. At **Suggested Import Strategy**, choose **`Copy`**.
+   `Move` deletes the original; `Use In Place` leaves the file where it is.
+6. At **Select Desired Import Method**, choose **`Imagery`**.
 
-**Your offline map is not in the map list.** An archive that arrived by QR is
-filed under `Overlay Manager -> Image Overlay`, not with the map sources. Look
-for `<region>.mbtiles` there, not under the folded-map icon. It still draws, and
-it still works with no network — it is simply filed as an overlay.
+**Step 6 is the one that matters.** The other option, `Image Overlay File`,
+files it as an overlay. `Imagery` makes it a map.
 
-To get it into the map list instead, import it through **Tools -> Import ->
-Local SD** rather than by QR. At the last step ATAK asks "Select Desired Import
-Method" and offers `Image Overlay File` or `Imagery` — choose **Imagery**. The
-map then appears in the map list and can be selected as the base map.
+It then appears under the folded-map icon in the map list, showing its size and
+the word `local`.
 
-Copying the file into `atak/imagery/` yourself does the same thing.
+### By copying the file yourself
 
-The QR route never offers that choice, which is why it always produces an
-overlay.
+Same result, no ATAK steps. Connect the device by USB or use a file manager, and
+put the file here:
 
-**It says it is off the coast of Africa.** The overlay's list entry shows a
-location of `31N AA 66021 00000` and its zoom-to button jumps to 0 deg, 0 deg.
-The map data itself is in the right place — pan to your area and it is there.
-Only the list entry is wrong.
+```
+Internal storage / atak / imagery / <region>.mbtiles
+```
 
-Both are ATAK behaviours. Nothing Map Room does changes them.
+Style files live in the same folder:
+
+```
+Internal storage / atak / imagery / <style>.xml
+```
+
+Restart ATAK if something you copied in does not show up.
+
+## Where things end up
+
+| What | Where to find it |
+| --- | --- |
+| Styles | Folded-map icon -> map list |
+| Offline map imported as `Imagery` | Folded-map icon -> map list, marked `local` |
+| Offline map imported by QR, or as `Image Overlay File` | Menu -> `Overlay Manager` -> `Image Overlay` |
+
+## Things that look broken and are not
+
+**An offline map filed as an overlay says it is off the coast of Africa.** Its
+entry shows a location of `31N AA 66021 00000`, and the entry's zoom-to button
+jumps to 0°, 0°. The map data is in the right place — pan to your area and it is
+there. Only the list entry is wrong. Importing as `Imagery` avoids this.
+
+**A style draws nothing.** Styles fetch their tiles from Map Room. With no route
+to the server there is nothing to draw. Use the offline map instead.
+
+**A large import looks frozen.** There is no progress bar. A few hundred
+megabytes takes a while. Leave it alone.
 
 ## When the map does not appear
 
 | Symptom | Cause | Fix |
 | --- | --- | --- |
-| Import prompt never appears | The QR encodes an address the device cannot reach | Check the device is on the same network as Map Room |
-| Import succeeds, style draws nothing | The style needs the server and cannot reach it | Use the offline map, or get back on the network |
-| Import succeeds, nothing registers at all | The archive was built with a `MANIFEST` directory | Rebuild it as a plain zip |
-| Cannot find the offline map | It is filed under Image Overlay | See above |
+| No import prompt after scanning | The QR points at an address this device cannot reach | Get on the same network as Map Room |
+| Imported fine, style draws nothing | The style needs the server | Use the offline map, or reconnect |
+| Imported fine, nothing appears anywhere | The archive was built with a `MANIFEST` folder inside | Rebuild it as a plain zip |
+| Offline map missing from the map list | It was filed as an overlay | Re-import via `Tools -> Import -> Local SD` and choose `Imagery` |
+| Copied a file in, still missing | The folder scan has not run | Restart ATAK |
 
 ## For whoever builds the archive
 
-A plain zip, files at the root, no `MANIFEST` directory:
+A plain zip, files at the root, **no `MANIFEST` folder**:
 
 ```
 colorado.mbtiles
@@ -88,10 +131,13 @@ The QR encodes:
 tak://com.atakmap.app/import?url=<percent-encoded url to the zip>
 ```
 
-The host segment is exactly `com.atakmap.app` — not `com.atakmap.app.civ`, even
-though the installed package is `com.atakmap.app.civ`. ATAK compares it
-literally and silently ignores anything else.
+Three rules that will silently break it if ignored:
 
-Generate the style definitions through the address the device will use. They
-embed their tile URL absolutely, so a definition generated against `localhost`
-hands the device a map that fetches from itself and draws nothing.
+- The host segment is exactly `com.atakmap.app` — **not** `com.atakmap.app.civ`,
+  even though the installed package is `com.atakmap.app.civ`. ATAK compares it
+  literally and ignores anything else.
+- A `MANIFEST/manifest.xml` inside the zip stops the styles registering
+  entirely. Leave it out.
+- Generate the style definitions through the address the device will use. They
+  embed their tile URL absolutely, so one generated against `localhost` hands the
+  device a map that fetches from itself and draws nothing.
