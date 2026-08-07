@@ -477,6 +477,51 @@ Both come from `ImportGRGSort` claiming every non-terrain `.mbtiles` and
 promoting itself above the other resolvers. Nothing Map Room emits changes
 this.
 
+## Styles do not apply to an offline vector map
+
+An offline `.mbtiles` and a Map Room "style" are not two halves of one thing.
+They are two different maps.
+
+- A **style** (`daylight.xml`, `midnight.xml`, ...) is a `customMapSource`
+  pointing at hosted raster tiles. Selecting one offline gives an empty layer.
+- The **offline archive** is vector tiles, drawn by ATAK with its own built-in
+  appearance.
+
+### ATAK's vector styling is fixed per schema
+
+`GLVectorTiles` maps a tileset's schema to a renderer, and that is the whole of
+it:
+
+```java
+styleSchemas.put("omt", Arrays.asList(Schema.OMT));
+styleSchemas.put("rbt", Arrays.asList(Schema.RBT_CULTURAL, Schema.RBT_PHYSICAL));
+...
+gltiles = createClientImpl(..., client, isOverlay, !Objects.equals(style, "omt"), ptr);
+```
+
+`Schema.java` hardcodes OMT and RBT as fixed layer and field maps. Nothing in
+the vector-tile path loads a style document — there is no sprite, glyph, or
+`style.json` handling in it. The `style` variable is a schema name, not a
+stylesheet.
+
+Map Room publishes OMT-schema tiles, so an offline archive renders with ATAK's
+built-in OMT appearance. **There is no way to supply a different one.**
+
+### What this means for offline style choice
+
+Switching appearance offline cannot be done by shipping more style documents.
+The options are:
+
+1. **Accept ATAK's look offline.** One archive, one appearance, smallest size.
+2. **Ship raster tiles per style.** Raster archives carry their appearance baked
+   in, so `daylight.mbtiles` and `midnight.mbtiles` would each be a separate
+   selectable offline map. This multiplies storage by the number of styles and
+   raster is far larger than vector for the same coverage.
+3. **A plugin.** Out of scope for a map server to require.
+
+Option 2 is the only route to offline style switching with stock ATAK, and its
+cost is size. This has not been measured — see below.
+
 ## Cost compared
 
 | Delivery | Interactions for a map plus *n* styles |
@@ -494,8 +539,13 @@ Listed explicitly so nothing here reads as settled:
 - Whether any *import* route can land an archive in `imagery/`. Bare file,
   plain zip, and path-prefixed zip all sort to `grg/`. Placement works but is
   not deliverable by QR.
-- Whether ATAK's own Import Manager UI, browsing to a local file, sorts
-  differently from the URL import path.
+- Whether the Import Manager's `HTTP URL` option also prompts for the resolver.
+  If it does, a URL-delivered archive can reach the map list and only the QR
+  path skips the choice.
+- The size of a raster `.mbtiles` per style for a real region, which decides
+  whether offline style switching is affordable at all.
+- Whether the per-layer palette control ATAK shows on overlays offers any
+  meaningful appearance change for a vector tileset.
 - The practical size ceiling. 356 MB imports and renders. The 20 MB figure in
   #63 is a Mission Package *send* warning threshold, and the working path is not
   a Mission Package, so that threshold may not apply at all — but this is
