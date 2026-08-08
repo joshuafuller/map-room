@@ -90,14 +90,18 @@ partial). Full detail in ATAK's `ATAK_Supported_Map_Types.md`.
 ATAK's own planned-formats section changes the calculus, because building what
 ATAK is about to ship natively is wasted effort:
 
-| Feature | ATAK status | Target |
-| --- | --- | --- |
-| **Custom style sheet import** | Planned | 5.7+ |
-| **Shortbread default styles** | Planned | 5.8+ |
-| **Map Manager download** (streaming vector region download) | Planned | 5.8+ |
-| RBT default styles | Planned | 5.7+ |
-| **Cesium Quantized Mesh** | Planned | 5.8+ |
-| ESRI **TPKX** / **VTPK** | In development | 5.7 |
+That roadmap comes from the **5.7** SDK documentation, while the shipping app
+is **5.8.0.1**. Checked against the 5.8 binary
+([method and findings](ATAK_BINARY_VERIFICATION.md)):
+
+| Feature | 5.7 doc | 5.8 binary | Build it? |
+| --- | --- | --- | --- |
+| Cesium Quantized Mesh | Planned 5.8+ | **shipped** (194 strings) | No |
+| ESRI TPKX / VTPK | In development | **shipped** (MIME types present) | No |
+| Shortbread | Planned 5.8+ | **absent** | Still a candidate |
+| PMTiles | not mentioned | **absent** | Still a candidate |
+| Custom style sheet import | Planned 5.7+ | mechanism changed, unresolved | Investigate first |
+| `vector-tiles.dark-default` | exists in 5.7 source | **removed** | n/a |
 
 Two consequences worth absorbing. Custom stylesheet import being *planned*
 explains the dead `overrideStyle` variable, and means the styling limitation may
@@ -106,8 +110,11 @@ suggests streaming vector region caching is **not** available in 5.8 — which
 would answer [#109](https://github.com/joshuafuller/map-room/issues/109) in the
 negative and must be verified before that spike is scoped.
 
-Do not build: TPKX, VTPK, Shortbread styling, or quantized mesh. ATAK is
-already doing them.
+Do not build TPKX, VTPK or quantized mesh — verified present in the 5.8
+binary. Shortbread and PMTiles are genuinely absent and remain candidates.
+
+**Verify every roadmap claim against the APK before scoring.** The 5.7
+documentation was wrong in both directions.
 
 ## Candidates — formats ATAK does not support
 
