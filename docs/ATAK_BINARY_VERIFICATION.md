@@ -74,9 +74,76 @@ is obfuscated to single letters, so establishing whether an **external** style
 document can be supplied needs a proper decompiler — jadx first, Ghidra for the
 native side.
 
-**This is the highest-value open question in the ATAK work.** If a Map Room
-style can be handed to the vector renderer in 5.8, offline maps stop needing
-baked raster, and the size argument changes completely.
+### Resolved by decompilation: two routes exist, one of them usable
+
+Decompiled `classes2.dex` with jadx. `com.atakmap.map.layer.feature.vectortiles.b`
+is a **public static style registry**:
+
+```java
+public static void g(File tileset, String name, String styleUri)   // register for one tileset
+static void h(String name, String styleUri, predicate)             // register by schema/role
+public static Collection<Map.Entry<String,String>> f(TileMatrix, boolean overlay)
+public interface c { void onStyleRegistered(File, String, String); ... }
+```
+
+ATAK registers its own built-ins through exactly this API:
+
+```java
+b.h("TAK Maps (Overlay)", "asset:/style/omt/overlay/style.json", <omt, Overlay>);
+b.h("TAK Maps",           "asset:/style/omt/bright/style.json",  <omt, Basemap>);
+```
+
+An entry is **(display name, style document URI)**. Both `g` and `h` use
+`addFirst`, so a later registration takes precedence.
+
+`GLVectorTiles.getStylePath()` resolves in two steps:
+
+```java
+Map.Entry entry = first(b.f(this.tileMatrix, this.isOverlay));
+if (entry != null) return entry.getValue();          // 1. registered style
+arj md = TileMatrix.a.c(this.tileMatrix, arj.class); // 2. tileset metadata
+return md.a().get("styleUrl");
+```
+
+**Route 1 — register a style. Works, needs in-process code.** A plugin can call
+`b.g(file, "Map Room Daylight", "http://…/style.json")` and win, because
+registrations go to the front.
+
+**Route 2 — `styleUrl` in tileset metadata. Exists but is unreachable for us.**
+The streaming descriptor's `metadata` object is passed through wholesale as
+tile-matrix metadata (`vu.s`, populated from `optJSONObject("metadata")` at
+schema >= 2.1, surfaced by `StreamingTileClient.a()`), so `styleUrl` does reach
+`getStylePath()`. **But it is only consulted when no registered style matched**,
+and ATAK's built-in `"TAK Maps"` matches any OMT basemap. Tested: a descriptor
+carrying
+`"metadata": {"styleUrl": "http://10.0.2.2:8088/styles/daylight/style.json"}`
+registered and streamed correctly — tiles were served — but Map Room's access
+log shows ATAK **never requested the style document**. The key exists for
+schemas ATAK does not recognise, which is why the VTPK reader sets it.
+
+**Conclusion: supplying a Map Room style to ATAK's vector renderer requires a
+plugin.** The API is public and stable-looking, so the plugin work is small —
+but there is no no-plugin route for an OMT tileset.
+
+### Also established: streaming vector registers, and supports caching
+
+Placing the `StreamingTiles` descriptor in `atak/imagery/mobile/mapsources/`
+registers it as a selectable map source (`Map Room - Colorado`), and selecting
+it streams tiles — verified by access log, `User-Agent: TAK`. Importing the same
+`.json` by URL does nothing at all: no resolver claims it, another silent
+failure.
+
+`StreamingTileClient.cache(CacheRequest, listener)` is implemented, gated on the
+descriptor's `downloadable` flag:
+
+```java
+if (!this.e.f) { listener.onRequestError(…, "Source is not downloadable", true); return; }
+```
+
+`vu.f` is `downloadable` from the descriptor JSON, defaulting true. So the
+engine supports region caching of a streaming vector source — which is what
+[#109](https://github.com/joshuafuller/map-room/issues/109) asks. What remains
+untested is whether any stock UI drives it for vector.
 
 ## Consequences for earlier conclusions
 
