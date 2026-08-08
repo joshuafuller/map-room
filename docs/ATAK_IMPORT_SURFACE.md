@@ -116,6 +116,25 @@ Three things follow:
 3. **The lookup is a URI through a protocol handler.** It resolves `asset:/`
    today, which is why the styles ship in the APK.
 
+### A Map Room style document cannot be supplied — settled
+
+`jglvectortiles.cpp` declares `TAK::Engine::Port::String overrideStyle;` and
+then never uses it. The search path is built inline and hardcoded:
+
+```cpp
+searchPath << "asset:/style/omt/" << sp << "/style.json";
+```
+
+There is no config option, parameter, or URI hook that redirects it, and the
+variant is limited to `overlay`, `dark`, `bright`. A stray
+`std::ifstream t(sspath)` follows the asset read on the same `asset:` string,
+which can never open a file, so it is a no-op rather than an opening.
+
+**In 5.8 a Map Room style document cannot reach the vector renderer.** To give
+an offline map a Map Room look, the style must be baked into raster tiles. The
+unused `overrideStyle` suggests someone intended otherwise, which makes this
+worth re-checking on future ATAK releases.
+
 ### Not established
 
 `DeveloperOptions` transfers any `devopts.properties` key prefixed `mapengine.`
@@ -126,10 +145,19 @@ in testing, and the cause was not isolated. One candidate: an archive registered
 through `ImageryScanner` may render through the dataset-raster path rather than
 `GLVectorTiles`, and the option only affects the latter.
 
-Two questions worth answering, because both would matter a great deal:
+Attempts so far, and why they were inconclusive:
 
-- Whether `vector-tiles.dark-default` can be made to take effect, which would
-  give offline vector maps a light/dark switch with no extra storage.
-- Whether the style lookup will resolve a non-`asset:` URI, which would mean a
-  Map Room style document could be supplied for vector tiles rather than only
-  baked into raster.
+- `mapengine.vector-tiles.dark-default=1` placed in `atak/devopts.properties`
+  changed nothing. `FileSystemUtils.getItem` resolves against
+  `Environment.getExternalStorageDirectory()`, so the file was then also placed
+  at `/sdcard/devopts.properties`; still nothing changed.
+- An attempt to validate the `devopts` mechanism independently, using
+  `default-map-projection=3857`, was **not a valid probe**: ATAK renders a globe
+  in 3D mode regardless of projection, so the absence of a flat map proves
+  nothing either way.
+
+So it remains unknown whether `devopts` is being read at all here. Before any
+further work on this, find a developer option with an unambiguous visual effect
+and confirm the mechanism itself. The prize is real — a light/dark switch for
+offline vector maps at zero extra storage — but nothing about it is established
+yet.
