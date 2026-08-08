@@ -75,21 +75,83 @@ the same answer.
 | 18 | **Releasability** | Can the data be handed to a coalition partner without a release process |
 | 19 | **Set-up burden for the publisher** | What a volunteer organisation must stand up to use it at all |
 
-## Candidates
+## What ATAK already supports — context, not candidates
 
-| Candidate | Status |
-| --- | --- |
-| Streaming raster (`customMapSource` XML) | Works today |
-| Streaming vector (`StreamingTiles` JSON) | Works today |
-| Streaming vector **+ region cache** | Capability present in source; unproven — [#109](https://github.com/joshuafuller/map-room/issues/109) |
-| MBTiles vector, offline | Works today |
-| MBTiles raster, styled, offline | Works today |
-| PMTiles vector | Requires a plugin (`TileContainerFactory.registerSpi`) |
-| GeoPackage | ATAK recognises it; untested here |
-| RBT schema vector | Doctrinal for FMS/coalition; EPSG:3395; untested here |
-| Terrain: DTED | Long-standing ATAK support; untested here |
-| Terrain: Terrain-RGB MBTiles | Recognised via `MBTilesInfo`; untested here |
-| Terrain: quantized mesh | `QMESourceManager` present; untested here |
+Not the subject of this rubric, but the baseline anything new must beat.
+Raster containers: **MBTiles**, **GeoPackage**, **OSM Droid SQLite**, **Zip
+tileset**, plus GDAL-georeferenced files and world-file images. Vector tiles:
+**MBTiles (MVT)** and **direct `.mvt`/`.pbf`**. Services: **WMS**, **WMTS**.
+Terrain: **DTED**, **SRTM**, **GeoTIFF**, **Mapbox RGB**, **Terrarium**. 3D:
+**OBJ**, **COLLADA**, **glTF/GLB**, **Cesium 3D Tiles** (b3dm full, i3dm
+partial). Full detail in ATAK's `ATAK_Supported_Map_Types.md`.
+
+### Check the roadmap before building anything
+
+ATAK's own planned-formats section changes the calculus, because building what
+ATAK is about to ship natively is wasted effort:
+
+| Feature | ATAK status | Target |
+| --- | --- | --- |
+| **Custom style sheet import** | Planned | 5.7+ |
+| **Shortbread default styles** | Planned | 5.8+ |
+| **Map Manager download** (streaming vector region download) | Planned | 5.8+ |
+| RBT default styles | Planned | 5.7+ |
+| **Cesium Quantized Mesh** | Planned | 5.8+ |
+| ESRI **TPKX** / **VTPK** | In development | 5.7 |
+
+Two consequences worth absorbing. Custom stylesheet import being *planned*
+explains the dead `overrideStyle` variable, and means the styling limitation may
+be temporary. And "Map Manager download" being planned rather than shipped
+suggests streaming vector region caching is **not** available in 5.8 — which
+would answer [#109](https://github.com/joshuafuller/map-room/issues/109) in the
+negative and must be verified before that spike is scoped.
+
+Do not build: TPKX, VTPK, Shortbread styling, or quantized mesh. ATAK is
+already doing them.
+
+## Candidates — formats ATAK does not support
+
+These are the plugin candidates, scored against each other.
+
+| Candidate | What it is | Why it might matter |
+| --- | --- | --- |
+| **PMTiles** | Single-file tile archive read by HTTP range request | No tile server at all — static hosting, or one file offline. The self-hosting community has largely settled on it |
+| **COMTiles** | Cloud-optimised tile archive, same idea | Alternative to PMTiles; far less adoption |
+| **COG** (Cloud-Optimised GeoTIFF) | Range-request GeoTIFF | Standard for imagery in the wider geo world; ATAK reads plain GeoTIFF but not cloud-optimised access |
+| **MLT** (MapLibre Tiles) | Next-generation vector tile encoding | Substantially better compression than MVT; early, and moving |
+| **FlatGeobuf** | Streamable flat feature format with spatial index | Feature data rather than tiles; good for large overlays |
+| **Protomaps basemap** | A complete open basemap build and schema, shipped as PMTiles | The community's turnkey self-hosted basemap |
+| **Shortbread** | Geofabrik's open vector tile schema | Open governance alternative to OMT — but ATAK plans native styles for it |
+| **Overture** | Open data supply (places, buildings, transport) | Changes the input, not the delivery format |
+
+### Additional criteria for plugin candidates
+
+On top of the nineteen above, these decide build-versus-wait:
+
+| # | Criterion | How it is measured |
+| --- | --- | --- |
+| 20 | **Plugin implementation effort** | Which SPIs it needs — `TileContainerFactory`, `DatasetDescriptorFactory2`, `GLMapLayerFactory`, an `ImportResolver` — measured against the `customtiles` example as the unit of work |
+| 21 | **Range-request dependency** | Does its advantage require HTTP range access, and does that advantage survive offline where there is no HTTP at all |
+| 22 | **Spec stability and governance** | Is the spec versioned, owned by a foundation or a company, and stable enough to ship against |
+| 23 | **Does ATAK plan it natively** | If yes, building it is throwaway work |
+| 24 | **Existing tooling** | Can Map Room produce it with tools already in the pipeline, or does it need a new toolchain |
+
+### First-pass reading, to be tested not trusted
+
+**PMTiles** is the strongest candidate on paper: open spec, no vendor, static
+hosting, and one file offline. But its headline advantage — range requests
+against dumb storage — is a *hosting* advantage, and for a disconnected device
+it degenerates to "a single file", which MBTiles already is. The honest question
+is whether it beats MBTiles **on the device**, or only in how we serve it. If
+only the latter, we can use PMTiles internally and keep shipping MBTiles to
+ATAK, with no plugin at all.
+
+**MLT** would be the real prize if the compression claims hold, because size is
+the binding constraint on every offline case. It is also the least mature.
+
+**COG** matters only if imagery becomes a priority; ATAK already reads GeoTIFF.
+
+**Shortbread and quantized mesh are off the list** — ATAK is shipping both.
 
 ## What is already measured
 
