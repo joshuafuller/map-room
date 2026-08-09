@@ -1,0 +1,104 @@
+#!/bin/sh
+# Provision the host-side assets that are deliberately absent from the repository:
+# the vendored browser bundles under web/vendor and the glyph pack under data/fonts.
+#
+# Both the documented Docker quick start and the contributor setup script depend on
+# this. It is idempotent, so it is safe to run on every `docker compose up`.
+set -eu
+
+root_dir=$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd)
+data_dir=${MAP_ROOM_DATA_DIR:-"$root_dir/data"}
+font_dir="$data_dir/fonts"
+vendor_dir="$root_dir/web/vendor"
+fixture_url=https://github.com/maptiler/tileserver-gl/releases/download/v1.3.0/test_data.zip
+
+require_command() {
+	if ! command -v "$1" >/dev/null 2>&1; then
+		printf 'Missing required command: %s\n' "$1" >&2
+		exit 1
+	fi
+}
+
+# node:24-alpine ships wget but not curl; developer machines usually have curl.
+download() {
+	url=$1
+	target=$2
+	if command -v curl >/dev/null 2>&1; then
+		curl -fsSL "$url" -o "$target"
+	elif command -v wget >/dev/null 2>&1; then
+		wget -q -O "$target" "$url"
+	else
+		printf 'Missing required command: curl or wget\n' >&2
+		exit 1
+	fi
+}
+
+fonts_present() {
+	find "$font_dir" -type f -name '*.pbf' -print -quit 2>/dev/null | grep -q .
+}
+
+vendor_present() {
+	for name in maplibre-gl.mjs maplibre-gl-shared.mjs maplibre-gl-worker.mjs \
+		maplibre-gl.css qrcode-generator.mjs MapLibre-LICENSE.txt; do
+		test -f "$vendor_dir/$name" || return 1
+	done
+	return 0
+}
+
+copy_vendor_from() {
+	modules=$1
+	cp "$modules"/maplibre-gl/dist/*.mjs "$vendor_dir/"
+	cp "$modules"/maplibre-gl/dist/maplibre-gl.css "$vendor_dir/"
+	cp "$modules"/maplibre-gl/LICENSE.txt "$vendor_dir/MapLibre-LICENSE.txt"
+	cp "$modules"/qrcode-generator/dist/qrcode.mjs "$vendor_dir/qrcode-generator.mjs"
+}
+
+mkdir -p "$font_dir" "$vendor_dir"
+
+# Docker creates a missing bind-mount source as root. If that happened before this
+# ran, say so plainly instead of failing later inside cp.
+for dir in "$font_dir" "$vendor_dir"; do
+	if [ ! -w "$dir" ]; then
+		printf '%s is not writable by uid %s.\n' "$dir" "$(id -u)" >&2
+		printf 'Fix ownership on the host, then retry:\n  sudo chown -R %s:%s %s\n' \
+			"$(id -u)" "$(id -g)" "$dir" >&2
+		exit 1
+	fi
+done
+
+if fonts_present; then
+	printf 'Glyphs already present in %s\n' "$font_dir"
+else
+	require_command unzip
+	fixture_dir=$(mktemp -d)
+	trap 'rm -rf "$fixture_dir"' EXIT HUP INT TERM
+	printf 'Downloading glyph pack...\n'
+	download "$fixture_url" "$fixture_dir/test_data.zip"
+	unzip -q "$fixture_dir/test_data.zip" 'fonts/*' -d "$fixture_dir"
+	cp -R "$fixture_dir/fonts/." "$font_dir/"
+	printf 'Installed glyphs into %s\n' "$font_dir"
+fi
+
+if vendor_present; then
+	printf 'Browser bundles already present in %s\n' "$vendor_dir"
+	exit 0
+fi
+
+require_command npm
+
+if [ -d "$root_dir/node_modules/maplibre-gl" ] && [ -d "$root_dir/node_modules/qrcode-generator" ]; then
+	# A contributor has already installed dependencies. Reuse them rather than
+	# running npm ci, which would delete and reinstall their node_modules.
+	copy_vendor_from "$root_dir/node_modules"
+else
+	# Install into a scratch tree so the caller's checkout is never mutated. The
+	# lockfile is copied in, so the bundles match the pinned versions exactly.
+	install_dir=$(mktemp -d)
+	trap 'rm -rf "${fixture_dir:-}" "$install_dir"' EXIT HUP INT TERM
+	cp "$root_dir/package.json" "$root_dir/package-lock.json" "$install_dir/"
+	printf 'Installing pinned browser dependencies...\n'
+	(cd "$install_dir" && npm ci --omit=dev --ignore-scripts --no-audit --no-fund >/dev/null)
+	copy_vendor_from "$install_dir/node_modules"
+fi
+
+printf 'Installed browser bundles into %s\n' "$vendor_dir"

@@ -1,7 +1,28 @@
 services:
+  # web/vendor and data/fonts are deliberately untracked. Provision them before the
+  # stack starts so a clean checkout works from `docker compose up` alone, with no
+  # host toolchain. Idempotent: a second run exits immediately.
+  setup:
+    image: node:24-alpine
+    user: "${MAP_ROOM_UID:-1000}:${MAP_ROOM_GID:-1000}"
+    working_dir: /workspace
+    environment:
+      MAP_ROOM_DATA_DIR: /workspace/data
+      npm_config_cache: /tmp/npm-cache
+    volumes:
+      - ./package.json:/workspace/package.json:ro
+      - ./package-lock.json:/workspace/package-lock.json:ro
+      - ./scripts:/workspace/scripts:ro
+      - ./web/vendor:/workspace/web/vendor
+      - ./data:/workspace/data
+    entrypoint: ["/bin/sh", "/workspace/scripts/provision-assets.sh"]
+
   tiles:
     build: .
     user: "${MAP_ROOM_UID:-1000}:${MAP_ROOM_GID:-1000}"
+    depends_on:
+      setup:
+        condition: service_completed_successfully
     environment:
       TILESERVER_GL_ALLOWED_HOSTS: ${MAP_ROOM_ALLOWED_HOSTS:-localhost,127.0.0.1}
       MAP_ROOM_DEFAULT_REGION: ${MAP_ROOM_DEFAULT_REGION:-}

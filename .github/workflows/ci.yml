@@ -23,3 +23,21 @@ jobs:
       - run: npm run test:coverage:atak
       - run: npm run test:create-map
       - run: shellcheck scripts/*.sh
+
+  quickstart:
+    # A clean checkout is exactly what a new user has: no node_modules, no
+    # web/vendor, no data/fonts. Run the README quick start verbatim against it.
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+      - name: Quick start
+        run: docker compose up -d --build --wait
+      - name: Smoke test the served app
+        run: ./scripts/test-quickstart.sh
+      - name: Server logs on failure
+        if: failure()
+        run: docker compose logs --no-color --tail 200
+      - name: Tear down
+        if: always()
+        run: docker compose down -v
