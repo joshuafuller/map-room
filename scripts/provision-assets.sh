@@ -10,6 +10,7 @@ root_dir=$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd)
 data_dir=${MAP_ROOM_DATA_DIR:-"$root_dir/data"}
 font_dir="$data_dir/fonts"
 vendor_dir="$root_dir/web/vendor"
+stamp_file="$vendor_dir/.provisioned"
 fixture_url=https://github.com/maptiler/tileserver-gl/releases/download/v1.3.0/test_data.zip
 
 require_command() {
@@ -37,12 +38,47 @@ fonts_present() {
 	find "$font_dir" -type f -name '*.pbf' -print -quit 2>/dev/null | grep -q .
 }
 
-vendor_present() {
+vendor_files_present() {
 	for name in maplibre-gl.mjs maplibre-gl-shared.mjs maplibre-gl-worker.mjs \
 		maplibre-gl.css qrcode-generator.mjs MapLibre-LICENSE.txt; do
 		test -f "$vendor_dir/$name" || return 1
 	done
 	return 0
+}
+
+vendored_packages="maplibre-gl qrcode-generator"
+
+pinned_version() {
+	node -p 'require(process.argv[1]).packages["node_modules/" + process.argv[2]].version' \
+		"$root_dir/package-lock.json" "$1"
+}
+
+installed_version() {
+	node -p 'require(process.argv[1]).version' "$root_dir/node_modules/$1/package.json" 2>/dev/null \
+		|| printf 'absent'
+}
+
+pinned_versions() {
+	for name in $vendored_packages; do
+		printf '%s@%s ' "$name" "$(pinned_version "$name")"
+	done
+	printf '\n'
+}
+
+node_modules_match_lockfile() {
+	for name in $vendored_packages; do
+		test "$(installed_version "$name")" = "$(pinned_version "$name")" || return 1
+	done
+	return 0
+}
+
+# Filenames alone are not enough. maplibre-gl 6.1.0 and a later release ship the
+# same names, so a version bump would otherwise leave stale bundles in place and
+# the browser running old code indefinitely. Stamp what was copied and compare.
+vendor_current() {
+	vendor_files_present || return 1
+	test -f "$stamp_file" || return 1
+	test "$(cat "$stamp_file")" = "$(pinned_versions)"
 }
 
 copy_vendor_from() {
@@ -90,17 +126,23 @@ else
 	printf 'Installed glyphs into %s\n' "$font_dir"
 fi
 
-if vendor_present; then
-	printf 'Browser bundles already present in %s\n' "$vendor_dir"
+require_command node
+
+if vendor_current; then
+	printf 'Browser bundles already match the lockfile (%s)\n' "$(pinned_versions)"
 	normalize_ownership
 	exit 0
 fi
 
+if vendor_files_present; then
+	printf 'Browser bundles are stale, refreshing to %s\n' "$(pinned_versions)"
+fi
+
 require_command npm
 
-if [ -d "$root_dir/node_modules/maplibre-gl" ] && [ -d "$root_dir/node_modules/qrcode-generator" ]; then
-	# A contributor has already installed dependencies. Reuse them rather than
-	# running npm ci, which would delete and reinstall their node_modules.
+if node_modules_match_lockfile; then
+	# A contributor already has the pinned versions installed. Reuse them rather
+	# than running npm ci, which would delete and reinstall their node_modules.
 	copy_vendor_from "$root_dir/node_modules"
 else
 	# Install into a scratch tree so the caller's checkout is never mutated. The
@@ -113,6 +155,7 @@ else
 	copy_vendor_from "$install_dir/node_modules"
 fi
 
+pinned_versions >"$stamp_file"
 normalize_ownership
 
-printf 'Installed browser bundles into %s\n' "$vendor_dir"
+printf 'Installed browser bundles into %s (%s)\n' "$vendor_dir" "$(pinned_versions)"
