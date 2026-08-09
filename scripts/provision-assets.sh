@@ -53,10 +53,21 @@ copy_vendor_from() {
 	cp "$modules"/qrcode-generator/dist/qrcode.mjs "$vendor_dir/qrcode-generator.mjs"
 }
 
-mkdir -p "$font_dir" "$vendor_dir"
+# The stack runs as MAP_ROOM_UID/GID, which need not match whoever owns the
+# checkout. A CI runner checks out as 1001; a developer may be any uid. When this
+# runs as root inside the setup container, hand the provisioned trees to the uid the
+# stack actually uses, so neither this script nor tileserver hits a permission wall.
+normalize_ownership() {
+	[ "$(id -u)" = 0 ] || return 0
+	chown -R "${MAP_ROOM_UID:-1000}:${MAP_ROOM_GID:-1000}" "$font_dir" "$vendor_dir"
+	chown "${MAP_ROOM_UID:-1000}:${MAP_ROOM_GID:-1000}" "$data_dir"
+}
 
-# Docker creates a missing bind-mount source as root. If that happened before this
-# ran, say so plainly instead of failing later inside cp.
+mkdir -p "$font_dir" "$vendor_dir"
+normalize_ownership
+
+# Outside the container there is no root to fall back on, so a directory Docker
+# already created as root has to be reported rather than silently failing in cp.
 for dir in "$font_dir" "$vendor_dir"; do
 	if [ ! -w "$dir" ]; then
 		printf '%s is not writable by uid %s.\n' "$dir" "$(id -u)" >&2
@@ -81,6 +92,7 @@ fi
 
 if vendor_present; then
 	printf 'Browser bundles already present in %s\n' "$vendor_dir"
+	normalize_ownership
 	exit 0
 fi
 
@@ -100,5 +112,7 @@ else
 	(cd "$install_dir" && npm ci --omit=dev --ignore-scripts --no-audit --no-fund >/dev/null)
 	copy_vendor_from "$install_dir/node_modules"
 fi
+
+normalize_ownership
 
 printf 'Installed browser bundles into %s\n' "$vendor_dir"

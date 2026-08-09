@@ -4,10 +4,14 @@ services:
   # host toolchain. Idempotent: a second run exits immediately.
   setup:
     image: node:24-alpine
-    user: "${MAP_ROOM_UID:-1000}:${MAP_ROOM_GID:-1000}"
+    # Runs as root on purpose. The checkout can be owned by any uid (a CI runner
+    # uses 1001), so this hands the provisioned files to MAP_ROOM_UID/GID itself
+    # rather than requiring the two to match.
     working_dir: /workspace
     environment:
       MAP_ROOM_DATA_DIR: /workspace/data
+      MAP_ROOM_UID: ${MAP_ROOM_UID:-1000}
+      MAP_ROOM_GID: ${MAP_ROOM_GID:-1000}
       npm_config_cache: /tmp/npm-cache
     volumes:
       - ./package.json:/workspace/package.json:ro
