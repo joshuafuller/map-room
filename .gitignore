@@ -1,5 +1,10 @@
 data/*
 !data/.gitkeep
+# Ship the glyph directory so Docker does not pre-create the bind-mount source as
+# root, which would leave the provisioner unable to write into it.
+!data/fonts/
+data/fonts/*
+!data/fonts/.gitkeep
 node_modules/
 coverage/
 web/vendor/*
@@ -7,3 +12,4 @@ web/vendor/*
 !web/vendor/americana-shields.json
 styles/regions/
 styles/collections/
+.gstack/

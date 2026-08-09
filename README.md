@@ -102,6 +102,10 @@ You need Docker and internet access while acquiring a catalog map.
 docker compose up -d --build --wait
 ```
 
+The first run provisions the browser bundles and the glyph pack into `web/vendor`
+and `data/fonts`, so it takes a little longer than later runs. No host toolchain is
+needed, and repeat runs skip the step.
+
 Open <http://localhost:8088>, select **Manage maps**, and start with a small
 region. Large countries or continents can require substantially more memory,
 SSD space, download time, and build time.
