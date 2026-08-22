@@ -35,7 +35,7 @@
     "c8": "^12.0.0",
     "fast-check": "^4.9.0",
     "jsqr": "1.4.0",
-    "lucide-static": "1.28.0",
+    "lucide-static": "1.33.0",
     "playwright": "1.62.1",
     "sharp": "0.35.3"
   }
