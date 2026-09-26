@@ -17,7 +17,7 @@ The complete upstream license text and provenance record are included under
 
 ## MapLibre GL JS
 
-Map Room's browser setup copies MapLibre GL JS, version 6.1.0, into the local
+Map Room's browser setup copies MapLibre GL JS, version 6.4.1, into the local
 runtime bundle. MapLibre GL JS is distributed under the BSD 3-Clause License
 and includes code under additional compatible notices. The setup command copies
 the dependency's complete `LICENSE.txt` alongside the browser bundle as
@@ -86,5 +86,5 @@ dependency distributed under the Apache License 2.0.
 ## Sharp
 
 The sprite build pipeline uses [Sharp](https://sharp.pixelplumbing.com/),
-version 0.35.3, under the Apache-2.0 License. Sharp is a build-time dependency;
+version 0.35.4, under the Apache-2.0 License. Sharp is a build-time dependency;
 it is not required by Map Room clients or served as a runtime asset.
