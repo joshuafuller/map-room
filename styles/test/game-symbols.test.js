@@ -110,7 +110,7 @@ test("uses Americana browser shields with truthful colored-theme POI categories"
   assert.equal(atakPng.readUInt32BE(16), 128);
   assert.equal(atakPng.readUInt32BE(20), 128);
   assert.equal(packageJson.devDependencies["lucide-static"], "1.28.0");
-  assert.equal(packageJson.devDependencies.sharp, "0.35.3");
+  assert.equal(packageJson.devDependencies.sharp, "0.35.4");
   assert.match(notices, /Lucide.*ISC/is);
   assert.match(notices, /Sharp.*Apache-2\.0/is);
   assert.equal(layers.taxiways.paint["line-color"], "#00eaff");

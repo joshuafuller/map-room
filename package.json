@@ -9,7 +9,7 @@
     "node": ">=24"
   },
   "dependencies": {
-    "maplibre-gl": "6.1.0",
+    "maplibre-gl": "6.4.1",
     "qrcode-generator": "2.0.4"
   },
   "scripts": {
@@ -37,6 +37,6 @@
     "jsqr": "1.4.0",
     "lucide-static": "1.28.0",
     "playwright": "1.62.1",
-    "sharp": "0.35.3"
+    "sharp": "0.35.4"
   }
 }
