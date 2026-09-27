@@ -1,4 +1,4 @@
-FROM ghcr.io/onthegomap/planetiler:0.10.1 AS planetiler
+FROM ghcr.io/onthegomap/planetiler:0.10.2 AS planetiler
 
 FROM maptiler/tileserver-gl:v5.6.0
 
