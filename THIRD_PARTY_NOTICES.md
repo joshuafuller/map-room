@@ -35,7 +35,7 @@ The canonical font sources and license are published by the
 ## Lucide Icons
 
 Map Room's generated POI sprite atlas incorporates selected SVG icons from
-[Lucide](https://lucide.dev/), version 1.28.0. Lucide is distributed under the
+[Lucide](https://lucide.dev/), version 1.47.0. Lucide is distributed under the
 ISC License; some icons are derived from Feather under the MIT License.
 
 Copyright (c) 2026 Lucide Icons and Contributors
