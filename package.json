@@ -18,7 +18,7 @@
     "capture:readme": "node scripts/capture-readme.mjs",
     "dev": "docker compose -f compose.yaml -f compose.dev.yaml up --build --wait",
     "dev:down": "docker compose -f compose.yaml -f compose.dev.yaml down",
-    "test:unit": "node --test maintainer/test/*.test.js styles/test/*.test.js web/*.test.js",
+    "test:unit": "node --test --test-concurrency=1 maintainer/test/*.test.js styles/test/*.test.js web/*.test.js",
     "test:mutation": "node scripts/test-mutation.mjs",
     "test:create-map": "./scripts/test-create-map.sh",
     "test:quickstart": "./scripts/test-quickstart.sh",
