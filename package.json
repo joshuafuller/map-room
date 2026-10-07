@@ -18,7 +18,7 @@
     "capture:readme": "node scripts/capture-readme.mjs",
     "dev": "docker compose -f compose.yaml -f compose.dev.yaml up --build --wait",
     "dev:down": "docker compose -f compose.yaml -f compose.dev.yaml down",
-    "test:unit": "node --test maintainer/test/*.test.js styles/test/*.test.js web/*.test.js",
+    "test:unit": "node --test --test-concurrency=1 maintainer/test/*.test.js styles/test/*.test.js web/*.test.js",
     "test:mutation": "node scripts/test-mutation.mjs",
     "test:create-map": "./scripts/test-create-map.sh",
     "test:quickstart": "./scripts/test-quickstart.sh",
@@ -35,8 +35,8 @@
     "c8": "^12.0.0",
     "fast-check": "^4.10.2",
     "jsqr": "1.4.0",
-    "lucide-static": "1.47.0",
+    "lucide-static": "1.49.0",
     "playwright": "1.63.0",
-    "sharp": "0.35.4"
+    "sharp": "0.35.5"
   }
 }

@@ -35,7 +35,7 @@ The canonical font sources and license are published by the
 ## Lucide Icons
 
 Map Room's generated POI sprite atlas incorporates selected SVG icons from
-[Lucide](https://lucide.dev/), version 1.47.0. Lucide is distributed under the
+[Lucide](https://lucide.dev/), version 1.49.0. Lucide is distributed under the
 ISC License; some icons are derived from Feather under the MIT License.
 
 Copyright (c) 2026 Lucide Icons and Contributors
@@ -86,5 +86,5 @@ dependency distributed under the Apache License 2.0.
 ## Sharp
 
 The sprite build pipeline uses [Sharp](https://sharp.pixelplumbing.com/),
-version 0.35.4, under the Apache-2.0 License. Sharp is a build-time dependency;
+version 0.35.5, under the Apache-2.0 License. Sharp is a build-time dependency;
 it is not required by Map Room clients or served as a runtime asset.
