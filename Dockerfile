@@ -1,6 +1,6 @@
 FROM ghcr.io/onthegomap/planetiler:0.10.2 AS planetiler
 
-FROM maptiler/tileserver-gl:v5.6.0
+FROM maptiler/tileserver-gl:v5.7.0
 
 USER root
 COPY --from=planetiler /opt/java/openjdk /opt/java/openjdk
